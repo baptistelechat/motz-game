@@ -19,7 +19,7 @@ workflow_path: "{project-root}/_bmad/bmm/workflows/workflow-status/paths/method-
 
 workflow_status:
   # Phase 1: Analysis (Optional)
-  brainstorm-project: optional
+  brainstorm-project: skipped
   research: optional
   product-brief: c:\Users\ASUS\Desktop\DEV\Projet_perso\motz-game\_bmad-output\planning-artifacts\product-brief-motz-game-2026-01-12.md
 

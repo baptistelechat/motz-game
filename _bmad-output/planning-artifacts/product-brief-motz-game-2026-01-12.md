@@ -113,6 +113,7 @@ Une application web "click-and-play" (Next.js/Supabase) où les joueurs rejoigne
 - **Input Latency :** Délai entre la soumission du mot et la validation serveur (Cible : < 100ms, "as low as possible").
 - **Matchmaking Velocity :** Temps d'attente moyen pour lancer une partie.
 - **Concurrency Optimization :** Maximiser le nombre de joueurs simultanés dans les limites du plan gratuit Supabase (Cible initiale : 100 joueurs simultanés).
+- **Hard Cap Strategy :** Limitation stricte des connexions en fonction des quotas Supabase (Message "Serveur complet") pour préserver la qualité de jeu des utilisateurs connectés.
 - **Weekly Active Users (WAU) :** Cible initiale de 100 joueurs uniques par semaine.
 
 ### Growth & Virality
@@ -128,15 +129,33 @@ Une application web "click-and-play" (Next.js/Supabase) où les joueurs rejoigne
 #### Core Gameplay & Mechanics
 
 - **Real-Time Engine :** Synchronisation multijoueur fluide via Supabase Realtime.
+  - **Architecture :** "Database as State" (Pas de serveur Node dédié). Chaque action est un event DB.
+  - **Optimisation :** Acceptation d'une latence modérée (~100-200ms) pour simplifier l'infra (Vercel + Supabase).
 - **Strict Server Validation :**
   - Vérification dictionnaire français.
   - Respect des lettres imposées/interdites.
+  - **Server Authoritative :** L'heure du serveur fait foi pour l'arbitrage (protection anti-triche).
+    - **Tie Breaker (L'École des Fans) :** Si écart < 50ms entre deux soumissions valides, égalité parfaite accordée (points pour les deux) pour maximiser le fun.
   - **Validation Thématique Avancée (Semantic Analysis) :** Tentative d'intégration dès la V1 pour les cartes "Thème".
     - _Note Technique :_ Utilisation de modèles légers ou d'API optimisées pour minimiser la latence. Si trop lent (>200ms), fallback sur validation par tags basiques.
+  - **Risk/Reward Scoring (Combo-Breaker) :** Bonus de points (ex: x1.5 ou x2) pour l'utilisation de lettres rares ou le respect de contraintes facultatives ("Hard Mode"), afin de récompenser l'audace face à la pure vitesse.
 - **Card System (Base + Special) :**
   - Lettres Obligatoires / Interdites.
   - **Cartes Spéciales de base :** Thème imposé, Inversion de règles, Longueur minimale.
-- **Report System :** Possibilité pour les joueurs de signaler un mot contestable (faux positif) pour amélioration continue du dictionnaire.
+- **Report System :** Possibilité pour les joueurs de signaler/contester un mot (faux positif) en temps réel ou en fin de partie.
+
+#### Trust & Safety
+
+- **Safe Mode (Filtre Profanité) :** Option à la création de la room (activée par défaut).
+  - **Priorité Sécurité :** Le filtre prime sur le dictionnaire (Risque 0).
+  - Si actif : Rejette les mots vulgaires/offensants même si valides au dictionnaire.
+  - Si inactif : Accepte tout mot valide du dictionnaire officiel.
+  - **Admin Tools :** Gestion d'une "Allowlist" pour corriger les faux positifs signalés.
+- **Vote Kick :** Mécanique d'exclusion communautaire (ex: 3 votes requis).
+  - **Anti-Griefing :** Désactivé automatiquement après 80% de progression de la partie.
+  - **Sanction :** Déconnexion neutre (pas de pénalité de score/classement pour l'instant).
+- **Disconnect Handling :** "The Ghost" (Passif).
+  - Un joueur déconnecté reste dans la liste (inactif) et peut reprendre sa place s'il se reconnecte. Pas de pénalité immédiate.
 
 #### Onboarding & Social
 
@@ -150,12 +169,16 @@ Une application web "click-and-play" (Next.js/Supabase) où les joueurs rejoigne
 
 - **Mobile First Design :** Interface pensée pour le tactile et les petits écrans.
 - **Immediate Feedback :** Animation visuelle instantanée lors de la soumission (Succès/Échec).
+- **Network Quality Indicator (Ping) :** Affichage discret de la latence avec alerte explicite ("Connexion instable, actions retardées") si critique.
 - **Scoreboard :** Classement de la manche et classement général de la partie.
 
 ### OUT OF SCOPE (Deferred to V2)
 
 - **Public Rooms / Global Matchmaking :** Pas de liste publique de parties, uniquement invitation par lien pour la V1 (simplification modération/technique).
 - **Complex Special Cards :** Effets modifiant le temps (ex: "Temps x2"), vol de points entre joueurs, ou mécaniques nécessitant trop d'états complexes.
+- **Alternative Game Modes :**
+  - **Mode Sabotage (Reverse) :** Un joueur devient Maître du Jeu et choisit les contraintes.
+  - **Battle Royale Lexical :** Zone rétrécissante avec lettres interdites progressives.
 - **User Accounts :** Pas d'inscription, pas d'historique de stats long terme, pas de profil persistant.
 - **Chat System :** Pas de discussion libre (focus gameplay, évite modération).
 - **Multi-language :** Uniquement français pour le lancement.
