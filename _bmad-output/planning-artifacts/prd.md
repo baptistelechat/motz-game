@@ -4,6 +4,13 @@ stepsCompleted:
   - step-02-discovery
   - step-03-success
   - step-04-journeys
+  - step-05-domain
+  - step-06-innovation
+  - step-07-project-type
+  - step-08-scoping
+  - step-09-functional
+  - step-10-nonfunctional
+  - step-11-polish
 inputDocuments:
   - product-brief-motz-game-2026-01-12.md
 workflowType: "prd"
@@ -183,6 +190,12 @@ Une application web "click-and-play" (Next.js/Supabase) où les joueurs rejoigne
 - **Chat System :** Pas de discussion libre (focus gameplay, évite modération).
 - **Multi-language :** Uniquement français pour le lancement.
 
+#### Long Term Vision
+
+- **Application Native :** Si succès web.
+- **E-Sport & Tournois :** Si la communauté devient compétitive.
+- **Intégration Streaming :** Fonctionnalités dédiées pour Twitch (vote du public sur les contraintes).
+
 ## Success Criteria
 
 ### User Success
@@ -213,26 +226,6 @@ Une application web "click-and-play" (Next.js/Supabase) où les joueurs rejoigne
 - **Durée Moyenne de Session :** > 15 minutes (soit au moins 2 parties enchaînées).
 - **Taux de Revanche :** > 50% des parties sont suivies d'une nouvelle partie avec le même groupe.
 - **Coût par Utilisateur :** 0€ (Maintenance de l'infra gratuite).
-
-## Product Scope
-
-### MVP - Minimum Viable Product
-
-- **Cœur de Jeu :** Moteur temps réel, Validation serveur stricte, Cartes de contraintes de base.
-- **Social :** Lobby privé, Lien d'invitation, Chat (limité/inexistant selon décision finale, focus gameplay).
-- **Tech :** Supabase Realtime, Hard Cap connexions, Fallback mobile.
-- **Trust & Safety :** Safe Mode par défaut, Vote Kick.
-
-### Growth Features (Post-MVP)
-
-- **Modes de Jeu Alternatifs :** Sabotage, Battle Royale.
-- **Système de Replay :** Pour partager les moments forts sur les réseaux.
-
-### Vision (Future)
-
-- **Application Native :** Si succès web.
-- **E-Sport & Tournois :** Si la communauté devient compétitive.
-- **Intégration Streaming :** Fonctionnalités dédiées pour Twitch (vote du public sur les contraintes).
 
 ## Exigences du Domaine
 
@@ -330,6 +323,30 @@ Une application web "click-and-play" (Next.js/Supabase) où les joueurs rejoigne
   - Le seuil dynamique (> 50% des autres joueurs) est atteint.
   - Troll123 est déconnecté immédiatement avec le message _"Vous avez été exclu de la partie"_.
   - La partie continue pour Thomas et les survivants.
+
+## Innovation Pillars
+
+### 1. Zero-Friction Social Play (Accessibilité Radicale)
+
+Contrairement aux jeux mobiles classiques (installation requise) ou aux jeux de société (matériel requis), Motz-game élimine toutes les barrières.
+
+- **Innovation :** Utilisation de l'URL comme "Ticket d'entrée" unique. Le lien _est_ le jeu.
+- **Validation :** Taux de conversion "Clic -> Jeu" > 90%.
+
+### 2. "Database as State" Architecture (Technical Simplicity)
+
+Le choix de ne pas avoir de serveur de jeu dédié (type Node.js + Socket.io) mais d'utiliser la base de données comme source de vérité temps réel.
+
+- **Innovation :** Réduction drastique de la complexité DevOps et des coûts (Serverless native).
+- **Validation :** Capacité à tenir la charge de 100 joueurs simultanés avec 0€ de coût infra.
+
+### 3. Generative Content Integration (Exploratory - V2)
+
+Utilisation potentielle de l'IA (LLM légers ou API) pour dynamiser le contenu, au-delà du simple dictionnaire statique.
+
+- **Idée C (Exploration) :** Génération procédurale de cartes "Thème" contextuelles ou validation sémantique avancée ("Ce mot est-il valide pour le thème 'Cuisine du monde' ?").
+- **Risque :** Latence et coût API.
+- **Stratégie :** Prototypage en V2 pour enrichir la variété des parties sans alourdir le client.
 
 ### Journey Requirements Summary
 
