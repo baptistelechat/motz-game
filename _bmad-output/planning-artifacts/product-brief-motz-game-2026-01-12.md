@@ -132,7 +132,8 @@ Une application web "click-and-play" (Next.js/Supabase) où les joueurs rejoigne
   - **Architecture :** "Database as State" (Pas de serveur Node dédié). Chaque action est un event DB.
   - **Optimisation :** Acceptation d'une latence modérée (~100-200ms) pour simplifier l'infra (Vercel + Supabase).
 - **Strict Server Validation :**
-  - Vérification dictionnaire français.
+  - **Dictionnaire In-Memory :** Chargement du dictionnaire côté client (ou Edge Function avec cache) au lancement pour validation instantanée sans spammer la DB.
+    - **Fallback Mode :** Si mémoire insuffisante (Low-End Mobile), bascule automatique sur validation API avec notification "Mode Dégradé".
   - Respect des lettres imposées/interdites.
   - **Server Authoritative :** L'heure du serveur fait foi pour l'arbitrage (protection anti-triche).
     - **Tie Breaker (L'École des Fans) :** Si écart < 50ms entre deux soumissions valides, égalité parfaite accordée (points pour les deux) pour maximiser le fun.
@@ -182,3 +183,73 @@ Une application web "click-and-play" (Next.js/Supabase) où les joueurs rejoigne
 - **User Accounts :** Pas d'inscription, pas d'historique de stats long terme, pas de profil persistant.
 - **Chat System :** Pas de discussion libre (focus gameplay, évite modération).
 - **Multi-language :** Uniquement français pour le lancement.
+
+## Success Criteria
+
+### User Success
+
+- **Expérience de Jeu ("Flow") :**
+  - **Volume :** Une partie "réussie" se définit par un rythme soutenu (grand nombre de mots joués par manche).
+  - **Durée Optimale :** Parties rapides et intenses, plafonnées à 15 minutes max pour éviter la lassitude.
+  - **Sentiment Clé :** L'envie de revanche immédiate ("One more game") même en cas de défaite, signe d'un équilibre fun/frustration sain.
+
+### Business Success
+
+- **Adoption & Rétention :**
+  - **Cible V1 :** 100 joueurs uniques actifs, principalement via le bouche-à-oreille (Twitter, Discord, cercles tech/amis).
+  - **Indicateur de Réussite (3 mois) :** Avoir des joueurs actifs réguliers plusieurs mois après le lancement, prouvant que le jeu dépasse l'effet de nouveauté.
+- **Stratégie de Diffusion :**
+  - Focus sur la viralité organique (partage de liens privés) et la promotion communautaire (X, Discord).
+
+### Technical Success
+
+- **Robustesse & Coût :**
+  - **Budget Infra :** 0€ (Strict Free Tier Supabase).
+  - **Capacité V1 :** ~100 joueurs simultanés (Hard Cap).
+    - _Note :_ Le monitoring des quotas temps réel de Supabase sera crucial pour ajuster ce cap dynamiquement si possible, ou le fixer arbitrairement pour garantir la stabilité.
+  - **Fiabilité :** Aucune partie interrompue par des erreurs serveur, même en pic de charge (dans la limite du Hard Cap).
+
+### Measurable Outcomes
+
+- **Durée Moyenne de Session :** > 15 minutes (soit au moins 2 parties enchaînées).
+- **Taux de Revanche :** > 50% des parties sont suivies d'une nouvelle partie avec le même groupe.
+- **Coût par Utilisateur :** 0€ (Maintenance de l'infra gratuite).
+
+## Product Scope
+
+### MVP - Minimum Viable Product
+
+- **Cœur de Jeu :** Moteur temps réel, Validation serveur stricte, Cartes de contraintes de base.
+- **Social :** Lobby privé, Lien d'invitation, Chat (limité/inexistant selon décision finale, focus gameplay).
+- **Tech :** Supabase Realtime, Hard Cap connexions, Fallback mobile.
+- **Trust & Safety :** Safe Mode par défaut, Vote Kick.
+
+### Growth Features (Post-MVP)
+
+- **Modes de Jeu Alternatifs :** Sabotage, Battle Royale.
+- **Système de Replay :** Pour partager les moments forts sur les réseaux.
+
+### Vision (Future)
+
+- **Application Native :** Si succès web.
+- **E-Sport & Tournois :** Si la communauté devient compétitive.
+- **Intégration Streaming :** Fonctionnalités dédiées pour Twitch (vote du public sur les contraintes).
+
+## Exigences du Domaine
+
+- **RGPD (GDPR) :**
+
+  - **Minimisation des données :** Pas de stockage de données personnelles inutiles (pas de compte obligatoire).
+  - **Logs :** Stockage des IP (logs Supabase) limité au strict nécessaire pour la sécurité et la modération, avec rotation/suppression automatique (ex: 30 jours).
+  - **Droits utilisateurs :** Mécanisme simple pour demander la suppression de toutes les données associées à un pseudo/IP si applicable.
+
+- **Loi sur les Services Numériques (DSA) & Modération :**
+
+  - **Safe Mode :** Activé par défaut pour protéger les utilisateurs contre les contenus offensants.
+  - **Signalement :** Mécanisme accessible pour signaler un comportement abusif ou un contenu illicite (mots offensants non filtrés).
+  - **Transparence :** Règles de modération claires (CGU simplifiées) accessibles depuis le jeu.
+
+- **Protection des Mineurs :**
+  - **Filtre de profanité :** Strictement appliqué par défaut, surtout si le jeu est accessible aux mineurs.
+  - **Interactions :** Limitation des interactions publiques (pas de chat libre ou chat très restreint) pour éviter le grooming ou le harcèlement.
+  - **Avertissement :** Indication claire de l'âge minimum recommandé si nécessaire.
