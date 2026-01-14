@@ -1,0 +1,262 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Motz Game - Design Directions</title>
+    <link
+      href="https://fonts.googleapis.com/css2?family=Press+Start+2P&family=VT323&family=Inter:wght@400;700&display=swap"
+      rel="stylesheet"
+    />
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+      /* Base Variables */
+      :root {
+        --color-canvas: #121220;
+        --color-success: #39ff14;
+        --color-danger: #ff00ff;
+        --color-waiting: #ffff00;
+      }
+
+      /* CRT Scanline Effect for Direction C */
+      .scanlines {
+        background: linear-gradient(
+          to bottom,
+          rgba(255, 255, 255, 0),
+          rgba(255, 255, 255, 0) 50%,
+          rgba(0, 0, 0, 0.2) 50%,
+          rgba(0, 0, 0, 0.2)
+        );
+        background-size: 100% 4px;
+        pointer-events: none;
+      }
+
+      /* Glitch Animation for Direction C */
+      @keyframes glitch {
+        0% {
+          transform: translate(0);
+        }
+        20% {
+          transform: translate(-2px, 2px);
+        }
+        40% {
+          transform: translate(-2px, -2px);
+        }
+        60% {
+          transform: translate(2px, 2px);
+        }
+        80% {
+          transform: translate(2px, -2px);
+        }
+        100% {
+          transform: translate(0);
+        }
+      }
+      .hover-glitch:hover {
+        animation: glitch 0.2s cubic-bezier(0.25, 0.46, 0.45, 0.94) both
+          infinite;
+      }
+    </style>
+  </head>
+  <body class="bg-gray-900 text-white min-h-screen p-8 font-sans">
+    <header class="text-center mb-12 space-y-4">
+      <h1 class="text-4xl font-bold">Design Directions: Motz Game</h1>
+      <p class="text-gray-400 max-w-2xl mx-auto">
+        Three intensity levels of the "Neo-Retro" aesthetic. Choose the one that
+        balances immersion and usability.
+      </p>
+    </header>
+
+    <div class="grid lg:grid-cols-3 gap-8">
+      <!-- Direction A: Soft Arcade -->
+      <article class="space-y-4">
+        <div class="bg-gray-800 p-4 rounded-lg">
+          <h2 class="text-xl font-bold mb-2">A. Soft Arcade (Safe)</h2>
+          <p class="text-sm text-gray-400">
+            Standard Modern UI with retro touches. High readability, low
+            friction.
+          </p>
+        </div>
+
+        <!-- Mockup A -->
+        <div
+          class="bg-[#1a1b26] rounded-xl overflow-hidden shadow-xl border border-gray-700 h-[600px] relative font-[Inter]"
+        >
+          <!-- Top Bar -->
+          <div
+            class="bg-[#24283b] p-4 flex justify-between items-center border-b border-gray-700"
+          >
+            <span class="font-bold text-gray-200">REQ: A, R</span>
+            <span
+              class="bg-yellow-500/20 text-yellow-500 px-2 py-1 rounded text-sm font-mono"
+              >00:12</span
+            >
+          </div>
+
+          <!-- Game Area -->
+          <div
+            class="p-6 flex flex-col items-center justify-center h-full space-y-8"
+          >
+            <div class="flex gap-4">
+              <div
+                class="w-12 h-12 rounded-full bg-gray-700 flex items-center justify-center text-2xl shadow-lg"
+              >
+                🦊
+              </div>
+              <div
+                class="w-12 h-12 rounded-full bg-gray-700 flex items-center justify-center text-2xl shadow-lg opacity-50"
+              >
+                🐼
+              </div>
+            </div>
+
+            <div class="w-full">
+              <input
+                type="text"
+                value="PARC"
+                class="w-full bg-[#16161e] text-white text-3xl font-mono p-4 rounded-lg border border-gray-600 focus:border-blue-500 outline-none text-center tracking-widest"
+                readonly
+              />
+            </div>
+
+            <button
+              class="w-full bg-blue-600 hover:bg-blue-500 text-white font-bold py-3 px-6 rounded-lg shadow-lg transition-all"
+            >
+              Valider
+            </button>
+          </div>
+        </div>
+      </article>
+
+      <!-- Direction B: True 8-Bit (Balanced) -->
+      <article class="space-y-4">
+        <div class="bg-gray-800 p-4 border-l-4 border-[#39FF14]">
+          <h2 class="text-xl font-bold mb-2 text-[#39FF14]">
+            B. True 8-Bit (Recommended)
+          </h2>
+          <p class="text-sm text-gray-400">
+            The "Pixel-Pop" sweet spot. Custom retro components, highly legible
+            text.
+          </p>
+        </div>
+
+        <!-- Mockup B -->
+        <div
+          class="bg-[#121220] border-4 border-black shadow-[8px_8px_0px_0px_#000] h-[600px] relative flex flex-col font-['VT323']"
+        >
+          <!-- Sticky Top -->
+          <div
+            class="bg-black text-white p-4 border-b-4 border-black flex justify-between items-center z-10"
+          >
+            <div class="text-xl">
+              REQ: <span class="text-[#39FF14]">A,R</span>
+              <span class="text-gray-600">|</span> NO:
+              <span class="text-[#FF00FF] line-through decoration-2">E</span>
+            </div>
+            <div class="text-2xl text-[#FFFF00] animate-pulse">00:12</div>
+          </div>
+
+          <!-- Game Area -->
+          <div
+            class="flex-1 p-6 flex flex-col items-center justify-center relative"
+          >
+            <!-- Avatars -->
+            <div class="flex gap-4 mb-8">
+              <div
+                class="w-16 h-16 bg-[#2a2a35] border-4 border-black flex items-center justify-center text-4xl shadow-[4px_4px_0px_0px_#000]"
+              >
+                🦊
+              </div>
+              <div
+                class="w-16 h-16 bg-[#2a2a35] border-4 border-black flex items-center justify-center text-4xl opacity-50 shadow-[4px_4px_0px_0px_#000]"
+              >
+                🐼
+              </div>
+            </div>
+
+            <!-- Input -->
+            <div class="w-full mb-4">
+              <label class="block text-gray-400 text-xl mb-1">YOUR WORD:</label>
+              <input
+                type="text"
+                value="PARC"
+                class="w-full bg-white text-black text-5xl p-2 border-4 border-black shadow-[6px_6px_0px_0px_#000] outline-none text-center tracking-widest font-['VT323']"
+                readonly
+              />
+            </div>
+
+            <!-- Button -->
+            <button
+              class="w-full bg-[#39FF14] text-black text-2xl border-4 border-black shadow-[6px_6px_0px_0px_#000] py-3 active:translate-x-1 active:translate-y-1 active:shadow-none transition-none font-['Press_Start_2P'] uppercase text-sm"
+            >
+              VALIDER >
+            </button>
+          </div>
+        </div>
+      </article>
+
+      <!-- Direction C: Hardcore Glitch (Intense) -->
+      <article class="space-y-4">
+        <div class="bg-gray-800 p-4 rounded-lg">
+          <h2 class="text-xl font-bold mb-2 text-[#FF00FF]">
+            C. Hardcore Glitch
+          </h2>
+          <p class="text-sm text-gray-400">
+            Maximum immersion. CRT effects, constant animation, extreme
+            contrast.
+          </p>
+        </div>
+
+        <!-- Mockup C -->
+        <div
+          class="bg-[#050510] h-[600px] relative flex flex-col font-['VT323'] border border-[#FF00FF] shadow-[0_0_20px_rgba(255,0,255,0.3)] overflow-hidden"
+        >
+          <!-- Scanlines Overlay -->
+          <div class="absolute inset-0 scanlines z-20 opacity-30"></div>
+
+          <!-- CRT Glow -->
+          <div
+            class="absolute inset-0 z-10 pointer-events-none"
+            style="
+              background: radial-gradient(
+                circle,
+                rgba(18, 18, 32, 0) 60%,
+                rgba(0, 0, 0, 0.6) 100%
+              );
+            "
+          ></div>
+
+          <!-- Top Bar -->
+          <div
+            class="p-4 border-b border-[#FF00FF] flex justify-between items-center text-[#FF00FF] drop-shadow-[0_0_5px_rgba(255,0,255,0.8)] z-0"
+          >
+            <span class="text-2xl tracking-tighter">REQ:[A][R]</span>
+            <span class="text-2xl animate-pulse">00:12</span>
+          </div>
+
+          <!-- Game Area -->
+          <div class="flex-1 p-6 flex flex-col items-center justify-center z-0">
+            <div
+              class="text-6xl mb-8 filter drop-shadow-[2px_0_0_rgba(255,0,0,0.5)]"
+            >
+              🦊
+            </div>
+
+            <input
+              type="text"
+              value="PARC"
+              class="w-full bg-transparent text-[#39FF14] text-6xl border-b-4 border-[#39FF14] p-2 outline-none text-center tracking-[0.5em] drop-shadow-[0_0_10px_#39FF14] font-['VT323'] mb-12"
+              readonly
+            />
+
+            <button
+              class="w-full bg-[#FF00FF] text-black text-3xl py-4 hover-glitch border-2 border-white skew-x-[-10deg] font-bold tracking-widest uppercase"
+            >
+              EXECUTE
+            </button>
+          </div>
+        </div>
+      </article>
+    </div>
+  </body>
+</html>

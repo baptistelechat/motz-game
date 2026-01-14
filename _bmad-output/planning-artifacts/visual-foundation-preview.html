@@ -1,0 +1,210 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Motz Game - Visual Foundation Preview</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Pixelify+Sans:wght@400;700&family=Press+Start+2P&family=VT323&display=swap" rel="stylesheet">
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        /* Custom Theme Configuration */
+        :root {
+            --color-canvas: #121220;
+            --color-success: #39FF14;
+            --color-danger: #FF00FF;
+            --color-waiting: #FFFF00;
+            --color-text-main: #FFFFFF;
+        }
+
+        body {
+            background-color: var(--color-canvas);
+            color: var(--color-text-main);
+            font-family: 'VT323', monospace; /* Default body font */
+        }
+
+        .font-heading {
+            font-family: 'Press Start 2P', cursive;
+        }
+
+        .font-pixel {
+            font-family: 'Pixelify Sans', sans-serif;
+        }
+
+        .font-vt323 {
+            font-family: 'VT323', monospace;
+        }
+
+        /* The "Crunchy" Look Utilities */
+        .crunchy-border {
+            border: 4px solid #000000;
+            border-radius: 0px; /* Zero-radius policy */
+        }
+
+        .crunchy-shadow {
+            box-shadow: 6px 6px 0px 0px #000000;
+        }
+        
+        .crunchy-shadow-sm {
+            box-shadow: 4px 4px 0px 0px #000000;
+        }
+
+        .crunchy-btn:active {
+            transform: translate(4px, 4px);
+            box-shadow: 2px 2px 0px 0px #000000;
+        }
+
+        /* Animations */
+        @keyframes blink {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0; }
+        }
+        .animate-blink {
+            animation: blink 1s step-end infinite;
+        }
+        
+        @keyframes shake {
+            0%, 100% { transform: translateX(0); }
+            25% { transform: translateX(-4px); }
+            75% { transform: translateX(4px); }
+        }
+        .animate-shake {
+             animation: shake 0.2s ease-in-out 2;
+        }
+
+    </style>
+</head>
+<body class="min-h-screen p-8 flex flex-col items-center gap-12">
+
+    <!-- Header Section -->
+    <header class="text-center space-y-4 max-w-2xl w-full">
+        <h1 class="font-heading text-4xl md:text-5xl text-[var(--color-waiting)] drop-shadow-md leading-relaxed">
+            MOTZ GAME<span class="animate-blink">_</span>
+        </h1>
+        <p class="text-2xl opacity-80 font-vt323">Visual Foundation Preview v1.0</p>
+    </header>
+
+    <!-- Color Palette Showcase -->
+    <section class="w-full max-w-4xl space-y-6">
+        <h2 class="font-heading text-xl mb-8 border-b-4 border-[#333] pb-4">1. NEO-RETRO PALETTE</h2>
+        <div class="grid grid-cols-2 md:grid-cols-4 gap-6">
+            <!-- Canvas -->
+            <div class="flex flex-col gap-2">
+                <div class="h-24 w-full crunchy-border crunchy-shadow bg-[#121220]"></div>
+                <div class="font-bold text-lg">Deep Arcade Blue</div>
+                <div class="text-sm opacity-70 font-mono">#121220 (Bg)</div>
+            </div>
+            <!-- Success -->
+            <div class="flex flex-col gap-2">
+                <div class="h-24 w-full crunchy-border crunchy-shadow bg-[#39FF14]"></div>
+                <div class="font-bold text-lg text-[#39FF14]">Power-Up Green</div>
+                <div class="text-sm opacity-70 font-mono">#39FF14 (Success)</div>
+            </div>
+            <!-- Danger -->
+            <div class="flex flex-col gap-2">
+                <div class="h-24 w-full crunchy-border crunchy-shadow bg-[#FF00FF]"></div>
+                <div class="font-bold text-lg text-[#FF00FF]">Hot Pink</div>
+                <div class="text-sm opacity-70 font-mono">#FF00FF (Error)</div>
+            </div>
+            <!-- Waiting -->
+            <div class="flex flex-col gap-2">
+                <div class="h-24 w-full crunchy-border crunchy-shadow bg-[#FFFF00]"></div>
+                <div class="font-bold text-lg text-[#FFFF00]">Laser Lemon</div>
+                <div class="text-sm opacity-70 font-mono">#FFFF00 (Wait/Info)</div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Typography Comparison -->
+    <section class="w-full max-w-4xl space-y-6">
+        <h2 class="font-heading text-xl mb-8 border-b-4 border-[#333] pb-4">2. TYPOGRAPHY: BODY OPTIONS</h2>
+        
+        <div class="grid md:grid-cols-2 gap-8">
+            <!-- VT323 Option -->
+            <div class="bg-[#1a1a2e] p-6 crunchy-border crunchy-shadow-sm space-y-4">
+                <div class="bg-black text-white px-2 py-1 inline-block font-heading text-xs mb-2">OPTION A: VT323</div>
+                <h3 class="font-vt323 text-4xl text-[var(--color-success)]">Game Lobby (VT323)</h3>
+                <p class="font-vt323 text-2xl leading-relaxed">
+                    Trouvez un mot contenant les lettres <span class="text-[var(--color-waiting)] bg-black px-1">A</span> et <span class="text-[var(--color-waiting)] bg-black px-1">R</span>.<br>
+                    Interdit: <span class="text-[var(--color-danger)] line-through decoration-2">E</span>.<br>
+                    Le joueur "Renard Rapide" a rejoint la partie !
+                </p>
+                <div class="mt-4">
+                    <input type="text" value="PARC" class="font-vt323 text-3xl bg-white text-black p-2 w-full crunchy-border outline-none" readonly>
+                </div>
+            </div>
+
+            <!-- Pixelify Sans Option -->
+            <div class="bg-[#1a1a2e] p-6 crunchy-border crunchy-shadow-sm space-y-4">
+                <div class="bg-black text-white px-2 py-1 inline-block font-heading text-xs mb-2">OPTION B: Pixelify Sans</div>
+                <h3 class="font-pixel text-3xl text-[var(--color-success)]">Game Lobby (Pixelify)</h3>
+                <p class="font-pixel text-xl leading-relaxed">
+                    Trouvez un mot contenant les lettres <span class="text-[var(--color-waiting)] bg-black px-1">A</span> et <span class="text-[var(--color-waiting)] bg-black px-1">R</span>.<br>
+                    Interdit: <span class="text-[var(--color-danger)] line-through decoration-4">E</span>.<br>
+                    Le joueur "Renard Rapide" a rejoint la partie !
+                </p>
+                <div class="mt-4">
+                    <input type="text" value="PARC" class="font-pixel text-2xl bg-white text-black p-2 w-full crunchy-border outline-none" readonly>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- UI Component Examples -->
+    <section class="w-full max-w-4xl space-y-8">
+        <h2 class="font-heading text-xl mb-8 border-b-4 border-[#333] pb-4">3. UI COMPONENTS (The "Crunchy" Feel)</h2>
+
+        <!-- Gameplay Context -->
+        <div class="bg-[#1A1A24] p-8 crunchy-border crunchy-shadow relative overflow-hidden">
+            <!-- Sticky Top Bar Simulation -->
+            <div class="flex justify-between items-center mb-8 bg-black p-4 border-b-4 border-[#333] -mx-8 -mt-8">
+                <div class="font-heading text-xs md:text-sm text-white">
+                    REQ: <span class="text-[var(--color-success)] text-base md:text-lg">A, R</span> | NO: <span class="text-[var(--color-danger)] text-base md:text-lg">E</span>
+                </div>
+                <div class="font-heading text-[var(--color-waiting)] animate-pulse">00:12</div>
+            </div>
+
+            <!-- Avatar Grid -->
+            <div class="flex justify-center gap-4 mb-8">
+                <div class="w-16 h-16 bg-[#2a2a35] crunchy-border flex items-center justify-center text-3xl relative">
+                    🦊
+                    <div class="absolute -top-2 -right-2 bg-[var(--color-success)] text-black font-bold text-xs px-1 crunchy-border">OK</div>
+                </div>
+                <div class="w-16 h-16 bg-[#2a2a35] crunchy-border flex items-center justify-center text-3xl opacity-50">
+                    🐼
+                </div>
+                <div class="w-16 h-16 bg-[#2a2a35] crunchy-border flex items-center justify-center text-3xl opacity-50">
+                    🐸
+                </div>
+            </div>
+
+            <!-- Input Area -->
+            <div class="space-y-4 max-w-md mx-auto">
+                <div class="relative">
+                    <label class="block font-vt323 text-xl mb-1 text-gray-400">Votre mot :</label>
+                    <input type="text" placeholder="Tapez ici..." class="w-full bg-white text-black font-vt323 text-4xl p-4 crunchy-border crunchy-shadow focus:outline-none uppercase tracking-widest placeholder:text-gray-300">
+                </div>
+                
+                <div class="grid grid-cols-2 gap-4">
+                    <button class="w-full bg-[var(--color-danger)] text-white font-heading text-xs py-4 px-2 crunchy-border crunchy-shadow crunchy-btn hover:brightness-110">
+                        ABANDON
+                    </button>
+                    <button class="w-full bg-[var(--color-success)] text-black font-heading text-xs py-4 px-2 crunchy-border crunchy-shadow crunchy-btn hover:brightness-110">
+                        VALIDER >
+                    </button>
+                </div>
+            </div>
+
+            <!-- Feedback Overlay Example -->
+            <div class="absolute inset-0 bg-black/80 flex items-center justify-center hidden">
+                <div class="text-center">
+                    <h2 class="font-heading text-4xl text-[var(--color-success)] mb-4 animate-bounce">VICTOIRE!</h2>
+                    <p class="font-vt323 text-2xl text-white">+100 PTS</p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+</body>
+</html>
