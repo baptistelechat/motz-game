@@ -209,6 +209,7 @@ So that pouvoir inviter mes amis sans que des inconnus ne devinent le code.
 **When** il clique sur "Créer une partie"
 **Then** une nouvelle entrée est créée dans la table `public.games` avec un `status` = 'LOBBY'
 **And** un `code` unique et non-prédictible est généré (ex: 6 caractères alphanumériques aléatoires `A7x9P2`, pas de séquence logique)
+**And** un QR Code est généré (via `react-qr-code`) pour permettre aux joueurs mobiles de rejoindre facilement
 **And** le joueur est automatiquement redirigé vers l'URL `/room/[code]`
 **And** le joueur est défini comme `host_id` de la partie
 **And** la table `games` est créée avec les champs nécessaires
@@ -290,6 +291,7 @@ So that récompenser tous les joueurs méritants, pas seulement le plus rapide.
 **When** le serveur traite les requêtes
 **Then** chaque mot valide est enregistré avec son timestamp et son score calculé
 **And** le score prend en compte : la validité, la rareté (FR7), et l'ordre d'arrivée (points dégressifs : 1er = Max, 2ème = Max-X, etc.)
+**And** Règle d'égalité (Tie Breaker) : Si deux soumissions sont reçues avec < 50ms d'écart, elles reçoivent les mêmes points (points du rang le plus haut)
 **And** la manche continue jusqu'à ce que la condition de fin soit atteinte (Timer écoulé ou Tous les joueurs ont trouvé)
 
 ### Story 3.4: Résolution Manche & Feedback
@@ -419,3 +421,30 @@ So that améliorer le dictionnaire du jeu.
 **Then** un signalement est envoyé aux logs administrateur
 **And** cela n'annule pas les points de la manche en cours (pour éviter les abus anti-jeu)
 **And** le joueur reçoit une confirmation "Signalement envoyé"
+
+### Story 5.4: Tableau de Bord Admin (Admin Dashboard)
+
+As a administrateur du jeu,
+I want visualiser les signalements et gérer la liste des mots autorisés (Allowlist/Blocklist),
+So that maintenir la qualité du dictionnaire et traiter les problèmes.
+
+**Acceptance Criteria:**
+
+**Given** un utilisateur avec le rôle `admin` (flag dans `public.users` ou table séparée)
+**When** il accède à la route `/admin` (protégée par Middleware + RLS)
+**Then** il voit la liste des derniers signalements (`player_reports`)
+**And** il peut agir sur un signalement : "Ignorer", "Bannir Joueur", "Ajouter Mot à Allowlist", "Ajouter Mot à Blocklist"
+**And** l'ajout à l'Allowlist met à jour la table de référence des mots valides (si dictionnaire dynamique) ou une table `custom_dictionary`
+**And** l'ajout à la Blocklist met à jour la table des profanités
+
+## Notes Techniques Globales & Dépendances
+
+Afin de respecter les exigences UX et Fonctionnelles, les librairies suivantes devront être ajoutées au `package.json` lors de l'implémentation :
+
+- **Audio/Visuel (Epic 3 & 4)** :
+  - `howler`: Pour la gestion des sons 8-bit (Validation, Timer, Fin).
+  - `canvas-confetti`: Pour les célébrations de victoire.
+- **QR Code (Epic 2)** :
+  - `react-qr-code`: Pour l'affichage du QR Code de la Room.
+- **Sécurité** :
+  - `bad-words` (ou équivalent léger) : Pour le filtrage initial des profanités (Client/Serveur).
