@@ -32,14 +32,14 @@ so that pouvoir commencer à développer les fonctionnalités sur des bases soli
   - [x] Configurer les bordures épaisses (`border-4`) et les ombres dures.
 - [x] Tâche 3 : Installer & Configurer Shadcn/UI (AC: 5)
   - [x] Exécuter `npx shadcn@latest init`.
-  - [x] Configurer `components.json` pour correspondre à la structure du projet (`src/components/ui`, `src/lib/utils`).
-  - [x] Ajouter des composants de base si nécessaire pour les tests (Button, Card).
+  - [x] Configurer `components.json` pour correspondre à la structure du projet (`components/ui`, `lib/utils`).
+  - [x] Ajouter des composants de base si nécessaire pour les tests (Button, Card, Badge, Checkbox, Input, Label).
 - [x] Tâche 4 : Configurer la Typographie (AC: 6)
   - [x] Installer `next/font` ou Google Fonts.
   - [x] Configurer "Press Start 2P" (Titres) et "VT323" (Corps/Input).
   - [x] Appliquer les polices globalement via `layout.tsx` ou `globals.css`.
 - [x] Tâche 5 : Mettre en place la structure du projet (AC: 3, 7)
-  - [x] Créer la structure des dossiers : `src/components/game`, `src/store`, `supabase/functions`, `src/hooks`, `src/lib`, `src/types`, `tests`.
+  - [x] Créer la structure des dossiers : `components/game`, `store`, `supabase/functions`, `hooks`, `lib`, `types`, `tests`.
   - [x] Nettoyer les pages par défaut du boilerplate.
 - [x] Tâche 6 : Vérification (AC: 7)
   - [x] Exécuter `pnpm dev`.
@@ -58,11 +58,11 @@ so that pouvoir commencer à développer les fonctionnalités sur des bases soli
 - **Tests :** S'assurer que `vitest` et `playwright` sont configurés (la Tâche 1 pourrait inclure une configuration de base, sinon ajouter une tâche spécifique si non couvert par le template). Note : Le template `with-supabase` pourrait ne pas inclure Vitest/Playwright par défaut, il faudra les ajouter.
 
 ### Notes sur la structure du projet
-
-- Suivre strictement l'arborescence définie dans `architecture.md`.
-- `src/app` pour le routage uniquement.
-- `src/components/game` pour les composants logiques du jeu.
-- `supabase/functions` pour les Edge Functions.
+ 
+ - Suivre strictement l'arborescence définie dans `architecture.md`.
+ - `app` pour le routage uniquement (Pas de dossier `src`).
+ - `components/game` pour les composants logiques du jeu.
+ - `supabase/functions` pour les Edge Functions.
 
 ### Références
 
