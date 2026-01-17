@@ -42,7 +42,7 @@ story_location: c:\Users\ASUS\Desktop\DEV\Projet_perso\motz-game\_bmad-output\im
 development_status:
   # Epic 1
   epic-1: in-progress
-  1-1-initialisation-projet-infrastructure: ready-for-dev
+  1-1-initialisation-projet-infrastructure: done
   1-2-landing-page-mode-mobile-first: backlog
   1-3-systeme-authentification-anonyme: backlog
   1-4-gestion-profil-pseudo-avatar: backlog

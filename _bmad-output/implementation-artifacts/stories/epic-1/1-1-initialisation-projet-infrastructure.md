@@ -22,29 +22,34 @@ so that pouvoir commencer à développer les fonctionnalités sur des bases soli
 
 ## Tâches / Sous-tâches
 
-- [ ] Tâche 1 : Initialiser le projet (AC: 1, 2, 3)
-  - [ ] Exécuter `pnpm create next-app -e with-supabase .`
-  - [ ] S'assurer que TypeScript, ESLint, Tailwind CSS sont sélectionnés/configurés.
-  - [ ] Mettre à jour les métadonnées de `package.json` (nom, version, etc.).
-- [ ] Tâche 2 : Configurer Tailwind CSS & Design System (AC: 4)
-  - [ ] Définir les couleurs du thème dans `globals.css` / config Tailwind (Deep Arcade Blue, Neon Green, Magenta, Yellow).
-  - [ ] Implémenter la politique "Zero-Radius" (`rounded-none`).
-  - [ ] Configurer les bordures épaisses (`border-4`) et les ombres dures.
-- [ ] Tâche 3 : Installer & Configurer Shadcn/UI (AC: 5)
-  - [ ] Exécuter `npx shadcn@latest init`.
-  - [ ] Configurer `components.json` pour correspondre à la structure du projet (`src/components/ui`, `src/lib/utils`).
-  - [ ] Ajouter des composants de base si nécessaire pour les tests (Button, Card).
-- [ ] Tâche 4 : Configurer la Typographie (AC: 6)
-  - [ ] Installer `next/font` ou Google Fonts.
-  - [ ] Configurer "Press Start 2P" (Titres) et "VT323" (Corps/Input).
-  - [ ] Appliquer les polices globalement via `layout.tsx` ou `globals.css`.
-- [ ] Tâche 5 : Mettre en place la structure du projet (AC: 3, 7)
-  - [ ] Créer la structure des dossiers : `src/components/game`, `src/store`, `supabase/functions`, `src/hooks`, `src/lib`, `src/types`, `tests`.
-  - [ ] Nettoyer les pages par défaut du boilerplate.
-- [ ] Tâche 6 : Vérification (AC: 7)
-  - [ ] Exécuter `pnpm dev`.
-  - [ ] Vérifier que la page d'accueil se charge avec les bonnes polices et couleurs.
-  - [ ] Vérifier la console pour les erreurs.
+- [x] Tâche 1 : Initialiser le projet (AC: 1, 2, 3)
+  - [x] Exécuter `pnpm create next-app -e with-supabase .`
+  - [x] S'assurer que TypeScript, ESLint, Tailwind CSS sont sélectionnés/configurés.
+  - [x] Mettre à jour les métadonnées de `package.json` (nom, version, etc.).
+- [x] Tâche 2 : Configurer Tailwind CSS & Design System (AC: 4)
+  - [x] Définir les couleurs du thème dans `globals.css` / config Tailwind (Deep Arcade Blue, Neon Green, Magenta, Yellow).
+  - [x] Implémenter la politique "Zero-Radius" (`rounded-none`).
+  - [x] Configurer les bordures épaisses (`border-4`) et les ombres dures.
+- [x] Tâche 3 : Installer & Configurer Shadcn/UI (AC: 5)
+  - [x] Exécuter `npx shadcn@latest init`.
+  - [x] Configurer `components.json` pour correspondre à la structure du projet (`src/components/ui`, `src/lib/utils`).
+  - [x] Ajouter des composants de base si nécessaire pour les tests (Button, Card).
+- [x] Tâche 4 : Configurer la Typographie (AC: 6)
+  - [x] Installer `next/font` ou Google Fonts.
+  - [x] Configurer "Press Start 2P" (Titres) et "VT323" (Corps/Input).
+  - [x] Appliquer les polices globalement via `layout.tsx` ou `globals.css`.
+- [x] Tâche 5 : Mettre en place la structure du projet (AC: 3, 7)
+  - [x] Créer la structure des dossiers : `src/components/game`, `src/store`, `supabase/functions`, `src/hooks`, `src/lib`, `src/types`, `tests`.
+  - [x] Nettoyer les pages par défaut du boilerplate.
+- [x] Tâche 6 : Vérification (AC: 7)
+  - [x] Exécuter `pnpm dev`.
+  - [x] Vérifier que la page d'accueil se charge avec les bonnes polices et couleurs.
+  - [x] Vérifier la console pour les erreurs.
+- [x] Tâche 7 : Infrastructure de Tests (AC: 7)
+  - [x] Installer et configurer Vitest pour les tests unitaires.
+  - [x] Installer et configurer Playwright pour les tests E2E.
+  - [x] Ajouter les scripts de test au `package.json`.
+  - [x] Vérifier le fonctionnement avec un test exemple.
 
 ## Notes de développement
 
