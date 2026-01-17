@@ -1,6 +1,6 @@
 # Story 1.2 : Landing Page & Mode Mobile First
 
-Statut : ready-for-dev
+Statut : completed
 
 <!-- Note : La validation est optionnelle. Exécutez validate-create-story pour un contrôle qualité avant dev-story. -->
 

@@ -1,7 +1,7 @@
 import * as React from "react"
 import { cn } from "@/lib/utils"
 
-interface MainLayoutProps extends React.HTMLAttributes<HTMLElement> {}
+type MainLayoutProps = React.HTMLAttributes<HTMLElement>
 
 const MainLayout = React.forwardRef<HTMLElement, MainLayoutProps>(
   ({ className, children, ...props }, ref) => {

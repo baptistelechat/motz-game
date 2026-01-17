@@ -1,4 +1,4 @@
-import { Page, expect } from '@playwright/test';
+import { Page, expect } from "@playwright/test";
 
 export async function verifyHomePageElements(page: Page) {
   // THEN: Page title is correct
@@ -10,14 +10,14 @@ export async function verifyHomePageElements(page: Page) {
   await expect(heading).toHaveClass(/font-pixel/);
 
   // Verify Buttons exist
-  const createButton = page.getByRole('button', { name: /CRÉER PARTIE/i });
+  const createButton = page.getByRole("button", { name: /CRÉER PARTIE/i });
   await expect(createButton).toBeVisible();
-  
-  const joinButton = page.getByRole('button', { name: /REJOINDRE/i });
+
+  const joinButton = page.getByRole("button", { name: /REJOINDRE/i });
   await expect(joinButton).toBeVisible();
 }
 
-export async function verifySystemStatus(page: Page) {
+export async function verifySystemStatus() {
   // System status is currently not present on Home Page.
   // Skipping assertions until feature is restored/implemented.
   // const statusHeading = page.getByRole("heading", { name: "System Status" });

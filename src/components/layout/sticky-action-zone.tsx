@@ -1,7 +1,7 @@
 import * as React from "react"
 import { cn } from "@/lib/utils"
 
-interface StickyActionZoneProps extends React.HTMLAttributes<HTMLElement> {}
+type StickyActionZoneProps = React.HTMLAttributes<HTMLElement>
 
 const StickyActionZone = React.forwardRef<HTMLElement, StickyActionZoneProps>(
   ({ className, children, ...props }, ref) => {

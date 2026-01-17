@@ -1,7 +1,7 @@
 import * as React from "react"
 import { cn } from "@/lib/utils"
 
-interface StickyHeaderProps extends React.HTMLAttributes<HTMLElement> {}
+type StickyHeaderProps = React.HTMLAttributes<HTMLElement>
 
 const StickyHeader = React.forwardRef<HTMLElement, StickyHeaderProps>(
   ({ className, children, ...props }, ref) => {

@@ -1,6 +1,6 @@
 # Story 1.1: Initialisation Projet & Infrastructure
 
-Status: ready-for-dev
+Status: completed
 
 <!-- Note: Validation is optional. Run validate-create-story for quality check before dev-story. -->
 
