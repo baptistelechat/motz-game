@@ -1,5 +1,7 @@
 import type { Metadata, Viewport } from "next";
 import { Press_Start_2P, VT323 } from "next/font/google";
+import { AuthProvider } from "@/components/providers/auth-provider";
+import { CaptchaGuard } from "@/components/auth/captcha-guard";
 import "./globals.css";
 
 const defaultUrl = process.env.VERCEL_URL
@@ -29,12 +31,14 @@ const pressStart2P = Press_Start_2P({
   weight: "400",
   subsets: ["latin"],
   variable: "--font-pixel",
+  display: "block",
 });
 
 const vt323 = VT323({
   weight: "400",
   subsets: ["latin"],
   variable: "--font-vt323",
+  display: "block",
 });
 
 export default function RootLayout({
@@ -47,7 +51,9 @@ export default function RootLayout({
       <body
         className={`${pressStart2P.variable} ${vt323.variable} font-sans antialiased bg-background text-foreground`}
       >
-        {children}
+        <AuthProvider>
+          <CaptchaGuard>{children}</CaptchaGuard>
+        </AuthProvider>
       </body>
     </html>
   );

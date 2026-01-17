@@ -24,26 +24,26 @@ so that pouvoir rejoindre une partie immédiatement (Friction Zero).
 
 ## Tasks / Subtasks
 
-- [ ] Configuration Supabase (AC: 1)
-  - [ ] Vérifier/Activer "Enable Anonymous Sign-ins" dans le projet Supabase (ou `config.toml` si local)
-  - [ ] Configurer les variables d'environnement (`NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_ANON_KEY`) dans `.env.local` (si pas déjà fait)
+- [x] Configuration Supabase (AC: 1)
+  - [x] Vérifier/Activer "Enable Anonymous Sign-ins" dans le projet Supabase (ou `config.toml` si local)
+  - [x] Configurer les variables d'environnement (`NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_ANON_KEY`) dans `.env.local` (si pas déjà fait)
 
-- [ ] Implémentation Clients Supabase (AC: 1, 3)
-  - [ ] Créer/Vérifier `src/lib/supabase/client.ts` (Browser Client)
-  - [ ] Créer/Vérifier `src/lib/supabase/server.ts` (Server Client - utile pour le futur)
+- [x] Implémentation Clients Supabase (AC: 1, 3)
+  - [x] Créer/Vérifier `src/lib/supabase/client.ts` (Browser Client)
+  - [x] Créer/Vérifier `src/lib/supabase/server.ts` (Server Client - utile pour le futur)
 
-- [ ] Hook d'Authentification (AC: 1, 2, 4)
-  - [ ] Créer `src/hooks/use-anonymous-auth.ts`
-  - [ ] Implémenter la logique : vérifier session ? si non -> `signInAnonymously()`
-  - [ ] Gérer les états de chargement (`isLoading`, `user`, `error`)
+- [x] Hook d'Authentification (AC: 1, 2, 4)
+  - [x] Créer `src/hooks/use-anonymous-auth.ts`
+  - [x] Implémenter la logique : vérifier session ? si non -> `signInAnonymously()`
+  - [x] Gérer les états de chargement (`isLoading`, `user`, `error`)
 
-- [ ] Intégration Global (AC: 1)
-  - [ ] Intégrer le hook dans un composant racine (ex: `AuthProvider` ou `src/app/layout.tsx`) pour garantir l'auth dès l'arrivée
-  - [ ] Afficher un indicateur discret (ex: log console ou petit dot status dev) pour confirmer la connexion
+- [x] Intégration Global (AC: 1)
+  - [x] Intégrer le hook dans un composant racine (ex: `AuthProvider` ou `src/app/layout.tsx`) pour garantir l'auth dès l'arrivée
+  - [x] Afficher un indicateur discret (ex: log console ou petit dot status dev) pour confirmer la connexion
 
-- [ ] Tests (AC: 2, 3)
-  - [ ] Test Unitaire du hook `useAnonymousAuth` (Mock Supabase client)
-  - [ ] Vérifier que `signInAnonymously` est appelé si pas de session
+- [x] Tests (AC: 2, 3)
+  - [x] Test Unitaire du hook `useAnonymousAuth` (Mock Supabase client)
+  - [x] Vérifier que `signInAnonymously` est appelé si pas de session
 
 ## Dev Notes
 
@@ -73,4 +73,16 @@ Gemini-3-Pro-Preview
 
 ### Completion Notes List
 
+- Implemented anonymous authentication using Supabase `signInAnonymously`.
+- Created `useAnonymousAuth` hook to handle session check and sign-in.
+- Implemented `AuthProvider` context/wrapper to initialize auth globally.
+- Integrated `AuthProvider` into `src/app/layout.tsx`.
+- Added unit tests for `useAnonymousAuth` using Vitest and Mocking.
+- Verified existing Supabase client implementation.
+
 ### File List
+
+- `src/hooks/use-anonymous-auth.ts`
+- `tests/unit/hooks/use-anonymous-auth.test.ts`
+- `src/components/providers/auth-provider.tsx`
+- `src/app/layout.tsx`
