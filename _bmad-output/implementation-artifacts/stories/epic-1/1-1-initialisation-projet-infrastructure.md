@@ -58,11 +58,11 @@ so that pouvoir commencer à développer les fonctionnalités sur des bases soli
 - **Tests :** S'assurer que `vitest` et `playwright` sont configurés (la Tâche 1 pourrait inclure une configuration de base, sinon ajouter une tâche spécifique si non couvert par le template). Note : Le template `with-supabase` pourrait ne pas inclure Vitest/Playwright par défaut, il faudra les ajouter.
 
 ### Notes sur la structure du projet
- 
- - Suivre strictement l'arborescence définie dans `architecture.md`.
- - `app` pour le routage uniquement (Pas de dossier `src`).
- - `components/game` pour les composants logiques du jeu.
- - `supabase/functions` pour les Edge Functions.
+
+- Suivre strictement l'arborescence définie dans `architecture.md`.
+- `src/app` pour le routage uniquement (Structure standard Next.js avec `src`).
+- `src/components/game` pour les composants logiques du jeu.
+- `supabase/functions` pour les Edge Functions (Hors src).
 
 ### Références
 
