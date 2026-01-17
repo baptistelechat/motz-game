@@ -10,7 +10,7 @@ describe("Badge Component", () => {
     expect(badge).toBeInTheDocument();
     // Verify default variant classes (bg-primary)
     expect(badge).toHaveClass("bg-primary");
-    expect(badge).toHaveClass("rounded-full");
+    expect(badge).toHaveClass("rounded-none");
   });
 
   it("renders destructive variant", () => {
@@ -24,6 +24,6 @@ describe("Badge Component", () => {
     render(<Badge variant="outline">Outline</Badge>);
     const badge = screen.getByText(/outline/i);
 
-    expect(badge).toHaveClass("border");
+    expect(badge).toHaveClass("border-4");
   });
 });

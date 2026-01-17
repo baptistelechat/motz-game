@@ -27,7 +27,7 @@ describe('Card Component', () => {
     
     // Check for rounded-none (Zero-Radius) and other base classes
     expect(card).toHaveClass('rounded-none');
-    expect(card).toHaveClass('border');
+    expect(card).toHaveClass('border-4');
     expect(card).toHaveClass('bg-card');
   });
 });
