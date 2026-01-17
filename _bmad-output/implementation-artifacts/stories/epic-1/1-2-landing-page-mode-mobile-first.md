@@ -26,29 +26,29 @@ afin de pouvoir naviguer confortablement sans que le clavier virtuel ne masque l
 
 ## Tâches / Sous-tâches
 
-- [ ] Configurer le Style Global & les Polices (AC: 1, 3)
-  - [ ] Installer les polices : "Press Start 2P" et "VT323" (Google Fonts) dans `layout.tsx`
-  - [ ] Configurer les couleurs du thème Tailwind v4 (Deep Arcade Blue `#121220`, Neon Green `#39FF14`, Magenta `#FF00FF`, Yellow `#FFFF00`)
-  - [ ] Définir la couleur de fond par défaut sur Deep Arcade Blue
+- [x] Configurer le Style Global & les Polices (AC: 1, 3)
+  - [x] Installer les polices : "Press Start 2P" et "VT323" (Google Fonts) dans `layout.tsx`
+  - [x] Configurer les couleurs du thème Tailwind v4 (Deep Arcade Blue `#121220`, Neon Green `#39FF14`, Magenta `#FF00FF`, Yellow `#FFFF00`)
+  - [x] Définir la couleur de fond par défaut sur Deep Arcade Blue
 
-- [ ] Implémenter les composants UI "Pixel-Pop" (AC: 1)
-  - [ ] Personnaliser le composant `Button` : `rounded-none`, `border-4 border-black`, `shadow-[6px_6px_0px_0px_#000]`, gestion de l'état actif
-  - [ ] Personnaliser le composant `Input` : `rounded-none`, `border-4 border-black`, `font-vt323`, text-3xl
-  - [ ] Créer le prototype du composant `ConstraintBadge` (Variantes Vert/Rouge)
+- [x] Implémenter les composants UI "Pixel-Pop" (AC: 1)
+  - [x] Personnaliser le composant `Button` : `rounded-none`, `border-4 border-black`, `shadow-[6px_6px_0px_0px_#000]`, gestion de l'état actif
+  - [x] Personnaliser le composant `Input` : `rounded-none`, `border-4 border-black`, `font-vt323`, text-3xl
+  - [x] Créer le prototype du composant `ConstraintBadge` (Variantes Vert/Rouge)
 
-- [ ] Implémenter le Layout "Mode Focus" (AC: 2)
-  - [ ] Créer le composant `StickyHeader` (Barre supérieure)
-  - [ ] Créer le composant `StickyActionZone` (Barre inférieure)
-  - [ ] Créer le wrapper Main Layout qui gère correctement la hauteur du viewport (dvh) pour éviter le chevauchement du clavier
+- [x] Implémenter le Layout "Mode Focus" (AC: 2)
+  - [x] Créer le composant `StickyHeader` (Barre supérieure)
+  - [x] Créer le composant `StickyActionZone` (Barre inférieure)
+  - [x] Créer le wrapper Main Layout qui gère correctement la hauteur du viewport (dvh) pour éviter le chevauchement du clavier
 
-- [ ] Créer le contenu de la Landing Page (AC: 1)
-  - [ ] Section Hero avec Titre ("MOTZ GAME") utilisant Press Start 2P
-  - [ ] Bouton "Créer une partie" (Style primaire)
-  - [ ] Bouton "Rejoindre" (Style secondaire) ou champ de saisie pour le code
+- [x] Créer le contenu de la Landing Page (AC: 1)
+  - [x] Section Hero avec Titre ("MOTZ GAME") utilisant Press Start 2P
+  - [x] Bouton "Créer une partie" (Style primaire)
+  - [x] Bouton "Rejoindre" (Style secondaire) ou champ de saisie pour le code
 
-- [ ] Configuration PWA (AC: 4, 5)
-  - [ ] Créer `manifest.json` (ou `manifest.ts` pour Next.js) avec icônes et couleurs du thème
-  - [ ] Activer le Service Worker (ex: via `next-pwa` ou sw personnalisé) pour la mise en cache des assets hors ligne
+- [x] Configuration PWA (AC: 4, 5)
+  - [x] Créer `manifest.json` (ou `manifest.ts` pour Next.js) avec icônes et couleurs du thème
+  - [x] Activer le Service Worker (ex: via `next-pwa` ou sw personnalisé) pour la mise en cache des assets hors ligne
 
 ## Notes de Dev
 
@@ -79,6 +79,27 @@ Gemini-3-Pro-Preview
 
 ### Debug Log References
 
+- Tests unitaires passés avec succès.
+- Vérification manuelle (simulée) de la structure des fichiers.
+
 ### Completion Notes List
 
+- Implémentation complète du Design System "Pixel-Pop" (Button, Input, ConstraintBadge).
+- Mise en place du Layout "Mode Focus" avec Sticky Header/Footer et dvh.
+- Création de la Landing Page conforme aux maquettes/ACs.
+- Configuration PWA via `@ducanh2912/next-pwa` et `manifest.ts`.
+- Tests unitaires ajoutés pour tous les nouveaux composants.
+
 ### File List
+
+- `src/components/ui/button.tsx`
+- `src/components/ui/input.tsx`
+- `src/components/ui/constraint-badge.tsx`
+- `src/components/layout/sticky-header.tsx`
+- `src/components/layout/sticky-action-zone.tsx`
+- `src/components/layout/main-layout.tsx`
+- `src/app/page.tsx`
+- `src/app/layout.tsx`
+- `src/app/manifest.ts`
+- `next.config.ts`
+- `tests/unit/**/*`
