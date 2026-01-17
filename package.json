@@ -1,4 +1,7 @@
 {
+  "name": "motz-game",
+  "version": "0.1.0",
+  "description": "Jeu de mots multijoueur temps réel avec design Pixel-Pop",
   "private": true,
   "scripts": {
     "dev": "next dev",
