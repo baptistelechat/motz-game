@@ -45,7 +45,7 @@ development_status:
   1-1-initialisation-projet-infrastructure: done
   1-2-landing-page-mode-mobile-first: done
   1-3-systeme-authentification-anonyme: review
-  1-4-gestion-profil-pseudo-avatar: backlog
+  1-4-gestion-profil-pseudo-avatar: ready-for-dev
   epic-1-retrospective: optional
 
   # Epic 2
