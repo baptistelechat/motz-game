@@ -16,9 +16,8 @@ interface BeforeInstallPromptEvent extends Event {
 }
 
 export function InstallApp() {
-  const [deferredPrompt, setDeferredPrompt] = useState<BeforeInstallPromptEvent | null>(
-    null
-  );
+  const [deferredPrompt, setDeferredPrompt] =
+    useState<BeforeInstallPromptEvent | null>(null);
   const [isVisible, setIsVisible] = useState(false);
   const [isIOS, setIsIOS] = useState(false);
   const [showIOSInstructions, setShowIOSInstructions] = useState(false);
@@ -77,17 +76,17 @@ export function InstallApp() {
   return (
     <>
       <Dialog open={showIOSInstructions} onOpenChange={setShowIOSInstructions}>
-        <DialogContent className="bg-[#121220] border-4 border-[#39FF14] shadow-hard text-white p-6 max-w-sm rounded-none">
+        <DialogContent className="bg-popover border-primary text-popover-foreground max-w-sm">
           <DialogHeader>
-            <DialogTitle className="font-display text-[#39FF14] text-lg text-center">
+            <DialogTitle className="font-display text-primary text-lg text-center">
               INSTALLER SUR IOS
             </DialogTitle>
           </DialogHeader>
 
           <div className="space-y-6 mt-4">
-            <ol className="space-y-4 font-sans text-white">
+            <ol className="space-y-4 font-sans text-popover-foreground">
               <li className="flex items-center gap-3">
-                <span className="flex items-center justify-center w-8 h-8 border-2 border-white text-[#39FF14] font-display">
+                <span className="flex items-center justify-center w-8 h-8 border-2 border-white text-primary font-display">
                   1
                 </span>
                 <span>
@@ -96,13 +95,15 @@ export function InstallApp() {
                 </span>
               </li>
               <li className="flex items-center gap-3">
-                <span className="flex items-center justify-center w-8 h-8 border-2 border-white text-[#39FF14] font-display">
+                <span className="flex items-center justify-center w-8 h-8 border-2 border-white text-primary font-display">
                   2
                 </span>
-                <span>Sélectionnez &quot;Sur l&apos;écran d&apos;accueil&quot;</span>
+                <span>
+                  Sélectionnez &quot;Sur l&apos;écran d&apos;accueil&quot;
+                </span>
               </li>
               <li className="flex items-center gap-3">
-                <span className="flex items-center justify-center w-8 h-8 border-2 border-white text-[#39FF14] font-display">
+                <span className="flex items-center justify-center w-8 h-8 border-2 border-white text-primary font-display">
                   3
                 </span>
                 <span>Confirmez avec &quot;Ajouter&quot;</span>
@@ -113,8 +114,9 @@ export function InstallApp() {
       </Dialog>
 
       <Button
+        size="icon-xl"
         onClick={handleInstallClick}
-        className="fixed bottom-6 right-6 z-50 w-16 h-16 bg-[#39FF14] text-black border-4 border-black shadow-hard hover:translate-x-1 hover:translate-y-1 hover:shadow-none transition-all rounded-none p-0 flex items-center justify-center animate-in zoom-in duration-300"
+        className="fixed bottom-6 right-6 z-50 transition-all animate-in zoom-in duration-300"
         aria-label="Installer l'application"
       >
         <Download className="size-7" />

@@ -9,7 +9,7 @@ const StickyActionZone = React.forwardRef<HTMLElement, StickyActionZoneProps>(
       <footer
         ref={ref}
         className={cn(
-          "sticky bottom-0 z-50 w-full border-t-4 border-black bg-background p-4 shadow-sm",
+          "sticky bottom-0 z-50 w-full border-t-4 border-black bg-background p-4",
           className
         )}
         {...props}

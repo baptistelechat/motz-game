@@ -1,6 +1,7 @@
 import { CaptchaGuard } from "@/components/auth/captcha-guard";
 import { AuthProvider } from "@/components/providers/auth-provider";
 import { InstallApp } from "@/components/pwa/install-app";
+import { THEME_COLORS } from "@/lib/constants/theme";
 import type { Metadata, Viewport } from "next";
 import { Press_Start_2P, VT323 } from "next/font/google";
 import "./globals.css";
@@ -10,7 +11,7 @@ const defaultUrl = process.env.VERCEL_URL
   : "http://localhost:3000";
 
 export const viewport: Viewport = {
-  themeColor: "#121220",
+  themeColor: THEME_COLORS.background,
   width: "device-width",
   initialScale: 1,
   maximumScale: 1,

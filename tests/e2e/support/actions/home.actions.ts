@@ -10,7 +10,7 @@ export async function verifyHomePageElements(page: Page) {
   await expect(heading).toHaveClass(/font-display/);
 
   // Verify Buttons exist
-  const createButton = page.getByRole("button", { name: /CRÉER PARTIE/i });
+  const createButton = page.getByRole("button", { name: /CRÉER UNE PARTIE/i });
   await expect(createButton).toBeVisible();
 
   const joinButton = page.getByRole("button", { name: /REJOINDRE/i });

@@ -1,3 +1,4 @@
+import { THEME_COLORS } from "@/lib/constants/theme";
 import { MetadataRoute } from "next";
 
 export default function manifest(): MetadataRoute.Manifest {
@@ -8,8 +9,8 @@ export default function manifest(): MetadataRoute.Manifest {
     description: "Jeu de mots multijoueur temps réel avec design Pixel-Pop",
     start_url: "/",
     display: "standalone",
-    background_color: "#121220",
-    theme_color: "#121220",
+    background_color: THEME_COLORS.background,
+    theme_color: THEME_COLORS.background,
     icons: [
       {
         src: "/icon.svg",

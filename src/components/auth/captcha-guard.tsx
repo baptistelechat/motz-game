@@ -3,6 +3,7 @@ import { useAuth } from "@/components/providers/auth-provider";
 import { Turnstile, type TurnstileInstance } from "@marsidev/react-turnstile";
 import { useRef, useState } from "react";
 
+import { Card } from "@/components/ui/card";
 import { LoadingScreen } from "@/components/ui/loading-screen";
 
 export function CaptchaGuard({ children }: { children: React.ReactNode }) {
@@ -22,17 +23,17 @@ export function CaptchaGuard({ children }: { children: React.ReactNode }) {
 
   // Si pas connecté, on affiche l'écran de garde avec Captcha
   return (
-    <div className="min-h-screen flex flex-col items-center justify-center bg-[#121220] p-4 gap-8">
+    <div className="min-h-screen flex flex-col items-center justify-center bg-background p-4 gap-8">
       <div className="text-center space-y-4">
-        <h1 className="font-display text-3xl md:text-5xl text-[#39FF14] drop-shadow-[4px_4px_0_rgba(0,0,0,1)] uppercase">
+        <h1 className="font-display text-3xl md:text-5xl text-primary drop-shadow-[4px_4px_0_var(--border)] uppercase">
           VERIFICATION
         </h1>
-        <p className="font-sans text-2xl md:text-4xl text-white">
+        <p className="font-sans text-2xl md:text-4xl text-foreground">
           Prouve que tu n&#39;es pas une machine
         </p>
       </div>
 
-      <div className="bg-black/50 p-8 border-4 border-[#39FF14] shadow-hard backdrop-blur-sm space-y-4 flex flex-col items-center">
+      <Card className="bg-black/50 border-primary backdrop-blur-sm p-8 gap-4 items-center">
         <Turnstile
           ref={turnstileRef}
           siteKey={process.env.NEXT_PUBLIC_TURNSTILE_SITE_KEY || ""}
@@ -52,7 +53,7 @@ export function CaptchaGuard({ children }: { children: React.ReactNode }) {
 
         {captchaError && (
           <div className="flex flex-col items-center gap-2">
-            <div className="text-[#FF00FF] font-sans text-md text-center">
+            <div className="text-destructive font-sans text-md text-center">
               Échec de la vérification.
               <br />
             </div>
@@ -61,7 +62,7 @@ export function CaptchaGuard({ children }: { children: React.ReactNode }) {
                 setCaptchaError(false);
                 turnstileRef.current?.reset();
               }}
-              className="px-4 py-2 bg-[#39FF14] text-black font-display text-xs uppercase hover:bg-[#2cb82c] transition-colors shadow-[2px_2px_0_rgba(0,0,0,1)]"
+              className="px-4 py-2 bg-primary text-primary-foreground font-display text-xs uppercase hover:bg-primary/90 transition-colors shadow-[2px_2px_0_var(--border)]"
             >
               Reessayer
             </button>
@@ -69,18 +70,28 @@ export function CaptchaGuard({ children }: { children: React.ReactNode }) {
         )}
 
         {isVerifying && (
-          <div className="text-[#39FF14] font-sans text-center animate-pulse">
+          <div className="text-primary font-sans text-center animate-pulse">
             Connexion en cours...
           </div>
         )}
 
         {/* Affichage des erreurs (ex: Anonymous auth disabled) */}
         {error && (
-          <div className="text-[#FF00FF] font-sans text-sm max-w-xs text-center bg-black p-2 border border-[#FF00FF]">
+          <div className="text-destructive font-sans text-sm max-w-xs text-center bg-black p-2 border border-destructive">
             ERREUR: {error.message}
           </div>
         )}
-      </div>
+      </Card>
+
+       {process.env.NEXT_PUBLIC_IS_E2E === "true" && (
+        <button
+          onClick={() => signIn("e2e-bypass-token")}
+          className="fixed bottom-4 right-4 bg-red-600 text-white p-2 font-mono text-xs z-50 opacity-50 hover:opacity-100"
+          data-testid="e2e-bypass-captcha"
+        >
+          [E2E] BYPASS CAPTCHA
+        </button>
+      )}
 
       {!process.env.NEXT_PUBLIC_TURNSTILE_SITE_KEY && (
         <div className="text-red-500 font-mono text-sm max-w-md text-center bg-black p-4 border border-red-500">

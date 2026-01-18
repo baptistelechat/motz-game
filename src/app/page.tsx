@@ -69,7 +69,7 @@ export default function Home() {
   if (creationError) {
     return (
       <MainLayout className="items-center justify-center">
-        <div className="bg-[#FF00FF] text-white p-6 border-4 border-black shadow-hard max-w-md w-full mx-4">
+        <div className="bg-destructive text-white p-6 border-4 border-black shadow-hard max-w-md w-full mx-4">
           <h2 className="font-display text-xl mb-4 text-center border-b-4 border-black/20 pb-2">
             ERREUR CRITIQUE
           </h2>
@@ -112,11 +112,15 @@ export default function Home() {
           {/* Profile Badge */}
           <Button
             onClick={() => setShowProfileEdit(true)}
-            variant="outline"
-            className="flex items-center gap-3 bg-[#121220] border-4 border-[#39FF14] p-2 h-auto shadow-hard hover:shadow-none hover:translate-x-1 hover:translate-y-1 transition-all cursor-pointer text-white hover:bg-[#121220] hover:text-white"
+            variant="profile"
             aria-label="Modifier mon profil"
           >
-            <span className="font-display text-sm md:text-base hidden sm:inline text-[#39FF14]">
+            <span
+              className="font-display text-sm md:text-base hidden sm:inline text-primary"
+              style={{
+                color: profile.avatar_config.color,
+              }}
+            >
               {profile.pseudo}
             </span>
             <AvatarDisplay
@@ -130,11 +134,11 @@ export default function Home() {
         <Dialog open={showProfileEdit} onOpenChange={setShowProfileEdit}>
           <DialogContent
             onOpenAutoFocus={(e) => e.preventDefault()}
-            className="bg-[#121220] border-4 border-[#39FF14] shadow-hard text-white p-0 w-full h-full max-w-none md:max-w-md md:h-auto md:max-h-[85vh] md:rounded-none flex flex-col overflow-hidden gap-0"
+            className="bg-popover border-primary text-popover-foreground p-0 w-full h-full max-w-none md:max-w-md md:h-auto md:max-h-[85vh] flex flex-col overflow-hidden gap-0"
           >
             <DialogHeader className="p-6 pb-0 shrink-0">
-              <DialogTitle className="font-display text-[#39FF14] text-xl text-center">
-                MODIFIER PROFIL
+              <DialogTitle className="font-display text-primary text-xl text-center">
+                MON PROFIL
               </DialogTitle>
             </DialogHeader>
             <div className="flex-1 overflow-hidden">
@@ -144,22 +148,19 @@ export default function Home() {
         </Dialog>
 
         <div className="text-center space-y-6">
-          <h1 className="font-display text-4xl md:text-7xl text-[#39FF14] drop-shadow-[4px_4px_0_rgba(0,0,0,1)] uppercase text-center">
+          <h1 className="font-display text-4xl md:text-7xl text-primary drop-shadow-[6px_6px_0_var(--border)] uppercase text-center">
             MOTZ-GAME
           </h1>
-          <p className="font-sans text-3xl md:text-4xl text-white tracking-wider">
+          <p className="font-sans text-3xl md:text-4xl text-foreground tracking-wider">
             Chaque lettre compte
           </p>
         </div>
 
         <div className="flex flex-col md:flex-row gap-6 w-full max-w-xs md:max-w-2xl justify-center items-center">
-          <Button className="w-full md:w-64 h-20 md:h-16 text-2xl bg-[#39FF14] text-black border-4 border-black shadow-hard hover:translate-x-1 hover:translate-y-1 hover:shadow-none transition-all rounded-none">
+          <Button size="xl" className="w-full md:w-64">
             CRÉER UNE PARTIE
           </Button>
-          <Button
-            variant="secondary"
-            className="w-full md:w-64 h-20 md:h-16 text-2xl bg-white text-black border-4 border-black shadow-hard hover:bg-gray-100 hover:translate-x-1 hover:translate-y-1 hover:shadow-none transition-all rounded-none"
-          >
+          <Button variant="secondary" size="xl" className="w-full md:w-64">
             REJOINDRE
           </Button>
         </div>

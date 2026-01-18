@@ -38,7 +38,7 @@ export function AvatarSelector({ value, onChange }: AvatarSelectorProps) {
               variant="outline"
               onClick={() => onChange({ ...value, color })}
               className={cn(
-                "w-full aspect-square border-4 transition-transform hover:scale-105 cursor-pointer p-0 rounded-none relative flex items-center justify-center focus:outline-none",
+                "w-full aspect-square cursor-pointer focus:outline-none",
               )}
               style={{ backgroundColor: color }}
               aria-label={`Choisir la couleur ${color}`}

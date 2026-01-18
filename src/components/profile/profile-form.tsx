@@ -106,9 +106,9 @@ export function ProfileForm({ onSaved }: ProfileFormProps) {
       onSubmit={handleSubmit}
       className="h-full flex flex-col overflow-hidden"
     >
-      <div className="flex-1 overflow-y-auto p-6 space-y-8">
-        <div className="space-y-4">
-          <Label htmlFor="pseudo" className="text-xl text-white">
+      <div className="flex-1 overflow-y-auto p-6 space-y-4">
+        <div className="space-y-3">
+          <Label htmlFor="pseudo" className="text-xl text-foreground">
             Ton Pseudo
           </Label>
           <div className="space-y-2">
@@ -119,21 +119,21 @@ export function ProfileForm({ onSaved }: ProfileFormProps) {
                 onChange={(e) => setPseudo(e.target.value)}
                 placeholder="Ton pseudo"
                 disabled={isSaving}
-                className="flex-1 font-display tracking-wide bg-[#121220] border-2 border-white text-white placeholder:text-gray-500 focus-visible:ring-[#39FF14] focus-visible:border-[#39FF14]"
+                className="flex-1 font-display tracking-wide"
               />
               <Button
                 type="button"
                 onClick={handleRandomize}
                 variant="outline"
                 disabled={isSaving}
-                className="aspect-square p-0 w-12 h-12 border-2 border-white bg-[#121220] text-white"
+                className="aspect-square p-0 w-12 h-12"
               >
                 <Dice className="size-7" />
               </Button>
             </div>
             {error && (
-              <p className="text-[#FF00FF] font-bold bg-black/20 p-2 border-2 border-[#FF00FF]">
-                {error}
+              <p className="text-destructive font-bold">
+                {error.split('message": "')[1].split('"')[0]}
               </p>
             )}
           </div>
@@ -146,7 +146,7 @@ export function ProfileForm({ onSaved }: ProfileFormProps) {
         <Button
           type="submit"
           disabled={isSaving}
-          className="w-full text-xl py-6 bg-[#39FF14] text-black border-4 border-black shadow-hard hover:translate-x-1 hover:translate-y-1 hover:shadow-none transition-all rounded-none font-display"
+          className="w-full text-xl py-6 font-display"
           size="lg"
         >
           {isSaving ? "SAUVEGARDE..." : "C'EST PARTI !"}
