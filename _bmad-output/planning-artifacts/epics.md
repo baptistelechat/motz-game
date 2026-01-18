@@ -131,7 +131,7 @@ Protéger les joueurs contre la toxicité et la triche.
 
 Permettre à un joueur d'arriver sur le site, d'avoir une identité anonyme persistante et de voir l'interface de base.
 
-### Story 1.1: Initialisation Projet & Infrastructure
+### Story 1.1: CHARGEMENT DU SYSTEME Projet & Infrastructure
 
 As a développeur (et futur joueur),
 I want que le projet soit initialisé avec la stack technique définie (Next.js, Supabase, Shadcn/Tailwind),
@@ -140,7 +140,7 @@ So that pouvoir commencer à développer les fonctionnalités sur des bases soli
 **Acceptance Criteria:**
 
 **Given** un environnement de développement local
-**When** j'exécute le script d'initialisation
+**When** j'exécute le script d'CHARGEMENT DU SYSTEME
 **Then** une application Next.js 15 fonctionnelle est créée avec le template `with-supabase`
 **And** Tailwind CSS 4 est configuré avec les couleurs du thème (Deep Arcade Blue, Neon Green, Magenta, Yellow)
 **And** Shadcn/UI est installé et configuré
@@ -249,7 +249,7 @@ So that synchroniser le début de la partie.
 
 Jouer une manche complète : recevoir des contraintes, soumettre un mot, et avoir un gagnant.
 
-### Story 3.1: Initialisation Manche & Distribution Cartes
+### Story 3.1: CHARGEMENT DU SYSTEME Manche & Distribution Cartes
 
 As a joueur,
 I want recevoir une combinaison variée de contraintes (Lettres, Thèmes, Règles Spéciales),

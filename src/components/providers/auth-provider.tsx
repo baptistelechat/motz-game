@@ -18,10 +18,10 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   useEffect(() => {
     if (user) {
-      console.log("Anonymous auth active:", user.id);
+      console.log("🔒✅ Anonymous auth active:", user.id);
     }
     if (error) {
-      console.error("Anonymous auth failed:", error);
+      console.error("🔒❌ Anonymous auth failed:", error);
     }
   }, [user, error]);
 

@@ -95,7 +95,7 @@ pnpm create next-app -e with-supabase .
 
 - Tailwind CSS (Configuré)
 - PostCSS
-- **shadcn/ui** (Ajout manuel impératif post-initialisation)
+- **shadcn/ui** (Ajout manuel impératif post-CHARGEMENT DU SYSTEME)
 
 **Build Tooling:**
 

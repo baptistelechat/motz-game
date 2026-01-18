@@ -3,6 +3,8 @@ import { useAuth } from "@/components/providers/auth-provider";
 import { Turnstile, type TurnstileInstance } from "@marsidev/react-turnstile";
 import { useRef, useState } from "react";
 
+import { LoadingScreen } from "@/components/ui/loading-screen";
+
 export function CaptchaGuard({ children }: { children: React.ReactNode }) {
   const { user, isLoading, signIn, error } = useAuth();
   const [isVerifying, setIsVerifying] = useState(false);
@@ -11,11 +13,7 @@ export function CaptchaGuard({ children }: { children: React.ReactNode }) {
 
   // Si on charge ou si l'utilisateur est connecté, on affiche le contenu normal
   if (isLoading) {
-    return (
-      <div className="min-h-screen flex items-center justify-center bg-[#121220] text-[#39FF14] font-display animate-pulse text-center text-2xl md:text-4xl p-4">
-        CHARGEMENT DU SYSTEME...
-      </div>
-    );
+    return <LoadingScreen message="CHARGEMENT..." />;
   }
 
   if (user) {

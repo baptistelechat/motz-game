@@ -1,4 +1,4 @@
-# Story 1.1: Initialisation Projet & Infrastructure
+# Story 1.1: CHARGEMENT DU SYSTEME Projet & Infrastructure
 
 Status: completed
 
@@ -13,7 +13,7 @@ so that pouvoir commencer à développer les fonctionnalités sur des bases soli
 ## Acceptance Criteria
 
 1. **Given** un environnement de développement local
-2. **When** j'exécute le script d'initialisation
+2. **When** j'exécute le script d'CHARGEMENT DU SYSTEME
 3. **Then** une application Next.js 15 fonctionnelle est créée avec le template `with-supabase`
 4. **And** Tailwind CSS 4 est configuré avec les couleurs du thème (Deep Arcade Blue, Neon Green, Magenta, Yellow)
 5. **And** Shadcn/UI est installé et configuré

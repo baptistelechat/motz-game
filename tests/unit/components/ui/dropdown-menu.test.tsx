@@ -7,7 +7,13 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { fireEvent, render, screen } from "@testing-library/react";
-import { describe, expect, it } from "vitest";
+import { describe, expect, it, vi } from "vitest";
+
+vi.mock('@nsmr/pixelart-react', () => ({
+  Check: () => <div data-testid="pixelart-check" />,
+  ChevronRight: () => <div data-testid="pixelart-chevron-right" />,
+  Circle: () => <div data-testid="pixelart-circle" />,
+}));
 
 // Radix UI PointerEvents workaround for JSDOM
 // https://github.com/radix-ui/primitives/issues/1220

@@ -15,7 +15,7 @@ describe('Input', () => {
     render(<Input placeholder="Enter text" />);
     const input = screen.getByPlaceholderText('Enter text');
     expect(input).toHaveClass('font-sans');
-    expect(input).toHaveClass('text-3xl');
+    expect(input).toHaveClass('text-lg');
   });
 
   it('renders with border-black', () => {

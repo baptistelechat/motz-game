@@ -1,6 +1,6 @@
 # Story 1.4: Gestion Profil (Pseudo & Avatar)
 
-Status: ready-for-dev
+Status: review
 
 <!-- Note: Validation is optional. Run validate-create-story for quality check before dev-story. -->
 
@@ -33,45 +33,45 @@ so that me différencier des autres joueurs dans le lobby.
 
 ## Tâches / Sous-tâches
 
-- [ ] Database & RLS (AC: 3)
-  - [ ] Créer la migration SQL pour la table `public.players`.
+- [x] Database & RLS (AC: 3)
+  - [x] Créer la migration SQL pour la table `public.players`.
     - Columns: `id` (uuid, PK, references auth.users), `pseudo` (text), `avatar_config` (jsonb), `last_seen` (timestamptz).
-  - [ ] Activer RLS sur `public.players`.
-  - [ ] Créer les policies :
+  - [x] Activer RLS sur `public.players`.
+  - [x] Créer les policies :
     - `SELECT`: Public (tout le monde peut voir les profils des autres joueurs). `true`
     - `INSERT/UPDATE`: Authenticated users only for their own `id`. `auth.uid() = id` with `check (auth.uid() = id)`
 
-- [ ] Zod Schema & Types (AC: 2)
-  - [ ] Créer `src/lib/schemas/player-schema.ts`.
-  - [ ] Définir `playerProfileSchema`:
+- [x] Zod Schema & Types (AC: 2)
+  - [x] Créer `src/lib/schemas/player-schema.ts`.
+  - [x] Définir `playerProfileSchema`:
     - `pseudo`: min 3, max 15, regex `^[a-zA-Z0-9_-]+$` (Alphanum + Tiret + Underscore).
       - _Note UX :_ Si l'utilisateur tape un espace, le remplacer dynamiquement par `_` ou `-`.
     - `avatar_config`: Object `{ animal: string, color: string }`.
       - _Note :_ `color` correspond à la couleur de fond du cadre de l'avatar (ex: palette Pixel-Pop #39FF14, #FF00FF, etc.).
-  - [ ] Générer les types TypeScript associés.
+  - [x] Générer les types TypeScript associés.
 
-- [ ] Logic & Hooks (AC: 1, 3, 4)
-  - [ ] Créer `src/lib/utils/random-pseudo.ts` pour générer "Animal + Adjectif" (liste en dur pour l'instant).
-  - [ ] Créer `src/hooks/use-player-profile.ts`.
-  - [ ] Utiliser `useAnonymousAuth` (Story 1.3) ou `supabase.auth.getUser()` pour récupérer l'ID courant.
-  - [ ] Implémenter `fetchProfile` (SELECT) et `updateProfile` (UPSERT).
-  - [ ] Gérer l'état de chargement et les erreurs.
+- [x] Logic & Hooks (AC: 1, 3, 4)
+  - [x] Créer `src/lib/utils/random-pseudo.ts` pour générer "Animal + Adjectif" (liste en dur pour l'instant).
+  - [x] Créer `src/hooks/use-player-profile.ts`.
+  - [x] Utiliser `useAnonymousAuth` (Story 1.3) ou `supabase.auth.getUser()` pour récupérer l'ID courant.
+  - [x] Implémenter `fetchProfile` (SELECT) et `updateProfile` (UPSERT).
+  - [x] Gérer l'état de chargement et les erreurs.
 
-- [ ] UI Components (AC: 1, 2)
-  - [ ] Créer `src/components/profile/profile-form.tsx`.
-  - [ ] Intégrer Shadcn `Input` (style Pixel-Pop).
-  - [ ] Créer un sélecteur d'avatar simple (Grille d'icônes ou Randomizer).
-  - [ ] Bouton "Valider" (style Pixel-Pop).
+- [x] UI Components (AC: 1, 2)
+  - [x] Créer `src/components/profile/profile-form.tsx`.
+  - [x] Intégrer Shadcn `Input` (style Pixel-Pop).
+  - [x] Créer un sélecteur d'avatar simple (Grille d'icônes ou Randomizer).
+  - [x] Bouton "Valider" (style Pixel-Pop).
 
-- [ ] Intégration (AC: 4)
-  - [ ] Ajouter la vérification du profil dans `src/app/page.tsx` (ou Layout).
-  - [ ] Si pas de profil -> **Création silencieuse** : Générer Pseudo + Avatar aléatoires et sauvegarder en DB immédiatement.
-  - [ ] Afficher "Bonjour [Pseudo]" dans le header/UI.
-  - [ ] Ajouter un bouton d'accès au profil pour permettre la modification (Formulaire d'édition).
+- [x] Intégration (AC: 4)
+  - [x] Ajouter la vérification du profil dans `src/app/page.tsx` (ou Layout).
+  - [x] Si pas de profil -> **Création silencieuse** : Générer Pseudo + Avatar aléatoires et sauvegarder en DB immédiatement.
+  - [x] Afficher "Bonjour [Pseudo]" dans le header/UI.
+  - [x] Ajouter un bouton d'accès au profil pour permettre la modification (Formulaire d'édition).
 
-- [ ] Tests
-  - [ ] Test unitaire du générateur de pseudo.
-  - [ ] Test d'intégration du hook `usePlayerProfile` (mock Supabase).
+- [x] Tests
+  - [x] Test unitaire du générateur de pseudo.
+  - [x] Test d'intégration du hook `usePlayerProfile` (mock Supabase).
 
 ## Notes de développement
 

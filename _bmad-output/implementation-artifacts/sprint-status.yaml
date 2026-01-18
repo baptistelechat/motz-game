@@ -42,10 +42,10 @@ story_location: c:\Users\ASUS\Desktop\DEV\Projet_perso\motz-game\_bmad-output\im
 development_status:
   # Epic 1
   epic-1: in-progress
-  1-1-initialisation-projet-infrastructure: done
+  1-1-CHARGEMENT DU SYSTEME-projet-infrastructure: done
   1-2-landing-page-mode-mobile-first: done
-  1-3-systeme-authentification-anonyme: review
-  1-4-gestion-profil-pseudo-avatar: ready-for-dev
+  1-3-systeme-authentification-anonyme: done
+  1-4-gestion-profil-pseudo-avatar: review
   epic-1-retrospective: optional
 
   # Epic 2
@@ -57,7 +57,7 @@ development_status:
 
   # Epic 3
   epic-3: backlog
-  3-1-initialisation-manche-distribution-cartes: backlog
+  3-1-CHARGEMENT DU SYSTEME-manche-distribution-cartes: backlog
   3-2-input-joueur-validation-locale-bloom-filter: backlog
   3-3-soumission-arbitrage-serveur: backlog
   3-4-resolution-manche-feedback: backlog

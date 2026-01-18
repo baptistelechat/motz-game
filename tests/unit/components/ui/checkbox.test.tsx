@@ -1,6 +1,10 @@
 import { render, screen } from '@testing-library/react';
 import { Checkbox } from '@/components/ui/checkbox';
-import { describe, it, expect } from 'vitest';
+import { describe, it, expect, vi } from 'vitest';
+
+vi.mock('@nsmr/pixelart-react', () => ({
+  Check: () => <div data-testid="pixelart-check" />,
+}));
 
 describe('Checkbox Component', () => {
   it('renders with Pixel-Pop styles', () => {
