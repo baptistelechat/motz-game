@@ -43,11 +43,12 @@ so that pouvoir rejoindre une partie immédiatement (Friction Zero).
 
 - [x] Tests (AC: 2, 3)
   - [x] Test Unitaire du hook `useAnonymousAuth` (Mock Supabase client)
-  - [x] Vérifier que `signInAnonymously` est appelé si pas de session
+  - [x] Vérifier que `signInAnonymously` est appelé avec token (plus d'auto-login)
 
 ## Dev Notes
 
 - **Architecture Auth** : On utilise exclusivement `signInAnonymously()` de Supabase [Source: architecture.md#Authentication & Security].
+- **Captcha** : `signInAnonymously` nécessite un `captchaToken` (Turnstile). L'auto-login silencieux n'est donc plus possible. L'utilisateur doit déclencher l'action manuellement via l'UI (ex: bouton "Créer Partie" qui ouvre un captcha).
 - **Persistance** : Le client Supabase gère automatiquement la persistance du token dans le `localStorage`. Pas besoin de code custom pour ça, juste s'assurer que le client est bien initialisé.
 - **Sécurité** : Pour l'instant, pas de RLS complexe car pas encore de tables, mais l'auth doit être fonctionnelle pour les futures stories.
 - **Conflits potentiels** : Attention au SSR avec le client Supabase. Utiliser `createBrowserClient` pour le client et `createServerClient` pour le serveur (via `@supabase/ssr`).
