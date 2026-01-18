@@ -76,9 +76,9 @@ export function InstallApp() {
   return (
     <>
       <Dialog open={showIOSInstructions} onOpenChange={setShowIOSInstructions}>
-        <DialogContent className="bg-popover border-primary text-popover-foreground max-w-sm">
+        <DialogContent className="max-w-sm">
           <DialogHeader>
-            <DialogTitle className="font-display text-primary text-lg text-center">
+            <DialogTitle className="font-display text-theme text-lg text-center">
               INSTALLER SUR IOS
             </DialogTitle>
           </DialogHeader>

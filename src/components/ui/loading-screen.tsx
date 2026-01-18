@@ -11,7 +11,7 @@ export function LoadingScreen({
 }: LoadingScreenProps) {
   return (
     <div className={cn(
-      "min-h-screen flex items-center justify-center bg-background text-primary font-display animate-pulse text-center text-2xl md:text-4xl p-4",
+      "min-h-screen flex items-center justify-center bg-background text-theme font-display animate-pulse text-center text-2xl md:text-4xl p-4",
       className
     )}>
       {message}

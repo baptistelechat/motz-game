@@ -95,7 +95,7 @@ export function ProfileForm({ onSaved }: ProfileFormProps) {
 
   if ((isLoading && !isInitialized) || (!isInitialized && !profile)) {
     return (
-      <div className="text-center font-display text-primary animate-pulse">
+      <div className="text-center font-display text-theme animate-pulse">
         CHARGEMENT DU PROFIL...
       </div>
     );
@@ -106,10 +106,10 @@ export function ProfileForm({ onSaved }: ProfileFormProps) {
       onSubmit={handleSubmit}
       className="h-full flex flex-col overflow-hidden"
     >
-      <div className="flex-1 overflow-y-auto p-6 space-y-4">
+      <div className="flex-1 overflow-y-auto p-6 space-y-6">
         <div className="space-y-3">
-          <Label htmlFor="pseudo" className="text-xl text-foreground">
-            Ton Pseudo
+          <Label htmlFor="pseudo">
+            Pseudo
           </Label>
           <div className="space-y-2">
             <div className="flex gap-2">

@@ -29,7 +29,7 @@ export function AvatarSelector({ value, onChange }: AvatarSelectorProps) {
   return (
     <div className="space-y-6">
       <div className="space-y-3">
-        <Label className="text-xl text-white">Couleur</Label>
+        <Label>Couleur</Label>
         <div className="grid grid-cols-4 md:grid-cols-6 gap-3">
           {AVATAR_COLORS.map((color) => (
             <Button
@@ -52,7 +52,7 @@ export function AvatarSelector({ value, onChange }: AvatarSelectorProps) {
       </div>
 
       <div className="space-y-3">
-        <Label className="text-xl text-white">Avatar</Label>
+        <Label>Avatar</Label>
         <Select
           value={value.animal}
           onValueChange={(animal) => {

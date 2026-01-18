@@ -1,15 +1,9 @@
 "use client";
 
 import { MainLayout } from "@/components/layout/main-layout";
-import { AvatarDisplay } from "@/components/profile/avatar-display";
-import { ProfileForm } from "@/components/profile/profile-form";
+import { ProfileBadge } from "@/components/profile/profile-badge";
+import { ProfileDialog } from "@/components/profile/profile-dialog";
 import { Button } from "@/components/ui/button";
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog";
 import { LoadingScreen } from "@/components/ui/loading-screen";
 import { usePlayerProfile } from "@/hooks/use-player-profile";
 import { AVATAR_COLORS } from "@/lib/constants/avatar";
@@ -108,47 +102,19 @@ export default function Home() {
   return (
     <MainLayout>
       <div className="flex-1 flex flex-col items-center justify-center p-4 gap-12 min-h-dvh relative">
-        <div className="absolute top-4 right-4 z-20">
-          {/* Profile Badge */}
-          <Button
-            onClick={() => setShowProfileEdit(true)}
-            variant="profile"
-            aria-label="Modifier mon profil"
-          >
-            <span
-              className="font-display text-sm md:text-base hidden sm:inline text-primary"
-              style={{
-                color: profile.avatar_config.color,
-              }}
-            >
-              {profile.pseudo}
-            </span>
-            <AvatarDisplay
-              animal={profile.avatar_config.animal}
-              color={profile.avatar_config.color}
-              size="sm"
-            />
-          </Button>
-        </div>
+        <ProfileBadge
+          profile={profile}
+          onClick={() => setShowProfileEdit(true)}
+          className="absolute top-4 right-4 z-20"
+        />
 
-        <Dialog open={showProfileEdit} onOpenChange={setShowProfileEdit}>
-          <DialogContent
-            onOpenAutoFocus={(e) => e.preventDefault()}
-            className="bg-popover border-primary text-popover-foreground p-0 w-full h-full max-w-none md:max-w-md md:h-auto md:max-h-[85vh] flex flex-col overflow-hidden gap-0"
-          >
-            <DialogHeader className="p-6 pb-0 shrink-0">
-              <DialogTitle className="font-display text-primary text-xl text-center">
-                MON PROFIL
-              </DialogTitle>
-            </DialogHeader>
-            <div className="flex-1 overflow-hidden">
-              <ProfileForm onSaved={() => setShowProfileEdit(false)} />
-            </div>
-          </DialogContent>
-        </Dialog>
+        <ProfileDialog
+          open={showProfileEdit}
+          onOpenChange={setShowProfileEdit}
+        />
 
         <div className="text-center space-y-6">
-          <h1 className="font-display text-4xl md:text-7xl text-primary drop-shadow-[6px_6px_0_var(--border)] uppercase text-center">
+          <h1 className="font-display text-4xl md:text-7xl text-theme drop-shadow-[6px_6px_0_var(--border)] uppercase text-center">
             MOTZ-GAME
           </h1>
           <p className="font-sans text-3xl md:text-4xl text-foreground tracking-wider">
