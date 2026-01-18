@@ -7,7 +7,7 @@ describe('Home Page', () => {
     render(<Home />);
     const title = screen.getByRole('heading', { level: 1, name: /motz-game/i });
     expect(title).toBeInTheDocument();
-    expect(title).toHaveClass('font-pixel');
+    expect(title).toHaveClass('font-display');
   });
 
   it('renders create game button', () => {

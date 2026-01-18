@@ -3,7 +3,7 @@ import { MetadataRoute } from "next";
 export default function manifest(): MetadataRoute.Manifest {
   return {
     name: "Motz Game",
-    short_name: "Motz",
+    short_name: "Motz Game",
     description: "Jeu de mots multijoueur temps réel avec design Pixel-Pop",
     start_url: "/",
     display: "standalone",

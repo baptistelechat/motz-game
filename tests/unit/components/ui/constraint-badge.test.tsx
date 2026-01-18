@@ -10,7 +10,7 @@ describe('ConstraintBadge', () => {
     expect(badge).toHaveClass('border-4');
     expect(badge).toHaveClass('border-black');
     expect(badge).toHaveClass('rounded-none');
-    expect(badge).toHaveClass('font-pixel');
+    expect(badge).toHaveClass('font-display');
   });
 
   it('renders with success variant', () => {

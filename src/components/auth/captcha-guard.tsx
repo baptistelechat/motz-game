@@ -12,7 +12,7 @@ export function CaptchaGuard({ children }: { children: React.ReactNode }) {
   // Si on charge ou si l'utilisateur est connecté, on affiche le contenu normal
   if (isLoading) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-[#121220] text-[#39FF14] font-display animate-pulse">
+      <div className="min-h-screen flex items-center justify-center bg-[#121220] text-[#39FF14] font-display animate-pulse text-center text-2xl md:text-4xl p-4">
         CHARGEMENT DU SYSTEME...
       </div>
     );
@@ -29,7 +29,7 @@ export function CaptchaGuard({ children }: { children: React.ReactNode }) {
         <h1 className="font-display text-3xl md:text-5xl text-[#39FF14] drop-shadow-[4px_4px_0_rgba(0,0,0,1)] uppercase">
           VERIFICATION
         </h1>
-        <p className="font-sans text-2xl text-white">
+        <p className="font-sans text-2xl md:text-4xl text-white">
           Prouve que tu n&#39;es pas une machine
         </p>
       </div>

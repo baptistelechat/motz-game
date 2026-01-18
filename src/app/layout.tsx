@@ -1,7 +1,8 @@
+import { CaptchaGuard } from "@/components/auth/captcha-guard";
+import { AuthProvider } from "@/components/providers/auth-provider";
+import { InstallApp } from "@/components/pwa/install-app";
 import type { Metadata, Viewport } from "next";
 import { Press_Start_2P, VT323 } from "next/font/google";
-import { AuthProvider } from "@/components/providers/auth-provider";
-import { CaptchaGuard } from "@/components/auth/captcha-guard";
 import "./globals.css";
 
 const defaultUrl = process.env.VERCEL_URL
@@ -53,6 +54,7 @@ export default function RootLayout({
       >
         <AuthProvider>
           <CaptchaGuard>{children}</CaptchaGuard>
+          <InstallApp />
         </AuthProvider>
       </body>
     </html>

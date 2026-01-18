@@ -20,7 +20,7 @@ export const test = base.extend<HomeFixture>({
         await page.goto("/");
       },
       verifyElements: async () => verifyHomePageElements(page),
-      verifyStatus: async () => verifySystemStatus(page),
+      verifyStatus: async () => verifySystemStatus(),
     });
   },
 });

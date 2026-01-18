@@ -3,7 +3,7 @@ import { cva, type VariantProps } from "class-variance-authority";
 import * as React from "react";
 
 const constraintBadgeVariants = cva(
-  "inline-flex items-center rounded-none border-4 border-black px-2.5 py-0.5 text-xs font-semibold font-pixel transition-colors focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2",
+  "inline-flex items-center rounded-none border-4 border-black px-2.5 py-0.5 text-xs font-semibold font-display transition-colors focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2",
   {
     variants: {
       variant: {

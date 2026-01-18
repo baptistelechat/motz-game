@@ -6,10 +6,10 @@ export default function Home() {
     <MainLayout>
       <div className="flex-1 flex flex-col items-center justify-center p-4 gap-12 min-h-dvh">
         <div className="text-center space-y-6">
-          <h1 className="font-pixel text-8xl text-[#39FF14] drop-shadow-[4px_4px_0_rgba(0,0,0,1)] uppercase">
+          <h1 className="font-display text-4xl md:text-7xl text-[#39FF14] drop-shadow-[4px_4px_0_rgba(0,0,0,1)] uppercase text-center">
             MOTZ-GAME
           </h1>
-          <p className="font-vt323 text-4xl text-white tracking-wider">
+          <p className="font-sans text-3xl md:text-4xl text-white tracking-wider">
             Chaque lettre compte
           </p>
         </div>

@@ -7,7 +7,7 @@ export async function verifyHomePageElements(page: Page) {
   // AND: Main heading uses pixel font and correct text
   const heading = page.locator("h1", { hasText: "MOTZ-GAME" });
   await expect(heading).toBeVisible();
-  await expect(heading).toHaveClass(/font-pixel/);
+  await expect(heading).toHaveClass(/font-display/);
 
   // Verify Buttons exist
   const createButton = page.getByRole("button", { name: /CRÉER PARTIE/i });
