@@ -1,4 +1,6 @@
 import { CaptchaGuard } from "@/components/auth/captcha-guard";
+import { AttributesDialog } from "@/components/info/attributes-dialog";
+import { StickyActionZone } from "@/components/layout/sticky-action-zone";
 import { AuthProvider } from "@/components/providers/auth-provider";
 import { InstallApp } from "@/components/pwa/install-app";
 import { THEME_COLORS } from "@/lib/constants/theme";
@@ -55,7 +57,10 @@ export default function RootLayout({
       >
         <AuthProvider>
           <CaptchaGuard>{children}</CaptchaGuard>
-          <InstallApp />
+          <StickyActionZone>
+            <AttributesDialog />
+            <InstallApp />
+          </StickyActionZone>
         </AuthProvider>
       </body>
     </html>

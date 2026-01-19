@@ -1,24 +1,24 @@
-import * as React from "react"
-import { cn } from "@/lib/utils"
+import { cn } from "@/lib/utils";
+import { ReactNode } from "react";
 
-type StickyActionZoneProps = React.HTMLAttributes<HTMLElement>
+interface StickyActionZoneProps {
+  children: ReactNode;
+  className?: string;
+}
 
-const StickyActionZone = React.forwardRef<HTMLElement, StickyActionZoneProps>(
-  ({ className, children, ...props }, ref) => {
-    return (
-      <footer
-        ref={ref}
-        className={cn(
-          "sticky bottom-0 z-50 w-full border-t-4 border-black bg-background p-4",
-          className
-        )}
-        {...props}
-      >
-        {children}
-      </footer>
-    )
-  }
-)
-StickyActionZone.displayName = "StickyActionZone"
-
-export { StickyActionZone }
+export function StickyActionZone({
+  children,
+  className,
+}: StickyActionZoneProps) {
+  return (
+    <div
+      className={cn(
+        "fixed bottom-6 right-6 z-50 flex flex-row-reverse items-end gap-4 pointer-events-none",
+        className,
+      )}
+    >
+      {/* Les enfants doivent réactiver le pointer-events */}
+      <div className="contents *:pointer-events-auto">{children}</div>
+    </div>
+  );
+}

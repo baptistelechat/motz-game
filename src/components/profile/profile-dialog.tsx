@@ -19,7 +19,7 @@ export function ProfileDialog({ open, onOpenChange }: ProfileDialogProps) {
         className="p-0 w-full h-full max-w-none md:max-w-md md:h-auto md:max-h-[85vh] flex flex-col overflow-hidden gap-0"
       >
         <DialogHeader className="p-6 pb-0 shrink-0">
-          <DialogTitle className="font-display text-theme text-xl text-center">
+          <DialogTitle>
             MON PROFIL
           </DialogTitle>
         </DialogHeader>

@@ -78,9 +78,7 @@ export function InstallApp() {
       <Dialog open={showIOSInstructions} onOpenChange={setShowIOSInstructions}>
         <DialogContent className="max-w-sm">
           <DialogHeader>
-            <DialogTitle className="font-display text-theme text-lg text-center">
-              INSTALLER SUR IOS
-            </DialogTitle>
+            <DialogTitle>INSTALLER SUR IOS</DialogTitle>
           </DialogHeader>
 
           <div className="space-y-6 mt-4">
@@ -116,7 +114,7 @@ export function InstallApp() {
       <Button
         size="icon-xl"
         onClick={handleInstallClick}
-        className="fixed bottom-6 right-6 z-50 transition-all animate-in zoom-in duration-300"
+        className="transition-all animate-in zoom-in duration-300"
         aria-label="Installer l'application"
       >
         <Download className="size-7" />

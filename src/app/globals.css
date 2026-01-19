@@ -30,6 +30,7 @@
   --destructive-foreground: #ffffff;
 
   --border: #000000;
+  --border-foreground: #ffffff;
   --input: #000000;
   --ring: #39ff14;
 
@@ -83,7 +84,7 @@
   --sidebar-accent-foreground: #ffffff;
   --sidebar-border: #000000;
   --sidebar-ring: #39ff14;
-    --allow: #39ff14;
+  --allow: #39ff14;
   --disallow: #ff00ff;
   --theme: #ffff00;
 }
@@ -108,6 +109,7 @@
   --color-destructive: var(--destructive);
   --color-destructive-foreground: var(--destructive-foreground);
   --color-border: var(--border);
+  --color-border-foreground: var(--border-foreground);
   --color-input: var(--input);
   --color-ring: var(--ring);
   --color-chart-1: var(--chart-1);
