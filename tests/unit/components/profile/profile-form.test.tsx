@@ -35,7 +35,7 @@ describe("ProfileForm", () => {
 
   it("renders with default random pseudo if no profile", () => {
     render(<ProfileForm />);
-    const input = screen.getByLabelText(/Ton Pseudo/i);
+    const input = screen.getByLabelText("Pseudo");
     expect(input).toHaveValue(); // Should have some value
     expect((input as HTMLInputElement).value).not.toBe("");
   });
@@ -53,7 +53,7 @@ describe("ProfileForm", () => {
     });
 
     render(<ProfileForm />);
-    const input = screen.getByLabelText(/Ton Pseudo/i);
+    const input = screen.getByLabelText("Pseudo");
     expect(input).toHaveValue("ExistingUser");
   });
 
@@ -62,7 +62,7 @@ describe("ProfileForm", () => {
 
     // Wait for pseudo to be generated
     await waitFor(() => {
-      expect(screen.getByLabelText(/Ton Pseudo/i)).not.toHaveValue("");
+      expect(screen.getByLabelText("Pseudo")).not.toHaveValue("");
     });
 
     const button = screen.getByRole("button", { name: /C'EST PARTI/i });
@@ -76,7 +76,7 @@ describe("ProfileForm", () => {
 
   it("validates short pseudo", async () => {
     render(<ProfileForm />);
-    const input = screen.getByLabelText(/Ton Pseudo/i);
+    const input = screen.getByLabelText("Pseudo");
 
     fireEvent.change(input, { target: { value: "Ab" } }); // Too short
     const button = screen.getByRole("button", { name: /C'EST PARTI/i });

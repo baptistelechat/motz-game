@@ -4,7 +4,9 @@ import { create } from "zustand";
 
 export type PlayerRecord = PlayerProfile & {
   id: string;
-  last_seen: string;
+  updated_at: string;
+  created_at: string;
+  last_sign_in_at?: string;
 };
 
 interface PlayerState {
@@ -39,7 +41,9 @@ export const usePlayerStore = create<PlayerState>((set) => ({
       const supabase = createClient();
       const { data, error } = await supabase
         .from("players")
-        .select("*")
+        .select(
+          "id, pseudo, avatar_config, updated_at, created_at, last_sign_in_at",
+        )
         .eq("id", userId)
         .single();
 
@@ -50,6 +54,17 @@ export const usePlayerStore = create<PlayerState>((set) => ({
         set({ profile: null, isInitialized: true });
       } else {
         set({ profile: data as PlayerRecord, isInitialized: true });
+
+        // Background update: Track activity without blocking the UI
+        supabase
+          .from("players")
+          .update({ last_sign_in_at: new Date().toISOString() })
+          .eq("id", userId)
+          .then(({ error }) => {
+            if (error) {
+              console.error("Failed to update last_sign_in_at:", error);
+            }
+          });
       }
     } catch (err) {
       console.error("Error fetching profile:", err);
@@ -66,13 +81,16 @@ export const usePlayerStore = create<PlayerState>((set) => ({
       const payload = {
         id: userId,
         ...newProfile,
-        last_seen: new Date().toISOString(),
+        updated_at: new Date().toISOString(),
+        last_sign_in_at: new Date().toISOString(), // Also update on explicit profile change
       };
 
       const { data, error } = await supabase
         .from("players")
         .upsert(payload)
-        .select()
+        .select(
+          "id, pseudo, avatar_config, updated_at, created_at, last_sign_in_at",
+        )
         .single();
 
       if (error) throw error;

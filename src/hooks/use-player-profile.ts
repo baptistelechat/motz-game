@@ -5,7 +5,8 @@ import { useEffect, useRef } from "react";
 
 export type PlayerRecord = PlayerProfile & {
   id: string;
-  last_seen: string;
+  updated_at: string;
+  created_at: string;
 };
 
 export function usePlayerProfile() {

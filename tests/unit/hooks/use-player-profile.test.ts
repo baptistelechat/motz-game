@@ -2,7 +2,7 @@ import { useAnonymousAuth } from "@/hooks/use-anonymous-auth";
 import { usePlayerProfile } from "@/hooks/use-player-profile";
 import { createClient } from "@/lib/supabase/client";
 import { act, renderHook, waitFor } from "@testing-library/react";
-import { beforeEach, describe, expect, it, vi } from "vitest";
+import { beforeEach, describe, expect, it, Mock, vi } from "vitest";
 
 // Mock dependencies
 vi.mock("@/lib/supabase/client", () => ({
@@ -17,6 +17,7 @@ describe("usePlayerProfile", () => {
   const mockSelect = vi.fn();
   const mockSingle = vi.fn();
   const mockUpsert = vi.fn();
+  const mockUpdate = vi.fn();
   const mockFrom = vi.fn();
 
   beforeEach(() => {
@@ -26,6 +27,7 @@ describe("usePlayerProfile", () => {
     mockSingle.mockResolvedValue({ data: null, error: null });
     mockSelect.mockReturnValue({ single: mockSingle });
     mockUpsert.mockResolvedValue({ data: null, error: null });
+    mockUpdate.mockResolvedValue({ data: null, error: null });
     // For select: from('players').select('*').eq('id', userId).single()
     // For upsert: from('players').upsert({...}).select()
 
@@ -40,9 +42,16 @@ describe("usePlayerProfile", () => {
     };
     mockUpsert.mockReturnValue(upsertChain);
 
+    // update() returns eq() then promise
+    const updateChain = {
+      eq: vi.fn().mockResolvedValue({ error: null }),
+    };
+    mockUpdate.mockReturnValue(updateChain);
+
     mockFrom.mockReturnValue({
       select: mockSelect,
       upsert: mockUpsert,
+      update: mockUpdate,
     });
 
     (createClient as Mock).mockReturnValue({
@@ -72,6 +81,9 @@ describe("usePlayerProfile", () => {
       id: "user-123",
       pseudo: "TestUser",
       avatar_config: { animal: "Fox", color: "Green" },
+      updated_at: new Date().toISOString(),
+      created_at: new Date().toISOString(),
+      last_sign_in_at: new Date().toISOString(),
     };
 
     mockSingle.mockResolvedValue({ data: mockProfile, error: null });
@@ -83,8 +95,15 @@ describe("usePlayerProfile", () => {
     });
 
     expect(mockFrom).toHaveBeenCalledWith("players");
-    expect(mockSelect).toHaveBeenCalledWith("*");
+    expect(mockSelect).toHaveBeenCalledWith(
+      "id, pseudo, avatar_config, updated_at, created_at, last_sign_in_at",
+    );
     expect(result.current.profile).toEqual(mockProfile);
+
+    // Check background update
+    expect(mockUpdate).toHaveBeenCalledWith({
+      last_sign_in_at: expect.any(String),
+    });
   });
 
   it("should update profile", async () => {
@@ -106,7 +125,12 @@ describe("usePlayerProfile", () => {
     };
 
     // Update mock for upsert return
-    const updatedRecord = { id: "user-123", ...newProfile };
+    const updatedRecord = {
+      id: "user-123",
+      ...newProfile,
+      updated_at: new Date().toISOString(),
+      last_sign_in_at: new Date().toISOString(),
+    };
     mockSingle.mockResolvedValue({ data: updatedRecord, error: null });
 
     await act(async () => {
@@ -117,7 +141,8 @@ describe("usePlayerProfile", () => {
     expect(mockUpsert).toHaveBeenCalledWith({
       id: "user-123",
       ...newProfile,
-      last_seen: expect.any(String), // We expect a timestamp
+      updated_at: expect.any(String),
+      last_sign_in_at: expect.any(String),
     });
   });
 });

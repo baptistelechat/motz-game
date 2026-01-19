@@ -73,10 +73,19 @@ export default function Home() {
           <div className="bg-black/20 p-4 font-mono text-xs overflow-auto mb-4 border-2 border-black/10">
             {creationError.message}
           </div>
-          <p className="text-sm text-center font-bold">
+          <p className="text-sm text-center font-bold mb-4">
             Vérifiez que la table &apos;players&apos; existe dans votre base de
             données Supabase.
           </p>
+          <div className="text-center">
+            <Button
+              variant="outline"
+              className="border-2 border-black/20 hover:border-black/40 font-display"
+              onClick={() => setCreationError(null)}
+            >
+              RÉESSAYER
+            </Button>
+          </div>
         </div>
       </MainLayout>
     );

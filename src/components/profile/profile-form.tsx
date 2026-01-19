@@ -70,12 +70,20 @@ export function ProfileForm({ onSaved }: ProfileFormProps) {
       await updateProfile(validated);
       if (onSaved) onSaved();
     } catch (err) {
-      const error = err as { errors?: { message: string }[]; message?: string };
-      if (error.errors && error.errors.length > 0) {
-        // Zod error
+      const error = err as {
+        issues?: { message: string }[];
+        errors?: { message: string }[];
+        message?: string;
+      };
+      // Prioritize Zod errors (or similar structured errors) because ZodError.message contains a stringified JSON of the errors
+      if (error.issues && error.issues.length > 0) {
+        setError(error.issues[0].message);
+      } else if (error.errors && error.errors.length > 0) {
         setError(error.errors[0].message);
+      } else if (error.message) {
+        setError(error.message);
       } else {
-        setError(error.message || "Une erreur est survenue");
+        setError("Une erreur est survenue");
       }
     } finally {
       setIsSaving(false);
@@ -108,9 +116,7 @@ export function ProfileForm({ onSaved }: ProfileFormProps) {
     >
       <div className="flex-1 overflow-y-auto p-6 space-y-6">
         <div className="space-y-3">
-          <Label htmlFor="pseudo">
-            Pseudo
-          </Label>
+          <Label htmlFor="pseudo">Pseudo</Label>
           <div className="space-y-2">
             <div className="flex gap-2">
               <Input
@@ -131,11 +137,7 @@ export function ProfileForm({ onSaved }: ProfileFormProps) {
                 <Dice className="size-7" />
               </Button>
             </div>
-            {error && (
-              <p className="text-destructive font-bold">
-                {error.split('message": "')[1].split('"')[0]}
-              </p>
-            )}
+            {error && <p className="text-destructive font-bold">{error}</p>}
           </div>
         </div>
 
