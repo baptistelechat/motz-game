@@ -1,15 +1,15 @@
 import { cn } from "@/lib/utils";
-import { User } from "@nsmr/pixelart-react";
 import { cva, type VariantProps } from "class-variance-authority";
+import Image from "next/image";
 
 const avatarDisplayVariants = cva(
-  "flex items-center justify-center bg-black border-black transition-colors",
+  "flex items-center justify-center bg-black border-black transition-colors relative overflow-hidden",
   {
     variants: {
       size: {
-        sm: "w-8 h-8 p-1 border-2",
-        md: "w-16 h-16 p-2 border-4",
-        lg: "w-32 h-32 p-4 border-4",
+        sm: "w-8 h-8 p-0.5 border-2",
+        md: "w-16 h-16 p-1 border-4",
+        lg: "w-32 h-32 p-2 border-4",
       },
     },
     defaultVariants: {
@@ -21,9 +21,9 @@ const avatarDisplayVariants = cva(
 const iconSizeVariants = cva("relative", {
   variants: {
     size: {
-      sm: "w-full h-full text-[0.75rem]",
-      md: "w-full h-full text-[1.5rem]",
-      lg: "w-full h-full text-[3rem]",
+      sm: "w-full h-full",
+      md: "w-full h-full",
+      lg: "w-full h-full",
     },
   },
   defaultVariants: {
@@ -32,7 +32,8 @@ const iconSizeVariants = cva("relative", {
 });
 
 interface AvatarDisplayProps
-  extends React.HTMLAttributes<HTMLDivElement>,
+  extends
+    React.HTMLAttributes<HTMLDivElement>,
     VariantProps<typeof avatarDisplayVariants> {
   animal: string;
   color: string;
@@ -52,13 +53,15 @@ export function AvatarDisplay({
       title={animal}
       {...props}
     >
-      <div style={{ color: color }} className={iconSizeVariants({ size })}>
-        {/* We use a generic User icon colored with the chosen color */}
-        {/* If specific animal icons become available, we can map them here */}
-        <User className="w-full h-full opacity-50" />
-        <span className="absolute inset-0 flex items-center justify-center font-display font-bold text-inherit uppercase">
-          {animal.charAt(0)}
-        </span>
+      <div className={iconSizeVariants({ size })}>
+        <Image
+          src={`/assets/avatar/${animal.toLowerCase()}.png`}
+          alt={animal}
+          fill
+          className="object-contain"
+          style={{ imageRendering: "pixelated" }}
+          sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
+        />
       </div>
     </div>
   );

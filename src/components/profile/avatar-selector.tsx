@@ -54,7 +54,7 @@ export function AvatarSelector({ value, onChange }: AvatarSelectorProps) {
       <div className="space-y-3">
         <Label>Avatar</Label>
         <Select
-          value={value.animal}
+          value={value.animal.toLowerCase()}
           onValueChange={(animal) => {
             if (animal) onChange({ ...value, animal });
           }}
@@ -73,7 +73,7 @@ export function AvatarSelector({ value, onChange }: AvatarSelectorProps) {
             </div>
           </SelectTrigger>
           <SelectContent>
-            {ANIMALS.sort().map((animal) => (
+            {ANIMALS.sort((a, b) => a.localeCompare(b)).map((animal) => (
               <SelectItem key={animal} value={animal}>
                 <div className="flex items-center gap-4 w-full">
                   <AvatarDisplay
