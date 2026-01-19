@@ -1,58 +1,66 @@
-# Script de Suppression de Fond (Pixel Art)
+# Scripts de Traitement d'Images (Pixel Art)
 
-Ce script CLI permet de supprimer le fond blanc d'images pixel art en utilisant un algorithme de **Flood Fill** (remplissage par diffusion). Il préserve les pixels blancs situés à l'intérieur du sprite et inclut une fonctionnalité de nettoyage des bordures pour éviter les liserés blancs (halos).
+Ce dossier contient des utilitaires pour manipuler les assets graphiques du jeu, notamment pour le style Pixel Art.
 
-## Utilisation
+---
 
-Le script est accessible via `pnpm` (ou `npm`/`yarn`).
+## 1. Remove Background (`remove-bg`)
 
-### Commande Rapide (Avatars)
+Supprime le fond blanc d'images en utilisant un algorithme de **Flood Fill**. Préserve les pixels blancs internes et nettoie les liserés.
 
-Pour traiter toutes les images dans `public/assets/avatar/` :
+### Utilisation
 
 ```bash
+# Via script npm
+pnpm remove-bg <input> [output] [options]
+
+# Exemple Avatar
 pnpm remove-bg:avatar
 ```
 
-### Utilisation Générale
+### Options Principales
+
+| Option             | Alias | Description                                           | Défaut |
+| ------------------ | ----- | ----------------------------------------------------- | ------ |
+| `--clean-edges`    | `-c`  | Active le nettoyage du liseré blanc autour du sprite. | `true` |
+| `--tolerance`      | `-t`  | Tolérance au blanc pour le fond (0-255).              | `245`  |
+| `--edge-tolerance` | `-e`  | Tolérance pour le nettoyage des bords.                | `200`  |
+
+---
+
+## 2. Pixelate (`pixelate`)
+
+Transforme une image haute résolution en Pixel Art (downscaling avec moyenne des couleurs). Peut soit réduire l'image physiquement (ex: 32x32), soit simuler des gros pixels en gardant la résolution d'origine (ex: 512x512).
+
+### Utilisation
 
 ```bash
-# Via tsx directement
-npx tsx scripts/remove-bg.ts <input> [output] [options]
+# Via script npm
+pnpm pixelate <input> [output] [options]
 
-# Ou si vous avez ajouté un script "remove-bg" dans package.json
-pnpm remove-bg <input> [output] [options]
+# Exemple Flaticon (garde la résolution 512x512 avec des pixels de 32px)
+pnpm pixelate:flaticon
 ```
 
-## Exemples
+### Options
 
-**Traiter une seule image :**
+| Option              | Alias | Description                                                                                                                                     | Défaut  |
+| ------------------- | ----- | ----------------------------------------------------------------------------------------------------------------------------------------------- | ------- |
+| `--pixel-size`      | `-p`  | Taille d'un "gros pixel" en pixels source (ex: `32` pour avoir des blocs de 32x32px sur l'image d'origine). **Recommandé.**                     | -       |
+| `--size`            | `-s`  | Taille de la grille cible (ex: `32` pour forcer une grille de 32x32 blocs). Utilisé si `--pixel-size` n'est pas défini.                         | `32`    |
+| `--keep-resolution` | `-k`  | Si activé, l'image de sortie garde la taille de l'image d'entrée (upscale sans interpolation). Si désactivé, l'image est réduite (ex: 32x32px). | `false` |
+
+### Exemples
+
+**Créer une icône 32x32 réelle :**
+
 ```bash
-pnpm remove-bg -- "image.png" "image_transparente.png"
+pnpm pixelate -- "icon.png" --size 32
 ```
 
-**Traiter tout un dossier (Batch) :**
+**Créer une image style "Pixel Pop" (HD avec gros pixels) :**
+
 ```bash
-# Traite tous les .png et ajoute le suffixe "_transparent"
-pnpm remove-bg -- "assets/*.png"
-
-# Traite et sauvegarde dans un dossier spécifique
-pnpm remove-bg -- "assets/*.png" "dist/"
+# Image source 512x512, on veut des pixels de 32px de large (donc grille 16x16)
+pnpm pixelate -- "image.png" --pixel-size 32 --keep-resolution
 ```
-
-> **Note :** Le script ignore automatiquement les fichiers contenant déjà `_transparent` dans leur nom pour éviter les doublons lors des exécutions multiples.
-
-## Options
-
-| Option | Alias | Description | Défaut |
-|--------|-------|-------------|--------|
-| `--tolerance` | `-t` | Sensibilité au blanc pour le fond (0-255). Plus la valeur est élevée, plus il faut que le blanc soit pur. | `245` |
-| `--clean-edges` | `-c` | Active le nettoyage des bords pour supprimer le liseré blanc/gris résiduel. | `true` |
-| `--no-clean-edges` | | Désactive le nettoyage des bords. | |
-| `--edge-tolerance` | `-e` | Tolérance spécifique pour le nettoyage des bords. | `200` |
-| `--help` | | Affiche l'aide. | |
-
-## Fonctionnement Technique
-
-1.  **Flood Fill (BFS)** : Le script part des 4 bords de l'image et propage la transparence sur tous les pixels connectés considérés comme blancs (`>= tolerance`).
-2.  **Edge Cleanup** : Si activé, une seconde passe identifie les pixels opaques en bordure de transparence qui sont "presque blancs" (`>= edge-tolerance`) et les supprime. Cela élimine l'effet d'escalier ou de halo blanc souvent visible après un détourage automatique.
