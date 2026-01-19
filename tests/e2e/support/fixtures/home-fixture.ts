@@ -18,15 +18,24 @@ export const test = base.extend<HomeFixture>({
     await use({
       goto: async () => {
         // Enable console logs from browser
-        page.on('console', msg => console.log(`BROWSER: ${msg.text()}`));
+        // page.on('console', msg => console.log(`BROWSER: ${msg.text()}`));
+        // page.on('pageerror', err => console.log(`BROWSER ERROR: ${err}`));
+
+        // Log all network requests to debug mocking
+        // await page.route('**', async (route) => {
+        //    console.log(`[NET] ${route.request().method()} ${route.request().url()}`);
+        //    await route.fallback();
+        // });
 
         // Mock Supabase Auth Routes to bypass Captcha/Backend verification
-        await page.route(/.*\/auth\/v1\/.*/, async (route) => {
+        await page.route("**/auth/v1/**", async (route) => {
           const url = route.request().url();
-          console.log(`[MOCK] Intercepting: ${url}`);
-          
-          if (url.includes("signup") || url.includes("token") || url.includes("anonymous")) {
-            console.log(`[MOCK] Returning fake session for: ${url}`);
+
+          if (
+            url.includes("signup") ||
+            url.includes("token") ||
+            url.includes("anonymous")
+          ) {
             await route.fulfill({
               status: 200,
               contentType: "application/json",
@@ -48,10 +57,9 @@ export const test = base.extend<HomeFixture>({
             });
             return;
           }
-          
+
           if (url.includes("user")) {
-             console.log(`[MOCK] Returning fake user for: ${url}`);
-             await route.fulfill({
+            await route.fulfill({
               status: 200,
               contentType: "application/json",
               body: JSON.stringify({
@@ -72,44 +80,62 @@ export const test = base.extend<HomeFixture>({
         });
 
         // Mock Supabase Rest API (Database) to prevent 401 errors with fake token
-        await page.route(/.*\/rest\/v1\/.*/, async (route) => {
+        let currentProfile = {
+          id: "fake-user-id",
+          pseudo: "TestPlayer",
+          avatar_config: {
+            animal: "chat",
+            color: "#e63946",
+          },
+          created_at: new Date().toISOString(),
+          updated_at: new Date().toISOString(),
+        };
+
+        await page.route("**/rest/v1/**", async (route) => {
           const url = route.request().url();
-          console.log(`[MOCK] Intercepting REST: ${url}`);
-          
+          const method = route.request().method();
+
           if (url.includes("players")) {
-             console.log(`[MOCK] Returning fake profile for: ${url}`);
-             await route.fulfill({
-              status: 200,
-              contentType: "application/json",
-              body: JSON.stringify({
-                id: "fake-user-id",
-                pseudo: "TestPlayer",
-                avatar_config: {
-                  animal: "cat",
-                  color: "blue"
-                },
-                created_at: new Date().toISOString(),
-                updated_at: new Date().toISOString()
-              }),
-            });
+            if (method === "GET") {
+              await route.fulfill({
+                status: 200,
+                contentType: "application/json",
+                body: JSON.stringify(currentProfile),
+              });
+            } else if (method === "PATCH" || method === "POST") {
+              const data = route.request().postDataJSON();
+              currentProfile = { ...currentProfile, ...data };
+              await route.fulfill({
+                status: 200,
+                contentType: "application/json",
+                body: JSON.stringify(currentProfile),
+              });
+            }
             return;
           }
 
-          await route.continue();
+          // Mock successful empty response for other DB operations
+          await route.fulfill({
+            status: 200,
+            contentType: "application/json",
+            body: JSON.stringify({}),
+          });
         });
 
         await page.goto("/");
-        
+
         // Bypass Captcha if in E2E mode
-        const bypassBtn = page.getByTestId("e2e-bypass-captcha");
+        const bypassButton = page.getByTestId("e2e-bypass-captcha");
         try {
-          console.log("Waiting for bypass button...");
-          // Wait longer to ensure it renders
-          await bypassBtn.waitFor({ state: "visible", timeout: 5000 });
-          console.log("Clicking bypass button...");
-          await bypassBtn.click();
+          // Wait for the button to be visible (it might take a moment to mount)
+          await bypassButton.waitFor({ state: "visible", timeout: 5000 });
+          await bypassButton.click();
         } catch (e) {
-          console.log("Bypass button not found or already authenticated");
+          // Ignore if button not found - might be already authenticated or not in E2E mode
+          console.log(
+            "CaptchaGuard: Bypass button not found - not in E2E mode or already authenticated",
+            e,
+          );
         }
       },
       verifyElements: async () => verifyHomePageElements(page),

@@ -83,13 +83,13 @@ export function CaptchaGuard({ children }: { children: React.ReactNode }) {
         )}
       </Card>
 
-       {process.env.NEXT_PUBLIC_IS_E2E === "true" && (
+      {process.env.NEXT_PUBLIC_IS_E2E === "true" && (
         <button
           onClick={() => signIn("e2e-bypass-token")}
           className="fixed bottom-4 right-4 bg-red-600 text-white p-2 font-mono text-xs z-50 opacity-50 hover:opacity-100"
           data-testid="e2e-bypass-captcha"
         >
-          [E2E] BYPASS CAPTCHA
+          [E2E] BYPASS CAPTCHA ({process.env.NEXT_PUBLIC_IS_E2E})
         </button>
       )}
 
