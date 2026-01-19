@@ -32,7 +32,7 @@ export function AttributesDialog() {
                     <h3 className="font-display text-secondary uppercase border-b border-border-foreground pb-1">
                       {group.category}
                     </h3>
-                    <ul className="space-y-2 font-sans text-popover-foreground text-sm">
+                    <ul className="space-y-2 font-sans text-popover-foreground">
                       {group.items.map((item, index) => (
                         <li key={index}>
                           <a

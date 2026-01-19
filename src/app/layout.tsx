@@ -53,7 +53,7 @@ export default function RootLayout({
   return (
     <html lang="fr" className="dark" suppressHydrationWarning>
       <body
-        className={`${pressStart2P.variable} ${vt323.variable} font-sans antialiased bg-background text-foreground`}
+        className={`${pressStart2P.variable} ${vt323.variable} font-sans antialiased bg-background text-foreground text-2xl leading-relaxed`}
       >
         <AuthProvider>
           <CaptchaGuard>{children}</CaptchaGuard>

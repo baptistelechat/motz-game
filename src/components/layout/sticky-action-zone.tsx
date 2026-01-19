@@ -12,6 +12,7 @@ export function StickyActionZone({
 }: StickyActionZoneProps) {
   return (
     <div
+      data-testid="sticky-action-zone"
       className={cn(
         "fixed bottom-6 right-6 z-50 flex flex-row-reverse items-end gap-4 pointer-events-none",
         className,

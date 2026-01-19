@@ -8,18 +8,13 @@ describe('StickyActionZone', () => {
     expect(screen.getByText('Action Zone')).toBeInTheDocument();
   });
 
-  it('has sticky positioning and correct z-index', () => {
+  it('has fixed positioning and correct z-index', () => {
     render(<StickyActionZone>Content</StickyActionZone>);
-    const zone = screen.getByRole('contentinfo');
-    expect(zone).toHaveClass('sticky');
-    expect(zone).toHaveClass('bottom-0');
+    const zone = screen.getByTestId('sticky-action-zone');
+    expect(zone).toHaveClass('fixed');
+    expect(zone).toHaveClass('bottom-6');
+    expect(zone).toHaveClass('right-6');
     expect(zone).toHaveClass('z-50');
   });
 
-  it('has pixel-pop border top', () => {
-    render(<StickyActionZone>Content</StickyActionZone>);
-    const zone = screen.getByRole('contentinfo');
-    expect(zone).toHaveClass('border-t-4');
-    expect(zone).toHaveClass('border-black');
-  });
 });

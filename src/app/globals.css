@@ -144,6 +144,15 @@
     "Liberation Mono", "Courier New", monospace;
 }
 
+/* 
+  STRATEGIE DE GESTION DES POLICES :
+  1. VT323 (Body) : Cette police est petite par nature (pixel grid 14px). 
+     Nous avons augmenté la taille de base du body à 'text-2xl' (24px) dans layout.tsx pour la rendre lisible.
+  2. Press Start 2P (Display) : Cette police est très large (pixel grid 8px -> rendu 16px).
+     Elle parait visuellement 2x plus grosse que VT323 à taille égale.
+     CONSEIL : Utilisez des classes de taille plus petites pour les titres en Press Start 2P (ex: text-sm ou text-base au lieu de text-xl).
+*/
+
 @layer base {
   * {
     @apply border-border outline-ring/50;

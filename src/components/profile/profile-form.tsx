@@ -125,7 +125,7 @@ export function ProfileForm({ onSaved }: ProfileFormProps) {
                 onChange={(e) => setPseudo(e.target.value)}
                 placeholder="Ton pseudo"
                 disabled={isSaving}
-                className="flex-1 font-display tracking-wide"
+                className="flex-1"
               />
               <Button
                 type="button"
@@ -148,8 +148,8 @@ export function ProfileForm({ onSaved }: ProfileFormProps) {
         <Button
           type="submit"
           disabled={isSaving}
-          className="w-full text-xl py-6 font-display"
-          size="lg"
+          className="w-full"
+          size="xl"
         >
           {isSaving ? "SAUVEGARDE..." : "C'EST PARTI !"}
         </Button>

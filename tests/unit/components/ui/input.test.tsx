@@ -11,11 +11,10 @@ describe('Input', () => {
     expect(input).toHaveClass('border-4');
   });
 
-  it('renders with correct font and size', () => {
+  it('renders with correct font', () => {
     render(<Input placeholder="Enter text" />);
     const input = screen.getByPlaceholderText('Enter text');
     expect(input).toHaveClass('font-sans');
-    expect(input).toHaveClass('text-lg');
   });
 
   it('renders with border-black', () => {

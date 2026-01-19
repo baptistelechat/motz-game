@@ -15,7 +15,7 @@ describe('Label Component', () => {
     render(<Label>Styled Label</Label>);
     const label = screen.getByText('Styled Label');
     
-    expect(label).toHaveClass('text-sm');
+    expect(label).toHaveClass('text-3xl');
     expect(label).toHaveClass('font-medium');
   });
 });

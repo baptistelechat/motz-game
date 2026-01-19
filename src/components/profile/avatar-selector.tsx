@@ -67,7 +67,7 @@ export function AvatarSelector({ value, onChange }: AvatarSelectorProps) {
                 size="sm"
                 className="border-2 border-white"
               />
-              <span className="text-lg font-display uppercase">
+              <span className="uppercase">
                 {value.animal}
               </span>
             </div>
@@ -82,7 +82,7 @@ export function AvatarSelector({ value, onChange }: AvatarSelectorProps) {
                     size="sm"
                     className="border-2 border-white"
                   />
-                  <span className="font-display uppercase flex-1">
+                  <span className="uppercase flex-1">
                     {animal}
                   </span>
                 </div>
