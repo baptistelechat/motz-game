@@ -3,7 +3,7 @@
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Copy } from "@nsmr/pixelart-react";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import QRCode from "react-qr-code";
 
 interface LobbyHeaderProps {
@@ -12,10 +12,11 @@ interface LobbyHeaderProps {
 
 export function LobbyHeader({ code }: LobbyHeaderProps) {
   const [copied, setCopied] = useState(false);
-  const roomUrl =
-    typeof window !== "undefined"
-      ? `${window.location.origin}/room/${code}`
-      : "";
+  const [roomUrl, setRoomUrl] = useState("");
+
+  useEffect(() => {
+    setRoomUrl(`${window.location.origin}/room/${code}`);
+  }, [code]);
 
   const handleCopy = () => {
     navigator.clipboard.writeText(roomUrl);
