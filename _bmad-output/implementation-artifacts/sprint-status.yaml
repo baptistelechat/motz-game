@@ -48,8 +48,8 @@ development_status:
   epic-1-retrospective: done
 
   # Epic 2
-  epic-2: backlog
-  2-1-creation-salle-routage: backlog
+  epic-2: in-progress
+  2-1-creation-salle-routage: ready-for-dev
   2-2-rejoindre-salle-lobby-realtime: backlog
   2-3-gestion-etat-pret-lancement: backlog
   epic-2-retrospective: optional
