@@ -72,7 +72,7 @@ export default defineConfig({
   webServer: {
     command: "cross-env NEXT_PUBLIC_IS_E2E=true pnpm dev",
     url: "http://localhost:3000",
-    reuseExistingServer: !process.env.CI,
+    reuseExistingServer: true,
     timeout: 120000,
     env: {
       NEXT_PUBLIC_IS_E2E: "true",

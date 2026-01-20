@@ -12,6 +12,7 @@ vi.mock("@nsmr/pixelart-react", () => ({
   ChevronDown: () => <div data-testid="pixelart-chevron-down" />,
   ChevronUp: () => <div data-testid="pixelart-chevron-up" />,
   Dice: () => <div data-testid="pixelart-dice" />,
+  InfoBox: () => <div data-testid="pixelart-infobox" />,
 }));
 
 // Mock usePlayerProfile

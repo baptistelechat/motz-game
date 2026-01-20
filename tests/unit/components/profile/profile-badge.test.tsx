@@ -1,7 +1,8 @@
 import { ProfileBadge } from "@/components/profile/profile-badge";
 import { ADJECTIVES, ANIMALS } from "@/lib/constants/pseudo";
 import { fireEvent, render, screen } from "@testing-library/react";
-import { describe, expect, it, vi } from "vitest";
+import { describe, expect, it, vi, Mock } from "vitest";
+import { usePlayerProfile } from "@/hooks/use-player-profile";
 
 // Mock dependencies
 vi.mock("@/components/profile/avatar-display", () => ({
@@ -12,45 +13,51 @@ vi.mock("@nsmr/pixelart-react", () => ({
   Lightbulb: () => <div data-testid="lightbulb-icon" />,
 }));
 
+vi.mock("@/components/profile/components/profile-dialog", () => ({
+  ProfileDialog: ({ open }: { open: boolean }) => (
+    open ? <div data-testid="profile-dialog">Dialog Open</div> : null
+  ),
+}));
+
+vi.mock("@/hooks/use-player-profile", () => ({
+  usePlayerProfile: vi.fn(),
+}));
+
 describe("ProfileBadge", () => {
   const mockProfile = {
     pseudo: "CustomUser",
     avatar_config: { animal: "fox", color: "green" },
   };
-  const mockOnClick = vi.fn();
 
-  it("renders profile pseudo", () => {
-    render(<ProfileBadge profile={mockProfile} onClick={mockOnClick} />);
+  it("renders nothing if profile is null", () => {
+    (usePlayerProfile as Mock).mockReturnValue({ profile: null });
+    const { container } = render(<ProfileBadge />);
+    expect(container).toBeEmptyDOMElement();
+  });
+
+  it("renders profile pseudo when profile exists", () => {
+    (usePlayerProfile as Mock).mockReturnValue({ profile: mockProfile });
+    render(<ProfileBadge />);
     expect(screen.getByText("CustomUser")).toBeInTheDocument();
   });
 
-  it("calls onClick when button is clicked", () => {
-    render(<ProfileBadge profile={mockProfile} onClick={mockOnClick} />);
+  it("opens dialog when clicked", () => {
+    (usePlayerProfile as Mock).mockReturnValue({ profile: mockProfile });
+    render(<ProfileBadge />);
+    
+    expect(screen.queryByTestId("profile-dialog")).not.toBeInTheDocument();
+    
     fireEvent.click(screen.getByRole("button"));
-    expect(mockOnClick).toHaveBeenCalled();
-  });
-
-  it("does NOT show hint for custom pseudo", () => {
-    render(<ProfileBadge profile={mockProfile} onClick={mockOnClick} />);
-    expect(screen.queryByTestId("lightbulb-icon")).not.toBeInTheDocument();
+    
+    expect(screen.getByTestId("profile-dialog")).toBeInTheDocument();
   });
 
   it("shows hint for default pseudo", () => {
-    // Construct a valid default pseudo
-    // We assume 'Renard' and 'Rapide' are in the lists (verified in previous reads)
-    // But let's use actual values from imports if possible, or just known ones
-    // The component normalizes, so we should test that path
-
-    // Let's rely on the fact that ANIMALS[0] and ADJECTIVES[0] are valid
-    // In random-pseudo.ts: raw = `${randomAnimal}_${randomAdjective}`
-    // And normalize removes accents.
-
-    // We'll create a pseudo that matches the logic
-    const animal = ANIMALS[0]; // e.g. "Renard"
-    const adjective = ADJECTIVES[0]; // e.g. "Rapide"
     const normalize = (str: string) =>
       str.normalize("NFD").replace(/[\u0300-\u036f]/g, "");
 
+    const animal = ANIMALS[0];
+    const adjective = ADJECTIVES[0];
     const defaultPseudo = `${normalize(animal)}_${normalize(adjective)}`;
 
     const defaultProfile = {
@@ -58,7 +65,8 @@ describe("ProfileBadge", () => {
       pseudo: defaultPseudo,
     };
 
-    render(<ProfileBadge profile={defaultProfile} onClick={mockOnClick} />);
+    (usePlayerProfile as Mock).mockReturnValue({ profile: defaultProfile });
+    render(<ProfileBadge />);
 
     expect(screen.getByTestId("lightbulb-icon")).toBeInTheDocument();
   });

@@ -145,12 +145,7 @@ export function ProfileForm({ onSaved }: ProfileFormProps) {
       </div>
 
       <div className="p-6 pt-4 shrink-0">
-        <Button
-          type="submit"
-          disabled={isSaving}
-          className="w-full"
-          size="xl"
-        >
+        <Button type="submit" disabled={isSaving} className="w-full" size="xl">
           {isSaving ? "SAUVEGARDE..." : "C'EST PARTI !"}
         </Button>
       </div>

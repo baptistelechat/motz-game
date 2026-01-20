@@ -9,7 +9,7 @@ vi.mock("@nsmr/pixelart-react", () => ({
   ChevronUp: () => <div data-testid="pixelart-chevron-up" />,
 }));
 
-import { AvatarSelector } from "@/components/profile/avatar-selector";
+import { AvatarSelector } from "@/components/profile/components/avatar-selector";
 import { AVATAR_COLORS } from "@/lib/constants/avatar";
 import { ANIMALS } from "@/lib/utils/random-pseudo";
 

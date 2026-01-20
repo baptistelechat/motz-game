@@ -1,8 +1,6 @@
 import { CaptchaGuard } from "@/components/auth/captcha-guard";
-import { AttributesDialog } from "@/components/info/attributes-dialog";
-import { StickyActionZone } from "@/components/layout/sticky-action-zone";
 import { AuthProvider } from "@/components/providers/auth-provider";
-import { InstallApp } from "@/components/pwa/install-app";
+import { PWAProvider } from "@/components/pwa/pwa-provider";
 import { THEME_COLORS } from "@/lib/constants/theme";
 import type { Metadata, Viewport } from "next";
 import { Press_Start_2P, VT323 } from "next/font/google";
@@ -56,11 +54,9 @@ export default function RootLayout({
         className={`${pressStart2P.variable} ${vt323.variable} font-sans antialiased bg-background text-foreground text-2xl leading-relaxed`}
       >
         <AuthProvider>
-          <CaptchaGuard>{children}</CaptchaGuard>
-          <StickyActionZone>
-            <AttributesDialog />
-            <InstallApp />
-          </StickyActionZone>
+          <PWAProvider>
+            <CaptchaGuard>{children}</CaptchaGuard>
+          </PWAProvider>
         </AuthProvider>
       </body>
     </html>

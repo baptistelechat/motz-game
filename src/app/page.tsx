@@ -1,22 +1,34 @@
 "use client";
 
+import { createGame } from "@/app/actions/game-actions";
+import { AttributesDialog } from "@/components/info/attributes-dialog";
 import { MainLayout } from "@/components/layout/main-layout";
-import { ProfileBadge } from "@/components/profile/profile-badge";
-import { ProfileDialog } from "@/components/profile/profile-dialog";
+import { StickyActionZone } from "@/components/layout/sticky-action-zone";
+import { InstallApp } from "@/components/pwa/install-app";
 import { Button } from "@/components/ui/button";
 import { LoadingScreen } from "@/components/ui/loading-screen";
 import { usePlayerProfile } from "@/hooks/use-player-profile";
 import { AVATAR_COLORS } from "@/lib/constants/avatar";
 import { ANIMALS } from "@/lib/constants/pseudo";
 import { generateRandomPseudo } from "@/lib/utils/random-pseudo";
-import { useEffect, useState } from "react";
+import { useEffect, useState, useTransition } from "react";
 
 export default function Home() {
   const { profile, isLoading, updateProfile, user, isInitialized } =
     usePlayerProfile();
-  const [showProfileEdit, setShowProfileEdit] = useState(false);
   const [isCreating, setIsCreating] = useState(false);
   const [creationError, setCreationError] = useState<Error | null>(null);
+  const [isPending, startTransition] = useTransition();
+
+  const handleCreateGame = () => {
+    startTransition(async () => {
+      try {
+        await createGame();
+      } catch (error) {
+        console.error("Failed to create game:", error);
+      }
+    });
+  };
 
   // Silent profile creation
   useEffect(() => {
@@ -111,17 +123,6 @@ export default function Home() {
   return (
     <MainLayout>
       <div className="flex-1 flex flex-col items-center justify-center p-4 gap-12 min-h-dvh relative">
-        <ProfileBadge
-          profile={profile}
-          onClick={() => setShowProfileEdit(true)}
-          className="absolute top-4 right-4 z-20"
-        />
-
-        <ProfileDialog
-          open={showProfileEdit}
-          onOpenChange={setShowProfileEdit}
-        />
-
         <div className="text-center space-y-6">
           <h1 className="font-display text-4xl md:text-7xl text-theme drop-shadow-[6px_6px_0_var(--border)] uppercase text-center">
             MOTZ-GAME
@@ -132,14 +133,24 @@ export default function Home() {
         </div>
 
         <div className="flex flex-col md:flex-row gap-6 w-full max-w-xs md:max-w-2xl justify-center items-center">
-          <Button size="xl" className="w-full md:w-64">
-            CRÉER UNE PARTIE
+          <Button
+            size="xl"
+            className="w-full md:w-64"
+            onClick={handleCreateGame}
+            disabled={isPending}
+          >
+            {isPending ? "CRÉATION..." : "CRÉER UNE PARTIE"}
           </Button>
           <Button variant="secondary" size="xl" className="w-full md:w-64">
             REJOINDRE
           </Button>
         </div>
       </div>
+
+      <StickyActionZone>
+        <AttributesDialog />
+        <InstallApp />
+      </StickyActionZone>
     </MainLayout>
   );
 }

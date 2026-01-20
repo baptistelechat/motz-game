@@ -4,7 +4,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
-import { ProfileForm } from "@/components/profile/profile-form";
+import { ProfileForm } from "./profile-form";
 
 interface ProfileDialogProps {
   open: boolean;
@@ -19,9 +19,7 @@ export function ProfileDialog({ open, onOpenChange }: ProfileDialogProps) {
         className="p-0 w-full h-full max-w-none md:max-w-md md:h-auto md:max-h-[85vh] flex flex-col overflow-hidden gap-0"
       >
         <DialogHeader className="p-6 pb-0 shrink-0">
-          <DialogTitle>
-            MON PROFIL
-          </DialogTitle>
+          <DialogTitle>MON PROFIL</DialogTitle>
         </DialogHeader>
         <div className="flex-1 overflow-hidden">
           <ProfileForm onSaved={() => onOpenChange(false)} />

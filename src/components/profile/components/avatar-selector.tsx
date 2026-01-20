@@ -13,7 +13,7 @@ import { AVATAR_COLORS } from "@/lib/constants/avatar";
 import { ANIMALS } from "@/lib/constants/pseudo";
 import { cn } from "@/lib/utils";
 import { Check } from "@nsmr/pixelart-react";
-import { AvatarDisplay } from "./avatar-display";
+import { AvatarDisplay } from "../avatar-display";
 
 interface AvatarConfig {
   animal: string;
@@ -67,9 +67,7 @@ export function AvatarSelector({ value, onChange }: AvatarSelectorProps) {
                 size="sm"
                 className="border-2 border-white"
               />
-              <span className="uppercase">
-                {value.animal}
-              </span>
+              <span className="uppercase">{value.animal}</span>
             </div>
           </SelectTrigger>
           <SelectContent>
@@ -82,9 +80,7 @@ export function AvatarSelector({ value, onChange }: AvatarSelectorProps) {
                     size="sm"
                     className="border-2 border-white"
                   />
-                  <span className="uppercase flex-1">
-                    {animal}
-                  </span>
+                  <span className="uppercase flex-1">{animal}</span>
                 </div>
               </SelectItem>
             ))}

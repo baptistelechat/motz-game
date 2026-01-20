@@ -7,19 +7,14 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
+import { useInstallStore } from "@/store/use-install-store";
 import { Download, Upload } from "@nsmr/pixelart-react";
 import { useEffect, useState } from "react";
 
-interface BeforeInstallPromptEvent extends Event {
-  prompt: () => Promise<void>;
-  userChoice: Promise<{ outcome: "accepted" | "dismissed"; platform: string }>;
-}
-
 export function InstallApp() {
-  const [deferredPrompt, setDeferredPrompt] =
-    useState<BeforeInstallPromptEvent | null>(null);
+  const { deferredPrompt, isIOS, isStandalone, setDeferredPrompt } =
+    useInstallStore();
   const [isVisible, setIsVisible] = useState(false);
-  const [isIOS, setIsIOS] = useState(false);
   const [showIOSInstructions, setShowIOSInstructions] = useState(false);
 
   useEffect(() => {
@@ -28,31 +23,18 @@ export function InstallApp() {
     const isTestMode = urlParams.get("test-install") === "true";
     const isTestIOS = urlParams.get("test-ios") === "true";
 
-    // Check device type
-    const userAgent = window.navigator.userAgent.toLowerCase();
-    const isIosDevice = /iphone|ipad|ipod/.test(userAgent) || isTestIOS;
-    setIsIOS(isIosDevice);
-
-    // Check standalone
-    const isStandalone =
-      window.matchMedia("(display-mode: standalone)").matches ||
-      (window.navigator as unknown as { standalone?: boolean }).standalone;
-
-    // Show if test mode, or if iOS and not standalone
-    if (isTestMode || isTestIOS || (isIosDevice && !isStandalone)) {
+    // Show if test mode, or if iOS and not standalone, or if we have a prompt
+    if (
+      isTestMode ||
+      isTestIOS ||
+      (isIOS && !isStandalone) ||
+      deferredPrompt
+    ) {
       setIsVisible(true);
+    } else {
+      setIsVisible(false);
     }
-
-    // Handle beforeinstallprompt
-    const handler = (e: Event) => {
-      e.preventDefault();
-      setDeferredPrompt(e as BeforeInstallPromptEvent);
-      setIsVisible(true);
-    };
-
-    window.addEventListener("beforeinstallprompt", handler);
-    return () => window.removeEventListener("beforeinstallprompt", handler);
-  }, []);
+  }, [isIOS, isStandalone, deferredPrompt]);
 
   const handleInstallClick = async () => {
     if (isIOS) {
