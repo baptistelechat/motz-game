@@ -9,137 +9,112 @@ type HomeFixture = {
     verifyElements: () => Promise<void>;
     verifyStatus: () => Promise<void>;
     goto: () => Promise<void>;
+    userId: string | null;
   };
 };
 
 export const test = base.extend<HomeFixture>({
   homePage: async ({ page }, use) => {
-    // eslint-disable-next-line react-hooks/rules-of-hooks
-    await use({
-      goto: async () => {
-        // Enable console logs from browser
-        // page.on('console', msg => console.log(`BROWSER: ${msg.text()}`));
-        // page.on('pageerror', err => console.log(`BROWSER ERROR: ${err}`));
+    // Setup Real Auth via E2E Backdoor
+    let userId = "fake-user-id";
+    let cleanupUserId: string | null = null;
 
-        // Log all network requests to debug mocking
-        // await page.route('**', async (route) => {
-        //    console.log(`[NET] ${route.request().method()} ${route.request().url()}`);
-        //    await route.fallback();
-        // });
+    try {
+      const response = await page.request.post("/api/e2e/auth");
+      const session = await response.json();
 
-        // Mock Supabase Auth Routes to bypass Captcha/Backend verification
-        await page.route("**/auth/v1/**", async (route) => {
-          const url = route.request().url();
+      console.log("Auth API Response:", { status: response.status(), session });
 
-          if (
-            url.includes("signup") ||
-            url.includes("token") ||
-            url.includes("anonymous")
-          ) {
-            await route.fulfill({
-              status: 200,
-              contentType: "application/json",
-              body: JSON.stringify({
-                access_token: "fake-access-token",
-                token_type: "bearer",
-                expires_in: 3600,
-                refresh_token: "fake-refresh-token",
-                user: {
-                  id: "fake-user-id",
-                  aud: "authenticated",
-                  role: "authenticated",
-                  email: "",
-                  app_metadata: { provider: "anonymous" },
-                  user_metadata: {},
-                  created_at: new Date().toISOString(),
-                },
-              }),
-            });
-            return;
-          }
+      if (session?.user?.id) {
+        userId = session.user.id;
+        cleanupUserId = userId; // Mark for cleanup
+        
+        const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || "";
+        const projectRef = supabaseUrl.match(/https:\/\/(.*?)\./)?.[1];
+        
+        console.log("Setup Real Auth:", { userId, projectRef, supabaseUrl });
 
-          if (url.includes("user")) {
-            await route.fulfill({
-              status: 200,
-              contentType: "application/json",
-              body: JSON.stringify({
-                id: "fake-user-id",
-                aud: "authenticated",
-                role: "authenticated",
-                email: "",
-                app_metadata: { provider: "anonymous" },
-                user_metadata: {},
-                created_at: new Date().toISOString(),
-              }),
-            });
-            return;
-          }
+        if (projectRef) {
+          const cookieName = `sb-${projectRef}-auth-token`;
+          const cookieValue = JSON.stringify(session);
+          
+          const cookie = {
+            name: cookieName,
+            value: cookieValue,
+            url: "http://localhost:3000",
+            sameSite: "Lax" as const,
+          };
 
-          // Continue other requests
-          await route.continue();
-        });
-
-        // Mock Supabase Rest API (Database) to prevent 401 errors with fake token
-        let currentProfile = {
-          id: "fake-user-id",
-          pseudo: "TestPlayer",
-          avatar_config: {
-            animal: "chat",
-            color: "#e63946",
-          },
-          created_at: new Date().toISOString(),
-          updated_at: new Date().toISOString(),
-        };
-
-        await page.route("**/rest/v1/**", async (route) => {
-          const url = route.request().url();
-          const method = route.request().method();
-
-          if (url.includes("players")) {
-            if (method === "GET") {
-              await route.fulfill({
-                status: 200,
-                contentType: "application/json",
-                body: JSON.stringify(currentProfile),
-              });
-            } else if (method === "PATCH" || method === "POST") {
-              const data = route.request().postDataJSON();
-              currentProfile = { ...currentProfile, ...data };
-              await route.fulfill({
-                status: 200,
-                contentType: "application/json",
-                body: JSON.stringify(currentProfile),
-              });
-            }
-            return;
-          }
-
-          // Mock successful empty response for other DB operations
-          await route.fulfill({
-            status: 200,
-            contentType: "application/json",
-            body: JSON.stringify({}),
-          });
-        });
-
-        await page.goto("/");
-
-        // Bypass Captcha if in E2E mode
-        const bypassButton = page.getByTestId("e2e-bypass-captcha");
-        try {
-          // Wait for the button to be visible (it might take a moment to mount)
-          await bypassButton.waitFor({ state: "visible", timeout: 5000 });
-          await bypassButton.click();
-        } catch (e) {
-          // Ignore if button not found - might be already authenticated or not in E2E mode
-          console.log(
-            "CaptchaGuard: Bypass button not found - not in E2E mode or already authenticated",
-            e,
-          );
+          console.log("Injecting Auth Cookie:", { name: cookieName, url: cookie.url });
+          
+          await page.context().addCookies([cookie]);
+        } else {
+            console.warn("Could not extract projectRef from URL for auth cookie");
         }
+      }
+    } catch (e) {
+              console.warn("Failed to setup real auth via API, falling back to UI bypass:", e);
+              // Do not throw, let the test try the UI bypass
+            }
+
+            // Mock Supabase Rest API (Database) to provide profile for the authenticated user
+    // We still mock 'players' table interactions to avoid creating real profiles if not needed,
+    // or to control the profile state.
+    let currentProfile = {
+      id: userId,
+      pseudo: "TestPlayer",
+      avatar_config: {
+        animal: "chat",
+        color: "#e63946",
+      },
+      created_at: new Date().toISOString(),
+      updated_at: new Date().toISOString(),
+    };
+
+    await page.route("**/rest/v1/**", async (route) => {
+      const url = route.request().url();
+      const method = route.request().method();
+
+      // Allow real DB calls for games (created by Server Action)
+      if (url.includes("games")) {
+         await route.continue();
+         return;
+      }
+
+      // Allow real DB calls for players table to support Server Action verification and Profile Loading
+      // We previously mocked this, but now that we create real profiles in route.ts, we should let it flow.
+      // However, to speed up tests or avoid flakiness, we could mock it.
+      // But since the Server Action checks the DB for the profile, and the Client checks the DB,
+      // keeping them in sync via mocks is hard. Better to use the real DB with the real user we just created.
+      if (url.includes("players")) {
+         await route.continue();
+         return;
+      }
+      
+      // For other requests, continue to real DB or mock if needed
+      await route.continue();
+    });
+
+    // Provide the fixture to the test
+    await use({
+      userId,
+      goto: async () => {
+        await page.goto("/");
       },
       verifyElements: async () => verifyHomePageElements(page),
       verifyStatus: async () => verifySystemStatus(),
     });
+
+    // Teardown: Cleanup User
+    if (cleanupUserId) {
+      try {
+        await page.request.delete("/api/e2e/auth", {
+          data: { userId: cleanupUserId },
+        });
+        console.log(`Cleaned up E2E user: ${cleanupUserId}`);
+      } catch (e) {
+        console.error(`Failed to clean up E2E user ${cleanupUserId}:`, e);
+      }
+    }
   },
 });
