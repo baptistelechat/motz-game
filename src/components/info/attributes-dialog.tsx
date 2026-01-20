@@ -40,7 +40,7 @@ export function AttributesDialog() {
                             title={item.title}
                             target="_blank"
                             rel="noopener noreferrer"
-                            className="hover:underline hover:text-primary transition-colors flex items-start gap-2"
+                            className="hover:underline hover:text-primary transition-colors flex items-center gap-2"
                           >
                             <span className="mt-1.5 w-1.5 h-1.5 rounded-full bg-primary/50 shrink-0" />
                             <span>{item.text}</span>
