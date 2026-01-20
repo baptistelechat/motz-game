@@ -31,7 +31,7 @@ describe("Home Page", () => {
     (usePlayerProfile as Mock).mockReturnValue({
       profile: {
         pseudo: "TestUser",
-        avatar_config: { animal: "cat", color: AVATAR_COLORS[2] },
+        avatar_config: { animal: "chat", color: AVATAR_COLORS[2] },
       },
       isLoading: false,
       isInitialized: true,

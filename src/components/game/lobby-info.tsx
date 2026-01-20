@@ -6,11 +6,11 @@ import { Copy } from "@nsmr/pixelart-react";
 import { useEffect, useState } from "react";
 import QRCode from "react-qr-code";
 
-interface LobbyHeaderProps {
+interface LobbyInfoProps {
   code: string;
 }
 
-export function LobbyHeader({ code }: LobbyHeaderProps) {
+export function LobbyInfo({ code }: LobbyInfoProps) {
   const [copied, setCopied] = useState(false);
   const [roomUrl, setRoomUrl] = useState("");
 
@@ -25,7 +25,7 @@ export function LobbyHeader({ code }: LobbyHeaderProps) {
   };
 
   return (
-    <Card className="flex flex-col items-center gap-4 py-8 md:py-10 px-8 md:px-6 max-w-md mx-auto w-full bg-foreground text-primary-foreground">
+    <Card className="flex flex-col items-center gap-4 py-8 md:py-10 px-8 md:px-6 max-w-md mx-auto w-full bg-foreground text-primary-foreground h-full justify-center">
       <QRCode value={roomUrl} size={150} bgColor="transparent" />
       <span className="text-5xl font-bold tracking-widest">{code}</span>
       <Button

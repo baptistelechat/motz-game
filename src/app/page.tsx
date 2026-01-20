@@ -1,6 +1,7 @@
 "use client";
 
 import { createGame } from "@/app/actions/game-actions";
+import { JoinGameDialog } from "@/components/game/join-game-dialog";
 import { AttributesDialog } from "@/components/info/attributes-dialog";
 import { MainLayout } from "@/components/layout/main-layout";
 import { StickyActionZone } from "@/components/layout/sticky-action-zone";
@@ -17,6 +18,7 @@ export default function Home() {
   const { profile, isLoading, updateProfile, user, isInitialized } =
     usePlayerProfile();
   const [isCreating, setIsCreating] = useState(false);
+  const [isJoinDialogOpen, setIsJoinDialogOpen] = useState(false);
   const [creationError, setCreationError] = useState<Error | null>(null);
   const [isPending, startTransition] = useTransition();
 
@@ -141,7 +143,12 @@ export default function Home() {
           >
             {isPending ? "CRÉATION..." : "CRÉER UNE PARTIE"}
           </Button>
-          <Button variant="secondary" size="xl" className="w-full md:w-64">
+          <Button
+            variant="secondary"
+            size="xl"
+            className="w-full md:w-64"
+            onClick={() => setIsJoinDialogOpen(true)}
+          >
             REJOINDRE
           </Button>
         </div>
@@ -151,6 +158,11 @@ export default function Home() {
         <AttributesDialog />
         <InstallApp />
       </StickyActionZone>
+
+      <JoinGameDialog
+        open={isJoinDialogOpen}
+        onOpenChange={setIsJoinDialogOpen}
+      />
     </MainLayout>
   );
 }

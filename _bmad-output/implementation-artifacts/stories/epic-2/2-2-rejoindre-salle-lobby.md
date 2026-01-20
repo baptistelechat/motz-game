@@ -1,6 +1,6 @@
 # Story 2.2: Rejoindre une Salle (Lobby Realtime)
 
-Status: ready-for-dev
+Status: completed
 
 <!-- Note: Validation is optional. Run validate-create-story for quality check before dev-story. -->
 
@@ -22,19 +22,19 @@ So that confirmer que je suis au bon endroit avant que la partie commence.
 
 ## Tasks / Subtasks
 
-- [ ] Database Schema & RLS
-  - [ ] Créer la table `public.game_players`.
+- [x] Database Schema & RLS
+  - [x] Créer la table `public.game_players`.
     - Columns: `game_id` (uuid, ref games.id), `player_id` (uuid, ref players.id), `is_ready` (boolean, default false), `joined_at` (timestamptz, default now()).
     - Primary Key: (`game_id`, `player_id`).
-  - [ ] Activer RLS.
-  - [ ] Policies:
+  - [x] Activer RLS.
+  - [x] Policies:
     - `SELECT`: Public (ou Authenticated) - Permettre de voir les joueurs du lobby.
     - `INSERT`: Authenticated users (`auth.uid() = player_id`). Self-join only.
     - `UPDATE`: Authenticated users (`auth.uid() = player_id`). Self-update only (pour le statut Prêt).
     - `DELETE`: Authenticated users (`auth.uid() = player_id`). Self-leave only.
 
-- [ ] Server Action & Logic
-  - [ ] Modifier/Étendre `src/app/actions/game-actions.ts` :
+- [x] Server Action & Logic
+  - [x] Modifier/Étendre `src/app/actions/game-actions.ts` :
     - `joinGame(code: string)` :
       - Récupère le `game_id` depuis le code.
       - Vérifie le statut 'LOBBY'.
@@ -42,18 +42,18 @@ So that confirmer que je suis au bon endroit avant que la partie commence.
       - Si non, `INSERT` dans `game_players`.
       - Retourne le `game_id` ou une erreur.
 
-- [ ] UI Implementation
-  - [ ] Modifier `src/app/room/[code]/page.tsx` :
+- [x] UI Implementation
+  - [x] Modifier `src/app/room/[code]/page.tsx` :
     - Ajouter la logique de "Join" automatique (ou via bouton "Rejoindre" si UX préférée, mais AC suggère automatique à l'accès).
     - _Note UX_: Si le joueur n'a pas de profil (Story 1.4), il doit probablement être redirigé ou invité à en créer un. (Assumons ici qu'il a une identité anonyme).
-  - [ ] Créer `src/components/game/lobby-player-list.tsx` :
+  - [x] Créer `src/components/game/lobby-player-list.tsx` :
     - Affiche la grille des avatars.
     - Utilise `useRealtimeLobby` (à créer).
-  - [ ] Créer `src/hooks/use-realtime-lobby.ts` :
+  - [x] Créer `src/hooks/use-realtime-lobby.ts` :
     - Subscribe au channel `game_players:game_id={id}`.
     - Écoute `INSERT`, `DELETE`, `UPDATE`.
     - Met à jour le state local (Zustand ou local state).
-  - [ ] Animation "Pop" :
+  - [x] Animation "Pop" :
     - Ajouter une animation CSS/Framer Motion sur l'apparition d'un nouvel avatar dans la liste.
 
 ## Dev Notes

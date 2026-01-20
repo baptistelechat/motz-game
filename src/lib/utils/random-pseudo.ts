@@ -1,7 +1,5 @@
 import { ADJECTIVES, ANIMALS } from "@/lib/constants/pseudo";
 
-export { ADJECTIVES, ANIMALS };
-
 export function generateRandomPseudo(): string {
   const randomAnimal = ANIMALS[Math.floor(Math.random() * ANIMALS.length)];
   const randomAdjective =
