@@ -8,6 +8,7 @@ import { StickyActionZone } from "@/components/layout/sticky-action-zone";
 import { useAuth } from "@/components/providers/auth-provider";
 import { InstallApp } from "@/components/pwa/install-app";
 import { Button } from "@/components/ui/button";
+import { ErrorCard } from "@/components/ui/error-card";
 import { LoadingScreen } from "@/components/ui/loading-screen";
 import { usePlayerProfile } from "@/hooks/use-player-profile";
 import { generateRandomPlayer } from "@/lib/utils/generate-player";
@@ -101,27 +102,30 @@ export default function Home() {
   if (creationError) {
     return (
       <MainLayout className="items-center justify-center">
-        <div className="bg-destructive text-white p-6 border-4 border-black shadow-hard max-w-md w-full mx-4">
-          <h2 className="font-display text-xl mb-4 text-center border-b-4 border-black/20 pb-2">
-            ERREUR CRITIQUE
-          </h2>
-          <p className="font-sans mb-4 text-center">Une erreur est survenue.</p>
-          <div className="bg-black/20 p-4 font-mono text-xs overflow-auto mb-4 border-2 border-black/10">
-            {creationError.message}
-          </div>
-          <p className="text-sm text-center font-bold mb-4">
-            Vérifiez votre connexion ou réessayez.
-          </p>
-          <div className="text-center">
+        <ErrorCard
+          title="ERREUR CRITIQUE"
+          message={
+            <div className="space-y-4">
+              <p className="text-center">Une erreur est survenue.</p>
+              <div className="bg-black/20 p-4 font-mono text-xs overflow-auto border-2 border-black/10 max-h-32">
+                {creationError.message}
+              </div>
+              <p className="text-center font-bold">
+                Vérifiez votre connexion ou réessayez.
+              </p>
+            </div>
+          }
+          variant="filled"
+          action={
             <Button
+              size="xl"
               variant="outline"
-              className="border-2 border-black/20 hover:border-black/40 font-display"
               onClick={() => setCreationError(null)}
             >
               RÉESSAYER
             </Button>
-          </div>
-        </div>
+          }
+        />
       </MainLayout>
     );
   }

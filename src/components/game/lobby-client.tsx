@@ -11,6 +11,7 @@ import { Loader } from "@nsmr/pixelart-react";
 import Link from "next/link";
 import { useEffect, useRef, useState } from "react";
 import { toast } from "sonner";
+import { ErrorCard } from "../ui/error-card";
 
 interface LobbyClientProps {
   code: string;
@@ -106,33 +107,31 @@ export function LobbyClient({ code, gameId, hostId }: LobbyClientProps) {
 
   if (error || isTimeout) {
     return (
-      <div className="flex flex-col items-center justify-center gap-6 w-full max-w-md animate-in fade-in duration-500">
-        <div className="text-destructive font-bold bg-black p-6 border-4 border-destructive shadow-[4px_4px_0_(--border)] text-center w-full">
-          <p className="font-display text-xl mb-2">
-            {isTimeout ? "DÉLAI D'ATTENTE DÉPASSÉ" : "ERREUR"}
-          </p>
-          <p className="font-sans text-sm">
-            {isTimeout ? "La connexion au lobby prend trop de temps." : error}
-          </p>
-        </div>
-        <div className="flex flex-col gap-4 w-full">
-          {isTimeout && (
-            <Button
-              size="xl"
-              variant="outline"
-              onClick={() => {
-                setIsTimeout(false);
-                refreshPlayers();
-              }}
-            >
-              RÉESSAYER
+      <ErrorCard
+        title={isTimeout ? "DÉLAI D'ATTENTE DÉPASSÉ" : "ERREUR"}
+        message={
+          isTimeout ? "La connexion au lobby prend trop de temps." : error
+        }
+        action={
+          <>
+            {isTimeout && (
+              <Button
+                size="xl"
+                variant="outline"
+                onClick={() => {
+                  setIsTimeout(false);
+                  refreshPlayers();
+                }}
+              >
+                RÉESSAYER
+              </Button>
+            )}
+            <Button asChild size="xl" variant="default">
+              <Link href="/">RETOUR AU MENU</Link>
             </Button>
-          )}
-          <Button asChild size="xl" variant="default">
-            <Link href="/">RETOUR AU MENU</Link>
-          </Button>
-        </div>
-      </div>
+          </>
+        }
+      />
     );
   }
 
