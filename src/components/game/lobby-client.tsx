@@ -4,9 +4,7 @@ import { joinGame } from "@/app/actions/game-actions";
 import { LobbyPlayerList } from "@/components/game/lobby-player-list";
 import { usePlayerProfile } from "@/hooks/use-player-profile";
 import { useRealtimeLobby } from "@/hooks/use-realtime-lobby";
-import { AVATAR_COLORS } from "@/lib/constants/avatar";
-import { ANIMALS } from "@/lib/constants/pseudo";
-import { generateRandomPseudo } from "@/lib/utils/random-pseudo";
+import { generateRandomPlayer } from "@/lib/utils/generate-player";
 import { Loader } from "@nsmr/pixelart-react";
 import { useEffect, useRef, useState } from "react";
 
@@ -35,19 +33,7 @@ export function LobbyClient({ code, gameId, hostId }: LobbyClientProps) {
 
     const createDefaultProfile = async () => {
       try {
-        const randomPseudo = generateRandomPseudo();
-        const randomColor =
-          AVATAR_COLORS[Math.floor(Math.random() * AVATAR_COLORS.length)];
-        const randomAnimal =
-          ANIMALS[Math.floor(Math.random() * ANIMALS.length)];
-
-        await updateProfile({
-          pseudo: randomPseudo,
-          avatar_config: {
-            animal: randomAnimal,
-            color: randomColor,
-          },
-        });
+        await updateProfile(generateRandomPlayer());
       } catch (err) {
         console.error("Failed to create auto-profile:", err);
         setError("Erreur lors de la création du profil.");

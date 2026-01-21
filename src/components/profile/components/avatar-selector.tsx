@@ -14,11 +14,7 @@ import { ANIMALS } from "@/lib/constants/pseudo";
 import { cn } from "@/lib/utils";
 import { Check } from "@nsmr/pixelart-react";
 import { AvatarDisplay } from "../avatar-display";
-
-interface AvatarConfig {
-  animal: string;
-  color: string;
-}
+import { AvatarConfig } from "@/interface/AvatarConfig";
 
 interface AvatarSelectorProps {
   value: AvatarConfig;

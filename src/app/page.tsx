@@ -9,9 +9,7 @@ import { InstallApp } from "@/components/pwa/install-app";
 import { Button } from "@/components/ui/button";
 import { LoadingScreen } from "@/components/ui/loading-screen";
 import { usePlayerProfile } from "@/hooks/use-player-profile";
-import { AVATAR_COLORS } from "@/lib/constants/avatar";
-import { ANIMALS } from "@/lib/constants/pseudo";
-import { generateRandomPseudo } from "@/lib/utils/random-pseudo";
+import { generateRandomPlayer } from "@/lib/utils/generate-player";
 import { useEffect, useState, useTransition } from "react";
 
 export default function Home() {
@@ -44,15 +42,8 @@ export default function Home() {
       !creationError
     ) {
       setIsCreating(true);
-      const randomAvatar = {
-        animal: ANIMALS[Math.floor(Math.random() * ANIMALS.length)],
-        color: AVATAR_COLORS[Math.floor(Math.random() * AVATAR_COLORS.length)],
-      };
 
-      updateProfile({
-        pseudo: generateRandomPseudo(),
-        avatar_config: randomAvatar,
-      })
+      updateProfile(generateRandomPlayer())
         .then(() => {
           setIsCreating(false);
         })

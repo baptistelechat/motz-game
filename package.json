@@ -15,7 +15,8 @@
     "lint:fix": "eslint . --fix",
     "test:unit": "vitest run",
     "test:e2e": "cross-env NEXT_PUBLIC_IS_E2E=true playwright test",
-    "test:e2e:ui": "cross-env NEXT_PUBLIC_IS_E2E=true playwright test --ui"
+    "test:e2e:ui": "cross-env NEXT_PUBLIC_IS_E2E=true playwright test --ui",
+    "seed:game": "tsx scripts/seed-game.ts"
   },
   "dependencies": {
     "@ducanh2912/next-pwa": "^10.2.9",

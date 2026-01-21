@@ -1,7 +1,5 @@
-import { AVATAR_COLORS } from "@/lib/constants/avatar";
-import { ANIMALS } from "@/lib/constants/pseudo";
+import { generateRandomPlayer } from "@/lib/utils/generate-player";
 import { createClient } from "@supabase/supabase-js";
-import { nanoid } from "nanoid";
 import { NextRequest, NextResponse } from "next/server";
 
 export async function POST() {
@@ -42,18 +40,9 @@ export async function POST() {
 
     const user = sessionData.user;
 
-    // Pre-create the player profile to avoid UI loading states and race conditions
-    const randomAnimal = ANIMALS[Math.floor(Math.random() * ANIMALS.length)];
-    const randomColor =
-      AVATAR_COLORS[Math.floor(Math.random() * AVATAR_COLORS.length)];
-
     const { error: profileError } = await supabase.from("players").insert({
       id: user.id,
-      pseudo: `E2E-${nanoid(6)}`,
-      avatar_config: {
-        animal: randomAnimal,
-        color: randomColor,
-      },
+      ...generateRandomPlayer("E2E"),
       updated_at: new Date().toISOString(),
       created_at: new Date().toISOString(),
       last_sign_in_at: new Date().toISOString(),

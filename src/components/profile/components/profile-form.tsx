@@ -7,7 +7,10 @@ import { usePlayerProfile } from "@/hooks/use-player-profile";
 import { AVATAR_COLORS } from "@/lib/constants/avatar";
 import { ANIMALS } from "@/lib/constants/pseudo";
 import { playerProfileSchema } from "@/lib/schemas/player-schema";
-import { generateRandomPseudo } from "@/lib/utils/random-pseudo";
+import {
+  generateRandomAvatar,
+  generateRandomPseudo,
+} from "@/lib/utils/generate-player";
 import { Dice } from "@nsmr/pixelart-react";
 import { useEffect, useRef, useState } from "react";
 import { AvatarSelector } from "./avatar-selector";
@@ -95,10 +98,7 @@ export function ProfileForm({ onSaved }: ProfileFormProps) {
     // But realistically Math.random collision on this set is rare.
     // We can also randomize the avatar to give a full "fresh" feel
     setPseudo(generateRandomPseudo());
-    setAvatar({
-      animal: ANIMALS[Math.floor(Math.random() * ANIMALS.length)],
-      color: AVATAR_COLORS[Math.floor(Math.random() * AVATAR_COLORS.length)],
-    });
+    setAvatar(generateRandomAvatar());
   };
 
   if ((isLoading && !isInitialized) || (!isInitialized && !profile)) {

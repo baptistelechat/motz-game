@@ -1,24 +1,80 @@
-# Scripts de Traitement d'Images (Pixel Art)
+# Documentation des Scripts
 
-Ce dossier contient des utilitaires pour manipuler les assets graphiques du jeu, notamment pour le style Pixel Art.
+Ce projet contient plusieurs scripts utilitaires pour faciliter le développement, la gestion des assets et les tests.
+
+## Table des Matières
+
+- [Documentation des Scripts](#documentation-des-scripts)
+  - [Table des Matières](#table-des-matières)
+  - [1. Gestion de Partie (`seed:game`)](#1-gestion-de-partie-seedgame)
+    - [Utilisation](#utilisation)
+    - [Options](#options)
+    - [Exemples](#exemples)
+  - [2. Remove Background (`remove-bg`)](#2-remove-background-remove-bg)
+    - [Utilisation](#utilisation-1)
+    - [Options](#options-1)
+  - [3. Pixelate (`pixelate`)](#3-pixelate-pixelate)
+    - [Utilisation](#utilisation-2)
+    - [Options](#options-2)
 
 ---
 
-## 1. Remove Background (`remove-bg`)
+## 1. Gestion de Partie (`seed:game`)
+
+Ce script permet de créer rapidement une partie de test ou d'ajouter des joueurs à une partie existante. Il est très utile pour tester les flux multijoueurs sans avoir à créer manuellement plusieurs comptes/sessions.
+
+### Utilisation
+
+```bash
+# Via script pnpm
+pnpm run seed:game -- [options]
+```
+
+### Options
+
+| Option      | Alias | Description                                                                 | Défaut |
+| ----------- | ----- | --------------------------------------------------------------------------- | ------ |
+| `--players` | `-p`  | Nombre de joueurs supplémentaires à créer (en plus de l'hôte si création).  | `3`    |
+| `--code`    | `-c`  | Code d'une partie existante. Si fourni, aucune nouvelle partie n'est créée. | `null` |
+| `--help`    | `-h`  | Affiche l'aide.                                                             |        |
+
+### Exemples
+
+**Créer une nouvelle partie avec l'hôte et 3 joueurs supplémentaires (défaut) :**
+
+```bash
+pnpm run seed:game
+```
+
+**Créer une partie avec 10 joueurs supplémentaires :**
+
+```bash
+pnpm run seed:game -- --players 10
+```
+
+**Ajouter 5 joueurs à une partie existante (ex: `ABC123`) :**
+
+```bash
+pnpm run seed:game -- --code ABC123 --players 5
+```
+
+---
+
+## 2. Remove Background (`remove-bg`)
 
 Supprime le fond blanc d'images en utilisant un algorithme de **Flood Fill**. Préserve les pixels blancs internes et nettoie les liserés.
 
 ### Utilisation
 
 ```bash
-# Via script npm
+# Via script pnpm
 pnpm remove-bg <input> [output] [options]
 
 # Exemple Avatar
 pnpm remove-bg:avatar
 ```
 
-### Options Principales
+### Options
 
 | Option             | Alias | Description                                           | Défaut |
 | ------------------ | ----- | ----------------------------------------------------- | ------ |
@@ -28,14 +84,14 @@ pnpm remove-bg:avatar
 
 ---
 
-## 2. Pixelate (`pixelate`)
+## 3. Pixelate (`pixelate`)
 
 Transforme une image haute résolution en Pixel Art (downscaling avec moyenne des couleurs). Peut soit réduire l'image physiquement (ex: 32x32), soit simuler des gros pixels en gardant la résolution d'origine (ex: 512x512).
 
 ### Utilisation
 
 ```bash
-# Via script npm
+# Via script pnpm
 pnpm pixelate <input> [output] [options]
 
 # Exemple Flaticon (garde la résolution 512x512 avec des pixels de 32px)
@@ -49,18 +105,3 @@ pnpm pixelate:flaticon
 | `--pixel-size`      | `-p`  | Taille d'un "gros pixel" en pixels source (ex: `32` pour avoir des blocs de 32x32px sur l'image d'origine). **Recommandé.**                     | -       |
 | `--size`            | `-s`  | Taille de la grille cible (ex: `32` pour forcer une grille de 32x32 blocs). Utilisé si `--pixel-size` n'est pas défini.                         | `32`    |
 | `--keep-resolution` | `-k`  | Si activé, l'image de sortie garde la taille de l'image d'entrée (upscale sans interpolation). Si désactivé, l'image est réduite (ex: 32x32px). | `false` |
-
-### Exemples
-
-**Créer une icône 32x32 réelle :**
-
-```bash
-pnpm pixelate -- "icon.png" --size 32
-```
-
-**Créer une image style "Pixel Pop" (HD avec gros pixels) :**
-
-```bash
-# Image source 512x512, on veut des pixels de 32px de large (donc grille 16x16)
-pnpm pixelate -- "image.png" --pixel-size 32 --keep-resolution
-```
