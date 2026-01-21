@@ -42,7 +42,7 @@ export function ProfileBadge({ className }: ProfileBadgeProps) {
         className="relative overflow-visible"
       >
         <span
-          className="font-display text-sm md:text-base hidden sm:inline"
+          className="font-display text-sm md:text-base hidden lg:inline"
           style={{
             color: profile.avatar_config.color,
           }}

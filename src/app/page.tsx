@@ -5,6 +5,7 @@ import { JoinGameDialog } from "@/components/game/join-game-dialog";
 import { AttributesDialog } from "@/components/info/attributes-dialog";
 import { MainLayout } from "@/components/layout/main-layout";
 import { StickyActionZone } from "@/components/layout/sticky-action-zone";
+import { useAuth } from "@/components/providers/auth-provider";
 import { InstallApp } from "@/components/pwa/install-app";
 import { Button } from "@/components/ui/button";
 import { LoadingScreen } from "@/components/ui/loading-screen";
@@ -13,7 +14,8 @@ import { generateRandomPlayer } from "@/lib/utils/generate-player";
 import { useEffect, useState, useTransition } from "react";
 
 export default function Home() {
-  const { profile, isLoading, updateProfile, user, isInitialized } =
+  const { user } = useAuth();
+  const { profile, isLoading, updateProfile, isInitialized } =
     usePlayerProfile();
   const [isCreating, setIsCreating] = useState(false);
   const [isJoinDialogOpen, setIsJoinDialogOpen] = useState(false);

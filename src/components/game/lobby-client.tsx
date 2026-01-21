@@ -2,6 +2,7 @@
 
 import { joinGame } from "@/app/actions/game-actions";
 import { LobbyPlayerList } from "@/components/game/lobby-player-list";
+import { useAuth } from "@/components/providers/auth-provider";
 import { usePlayerProfile } from "@/hooks/use-player-profile";
 import { useRealtimeLobby } from "@/hooks/use-realtime-lobby";
 import { generateRandomPlayer } from "@/lib/utils/generate-player";
@@ -15,12 +16,12 @@ interface LobbyClientProps {
 }
 
 export function LobbyClient({ code, gameId, hostId }: LobbyClientProps) {
+  const { user } = useAuth();
   const {
     profile,
     isLoading: isProfileLoading,
     updateProfile,
     isInitialized,
-    user,
   } = usePlayerProfile();
   const { players, isLoading: isLobbyLoading } = useRealtimeLobby(gameId);
   const [isJoining, setIsJoining] = useState(false);
