@@ -3,10 +3,12 @@
 import { joinGame } from "@/app/actions/game-actions";
 import { LobbyPlayerList } from "@/components/game/lobby-player-list";
 import { useAuth } from "@/components/providers/auth-provider";
+import { Button } from "@/components/ui/button";
 import { usePlayerProfile } from "@/hooks/use-player-profile";
 import { useRealtimeLobby } from "@/hooks/use-realtime-lobby";
 import { generateRandomPlayer } from "@/lib/utils/generate-player";
 import { Loader } from "@nsmr/pixelart-react";
+import Link from "next/link";
 import { useEffect, useRef, useState } from "react";
 
 interface LobbyClientProps {
@@ -23,9 +25,14 @@ export function LobbyClient({ code, gameId, hostId }: LobbyClientProps) {
     updateProfile,
     isInitialized,
   } = usePlayerProfile();
-  const { players, isLoading: isLobbyLoading } = useRealtimeLobby(gameId);
+  const {
+    players,
+    isLoading: isLobbyLoading,
+    refreshPlayers,
+  } = useRealtimeLobby(gameId);
   const [isJoining, setIsJoining] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [isTimeout, setIsTimeout] = useState(false);
   const hasJoinedRef = useRef(false);
 
   // 1. Ensure profile exists (Auto-create if missing for seamless join)
@@ -55,6 +62,8 @@ export function LobbyClient({ code, gameId, hostId }: LobbyClientProps) {
       try {
         await joinGame(code);
         hasJoinedRef.current = true;
+        // Trigger refresh immediately to minimize wait time
+        refreshPlayers();
       } catch (err) {
         console.error("Failed to join game:", err);
         setError("Impossible de rejoindre la partie.");
@@ -63,19 +72,60 @@ export function LobbyClient({ code, gameId, hostId }: LobbyClientProps) {
       }
     };
     join();
-  }, [user, profile, code]);
+  }, [user, profile, code, refreshPlayers]);
 
-  if (error) {
+  const isInLobby = players.some((p) => p.player_id === user?.id);
+  const showLoader =
+    isJoining ||
+    (isLobbyLoading && players.length === 0) ||
+    (!isInLobby && !error);
+
+  // 3. Timeout handler for connection issues
+  useEffect(() => {
+    let timeout: NodeJS.Timeout;
+    if (showLoader) {
+      timeout = setTimeout(() => {
+        setIsTimeout(true);
+      }, 10000); // 10 seconds timeout
+    } else {
+      setIsTimeout(false);
+    }
+    return () => clearTimeout(timeout);
+  }, [showLoader]);
+
+  if (error || isTimeout) {
     return (
-      <div className="text-destructive font-bold bg-black p-4 border-2 border-destructive shadow-[4px_4px_0_(--border)]">
-        ERREUR: {error}
+      <div className="flex flex-col items-center justify-center gap-6 w-full max-w-md animate-in fade-in duration-500">
+        <div className="text-destructive font-bold bg-black p-6 border-4 border-destructive shadow-[4px_4px_0_(--border)] text-center w-full">
+          <p className="font-display text-xl mb-2">
+            {isTimeout ? "DÉLAI D'ATTENTE DÉPASSÉ" : "ERREUR"}
+          </p>
+          <p className="font-sans text-sm">
+            {isTimeout
+              ? "La connexion au lobby prend trop de temps."
+              : error}
+          </p>
+        </div>
+        <div className="flex flex-col gap-4 w-full">
+          {isTimeout && (
+            <Button
+              size="xl"
+              variant="outline"
+              onClick={() => {
+                setIsTimeout(false);
+                refreshPlayers();
+              }}
+            >
+              RÉESSAYER
+            </Button>
+          )}
+          <Button asChild size="xl" variant="default">
+            <Link href="/">RETOUR AU MENU</Link>
+          </Button>
+        </div>
       </div>
     );
   }
-
-  // Show loader only if joining OR (lobby loading AND no players yet) OR (user not yet in list)
-  const isInLobby = players.some((p) => p.player_id === user?.id);
-  const showLoader = isJoining || (isLobbyLoading && players.length === 0) || (!isInLobby && !error);
 
   if (showLoader) {
     return (

@@ -77,8 +77,17 @@ export function CaptchaGuard({ children }: { children: React.ReactNode }) {
 
         {/* Affichage des erreurs (ex: Anonymous auth disabled) */}
         {error && (
-          <div className="text-destructive font-sans text-sm max-w-xs text-center bg-black p-2 border border-destructive">
-            ERREUR: {error.message}
+          <div className="flex flex-col items-center gap-3 animate-in fade-in slide-in-from-bottom-2">
+            <div className="text-destructive font-sans text-sm max-w-xs text-center bg-black p-3 border-2 border-destructive shadow-[2px_2px_0_var(--border)]">
+              <span className="font-bold block mb-1">ERREUR CRITIQUE</span>
+              {error.message}
+            </div>
+            <button
+              onClick={() => window.location.reload()}
+              className="px-4 py-2 bg-white text-black font-display text-xs uppercase hover:bg-gray-200 transition-colors shadow-[2px_2px_0_var(--border)] border-2 border-black"
+            >
+              RECHARGER LA PAGE
+            </button>
           </div>
         )}
       </Card>

@@ -1,5 +1,5 @@
 import { createClient } from "@/lib/supabase/client";
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 
 export type LobbyPlayer = {
   game_id: string;
@@ -19,23 +19,25 @@ export function useRealtimeLobby(gameId: string) {
   // Keep supabase instance stable across renders
   const [supabase] = useState(() => createClient());
 
-  useEffect(() => {
+  const fetchPlayers = useCallback(async () => {
     if (!gameId) return;
 
-    const fetchPlayers = async () => {
-      const { data, error } = await supabase
-        .from("game_players")
-        .select(`*, player:players(id, pseudo, avatar_config)`)
-        .eq("game_id", gameId)
-        .order("joined_at", { ascending: true });
+    const { data, error } = await supabase
+      .from("game_players")
+      .select(`*, player:players(id, pseudo, avatar_config)`)
+      .eq("game_id", gameId)
+      .order("joined_at", { ascending: true });
 
-      if (error) {
-        console.error("Error fetching players:", error);
-      } else if (data) {
-        setPlayers(data as unknown as LobbyPlayer[]);
-      }
-      setIsLoading(false);
-    };
+    if (error) {
+      console.error("Error fetching players:", error);
+    } else if (data) {
+      setPlayers(data as unknown as LobbyPlayer[]);
+    }
+    setIsLoading(false);
+  }, [gameId, supabase]);
+
+  useEffect(() => {
+    if (!gameId) return;
 
     // Initial fetch
     fetchPlayers();
@@ -79,7 +81,7 @@ export function useRealtimeLobby(gameId: string) {
     return () => {
       supabase.removeChannel(channel);
     };
-  }, [gameId, supabase]);
+  }, [gameId, supabase, fetchPlayers]);
 
-  return { players, isLoading };
+  return { players, isLoading, refreshPlayers: fetchPlayers };
 }

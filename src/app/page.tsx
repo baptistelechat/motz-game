@@ -28,6 +28,9 @@ export default function Home() {
         await createGame();
       } catch (error) {
         console.error("Failed to create game:", error);
+        setCreationError(
+          error instanceof Error ? error : new Error("Impossible de créer la partie"),
+        );
       }
     });
   };
@@ -75,14 +78,13 @@ export default function Home() {
             ERREUR CRITIQUE
           </h2>
           <p className="font-sans mb-4 text-center">
-            Impossible de créer le profil joueur.
+            Une erreur est survenue.
           </p>
           <div className="bg-black/20 p-4 font-mono text-xs overflow-auto mb-4 border-2 border-black/10">
             {creationError.message}
           </div>
           <p className="text-sm text-center font-bold mb-4">
-            Vérifiez que la table &apos;players&apos; existe dans votre base de
-            données Supabase.
+            Vérifiez votre connexion ou réessayez.
           </p>
           <div className="text-center">
             <Button
