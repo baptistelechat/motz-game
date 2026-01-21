@@ -32,6 +32,7 @@ export function LobbyPlayerList({ players, hostId }: LobbyPlayerListProps) {
                 color={p.player.avatar_config.color}
                 size="md"
                 isHost={hostId === p.player_id}
+                isPlayer={p.player_id !== hostId}
                 isBot={p.player.pseudo.startsWith("Bot-")}
               />
               {p.is_ready && (

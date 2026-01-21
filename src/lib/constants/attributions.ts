@@ -18,6 +18,11 @@ export const ATTRIBUTIONS: AttributionGroup[] = [
         url: "https://www.flaticon.com/fr/packs/animals-126?word=animals",
         title: "Animaux icônes",
       },
+      {
+        text: "Pixel Icons par Shu Qi Khor",
+        url: "https://github.com/shuqikhor/pixel-icons",
+        title: "Pixel Icons",
+      },
     ],
   },
   {

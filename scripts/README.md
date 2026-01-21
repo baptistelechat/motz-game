@@ -16,6 +16,8 @@ Ce projet contient plusieurs scripts utilitaires pour faciliter le développemen
   - [3. Pixelate (`pixelate`)](#3-pixelate-pixelate)
     - [Utilisation](#utilisation-2)
     - [Options](#options-2)
+  - [4. Génération de Types d'Icônes (`generate:icons`)](#4-génération-de-types-dicônes-generateicons)
+    - [Utilisation](#utilisation-3)
 
 ---
 
@@ -105,3 +107,18 @@ pnpm pixelate:flaticon
 | `--pixel-size`      | `-p`  | Taille d'un "gros pixel" en pixels source (ex: `32` pour avoir des blocs de 32x32px sur l'image d'origine). **Recommandé.**                     | -       |
 | `--size`            | `-s`  | Taille de la grille cible (ex: `32` pour forcer une grille de 32x32 blocs). Utilisé si `--pixel-size` n'est pas défini.                         | `32`    |
 | `--keep-resolution` | `-k`  | Si activé, l'image de sortie garde la taille de l'image d'entrée (upscale sans interpolation). Si désactivé, l'image est réduite (ex: 32x32px). | `false` |
+
+---
+
+## 4. Génération de Types d'Icônes (`generate:icons`)
+
+Génère automatiquement les types TypeScript pour les icônes présentes dans `public/assets/icons`. Cela permet d'avoir de l'autocomplétion lors de l'utilisation du composant `<PixelIcon />`.
+
+### Utilisation
+
+```bash
+# Via script pnpm
+pnpm run generate:icons
+```
+
+À exécuter après avoir ajouté de nouvelles icônes SVG dans le dossier `public/assets/icons`. Le script va mettre à jour le fichier `src/types/pixel-icons.ts`.

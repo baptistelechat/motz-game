@@ -39,6 +39,7 @@ interface AvatarDisplayProps
   animal: string;
   color: string;
   isHost?: boolean;
+  isPlayer?: boolean;
   isBot?: boolean;
 }
 
@@ -48,6 +49,7 @@ export function AvatarDisplay({
   className,
   size = "md",
   isHost,
+  isPlayer,
   isBot,
   ...props
 }: AvatarDisplayProps) {
@@ -71,6 +73,7 @@ export function AvatarDisplay({
         </div>
       </div>
       {isHost && <PlayerStatusBadge role="HOST" />}
+      {isPlayer && <PlayerStatusBadge role="PLAYER" />}
       {isBot && <PlayerStatusBadge role="BOT" />}
     </div>
   );

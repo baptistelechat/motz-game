@@ -1,3 +1,4 @@
+import { PixelIcon } from "@/components/ui/pixel-icon";
 import { cn } from "@/lib/utils";
 
 interface PlayerStatusBadgeProps {
@@ -15,9 +16,27 @@ export function PlayerStatusBadge({ role, className }: PlayerStatusBadgeProps) {
         )}
         title="Host"
       >
-        <span className="font-display text-2xl text-yellow-400 drop-shadow-[2px_2px_0_#000] leading-none select-none">
-          *
-        </span>
+        <PixelIcon
+          name="star"
+          className="size-6 drop-shadow-[2px_2px_0_#000]"
+        />
+      </div>
+    );
+  }
+
+  if (role === "PLAYER") {
+    return (
+      <div
+        className={cn(
+          "absolute -top-3 -right-3 z-10 flex items-center justify-center pointer-events-none",
+          className,
+        )}
+        title="Player"
+      >
+        <PixelIcon
+          name="game-controller"
+          className="size-6 drop-shadow-[2px_2px_0_#000]"
+        />
       </div>
     );
   }
@@ -31,9 +50,10 @@ export function PlayerStatusBadge({ role, className }: PlayerStatusBadgeProps) {
         )}
         title="Bot"
       >
-        <span className="font-display text-2xl text-gray-400 drop-shadow-[2px_2px_0_#000] leading-none select-none">
-          B
-        </span>
+        <PixelIcon
+          name="robot"
+          className="size-6 drop-shadow-[2px_2px_0_#000]"
+        />
       </div>
     );
   }

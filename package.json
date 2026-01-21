@@ -4,10 +4,6 @@
   "description": "Jeu de mots multijoueur temps réel avec design Pixel-Pop",
   "private": true,
   "scripts": {
-    "remove-bg": "tsx scripts/remove-bg.ts",
-    "remove-bg:avatar": "tsx scripts/remove-bg.ts \"public/assets/avatar/*.png\"",
-    "pixelate": "tsx scripts/pixelate.ts",
-    "pixelate:avatar": "tsx scripts/pixelate.ts \"src/assets/avatar/*.png\" \"public/assets/avatar/\" --pixel-size 32 --keep-resolution",
     "dev": "next dev --turbo",
     "build": "next build --webpack",
     "start": "next start",
@@ -16,6 +12,11 @@
     "test:unit": "vitest run",
     "test:e2e": "cross-env NEXT_PUBLIC_IS_E2E=true playwright test",
     "test:e2e:ui": "cross-env NEXT_PUBLIC_IS_E2E=true playwright test --ui",
+    "remove-bg": "tsx scripts/remove-bg.ts",
+    "remove-bg:avatar": "tsx scripts/remove-bg.ts \"public/assets/avatar/*.png\"",
+    "pixelate": "tsx scripts/pixelate.ts",
+    "pixelate:avatar": "tsx scripts/pixelate.ts \"src/assets/avatar/*.png\" \"public/assets/avatar/\" --pixel-size 32 --keep-resolution",
+    "generate:icons": "tsx scripts/generate-icon-types.ts",
     "seed:game": "tsx scripts/seed-game.ts"
   },
   "dependencies": {
