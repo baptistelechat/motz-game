@@ -16,30 +16,28 @@ export type LobbyPlayer = {
 export function useRealtimeLobby(gameId: string) {
   const [players, setPlayers] = useState<LobbyPlayer[]>([]);
   const [isLoading, setIsLoading] = useState(true);
-  // Create a stable supabase client instance
+  // Keep supabase instance stable across renders
   const [supabase] = useState(() => createClient());
 
   useEffect(() => {
+    if (!gameId) return;
+
     const fetchPlayers = async () => {
       const { data, error } = await supabase
         .from("game_players")
-        .select(
-          `
-        *,
-        player:players(id, pseudo, avatar_config)
-      `,
-        )
+        .select(`*, player:players(id, pseudo, avatar_config)`)
         .eq("game_id", gameId)
         .order("joined_at", { ascending: true });
 
-      if (!error && data) {
-        // Transform data to match LobbyPlayer type if necessary
-        // Supabase returns array of objects, need to ensure type safety
+      if (error) {
+        console.error("Error fetching players:", error);
+      } else if (data) {
         setPlayers(data as unknown as LobbyPlayer[]);
       }
       setIsLoading(false);
     };
 
+    // Initial fetch
     fetchPlayers();
 
     const channel = supabase
@@ -50,11 +48,17 @@ export function useRealtimeLobby(gameId: string) {
           event: "*",
           schema: "public",
           table: "game_players",
-          filter: `game_id=eq.${gameId}`,
         },
-        () => {
-          // On any change in lobby, re-fetch
-          fetchPlayers();
+        (payload) => {
+          const newRecord = payload.new as { game_id: string } | null;
+          const oldRecord = payload.old as { game_id: string } | null;
+
+          if (
+            (newRecord && newRecord.game_id === gameId) ||
+            (oldRecord && oldRecord.game_id === gameId)
+          ) {
+            fetchPlayers();
+          }
         },
       )
       .on(
@@ -65,20 +69,12 @@ export function useRealtimeLobby(gameId: string) {
           table: "players",
         },
         () => {
-          // When ANY player updates their profile, check if they are in our lobby
-          // If so, refresh the lobby data to show new avatar/pseudo
-          // We can't access current 'players' state easily here without refs, 
-          // but re-fetching is safe and ensures consistency.
-          // To optimize, we could check if payload.new.id is in the list, 
-          // but for now, simple is better.
+          // Refresh if any player profile updates (avatar/pseudo)
+          // Ideally we should filter by players IN this game, but fetching is cheap here
           fetchPlayers();
         },
       )
-      .subscribe((status) => {
-        if (status === "SUBSCRIBED") {
-          console.log("Realtime connected for lobby:", gameId);
-        }
-      });
+      .subscribe();
 
     return () => {
       supabase.removeChannel(channel);

@@ -73,8 +73,11 @@ export function LobbyClient({ code, gameId, hostId }: LobbyClientProps) {
     );
   }
 
-  // Show loader only if joining OR (lobby loading AND no players yet)
-  if (isJoining || (isLobbyLoading && players.length === 0)) {
+  // Show loader only if joining OR (lobby loading AND no players yet) OR (user not yet in list)
+  const isInLobby = players.some((p) => p.player_id === user?.id);
+  const showLoader = isJoining || (isLobbyLoading && players.length === 0) || (!isInLobby && !error);
+
+  if (showLoader) {
     return (
       <div className="flex items-center justify-center h-64 gap-4 animate-pulse text-muted-foreground">
         <Loader className="size-8 animate-spin" />

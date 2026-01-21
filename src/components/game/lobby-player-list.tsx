@@ -57,7 +57,6 @@ export function LobbyPlayerList({ players, hostId }: LobbyPlayerListProps) {
                 )}
               >
                 {p.player.pseudo}
-                {p.player_id === currentUserId && " (Moi)"}
               </div>
             </motion.div>
           ))}

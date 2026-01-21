@@ -17,6 +17,7 @@
     "pixelate": "tsx scripts/pixelate.ts",
     "pixelate:avatar": "tsx scripts/pixelate.ts \"src/assets/avatar/*.png\" \"public/assets/avatar/\" --pixel-size 32 --keep-resolution",
     "generate:icons": "tsx scripts/generate-icon-types.ts",
+    "db:reset": "tsx scripts/reset-db.ts",
     "seed:game": "tsx scripts/seed-game.ts"
   },
   "dependencies": {
@@ -59,6 +60,7 @@
     "@testing-library/jest-dom": "^6.9.1",
     "@testing-library/react": "^16.3.1",
     "@types/node": "^20",
+    "@types/pg": "^8.16.0",
     "@types/pngjs": "^6.0.5",
     "@types/react": "^19",
     "@types/react-dom": "^19",
@@ -69,6 +71,7 @@
     "eslint": "^9",
     "eslint-config-next": "15.3.1",
     "jsdom": "^27.4.0",
+    "pg": "^8.17.2",
     "tailwindcss-animate": "^1.0.7",
     "tsx": "^4.21.0",
     "typescript": "^5",
