@@ -20,25 +20,37 @@ if (!supabaseUrl || !supabaseServiceKey) {
 
 const supabase = createClient(supabaseUrl, supabaseServiceKey);
 
-async function createPlayer(gameId: string) {
-  // Créer un utilisateur anonyme
-  const { data: user, error: userError } =
-    await supabase.auth.signInAnonymously();
+const delay = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
 
-  if (userError || !user.user) {
-    console.error("❌ Erreur lors de la création d'un joueur:", userError);
+async function createPlayer(gameId: string) {
+  // Utiliser l'API Admin pour créer un utilisateur sans restriction de rate limit
+  const fakeEmail = `bot-${Date.now()}-${Math.random().toString(36).substring(7)}@example.com`;
+
+  const { data, error: userError } = await supabase.auth.admin.createUser({
+    email: fakeEmail,
+    email_confirm: true,
+    user_metadata: { is_bot: true },
+  });
+
+  if (userError || !data.user) {
+    console.error(
+      "❌ Erreur lors de la création d'un joueur (Admin API):",
+      userError,
+    );
     return null;
   }
 
+  const userId = data.user.id;
+
   // Créer le profil public
   const { error: profileError } = await supabase.from("players").insert({
-    id: user.user.id,
+    id: userId,
     ...generateRandomPlayer("Bot"),
   });
 
   if (profileError) {
     console.warn(
-      `⚠️ Impossible de créer le profil pour ${user.user.id}:`,
+      `⚠️ Impossible de créer le profil pour ${userId}:`,
       profileError.message,
     );
   }
@@ -46,18 +58,18 @@ async function createPlayer(gameId: string) {
   // Rejoindre la partie
   const { error: joinError } = await supabase.from("game_players").insert({
     game_id: gameId,
-    player_id: user.user.id,
+    player_id: userId,
     is_ready: false, // Par défaut
   });
 
   if (joinError) {
     console.warn(
-      `⚠️ Impossible de rejoindre la partie pour ${user.user.id}:`,
+      `⚠️ Impossible de rejoindre la partie pour ${userId}:`,
       joinError.message,
     );
   }
 
-  return user.user;
+  return data.user;
 }
 
 async function seedGame() {
@@ -168,6 +180,9 @@ async function seedGame() {
   if (argv.players > 0) {
     console.log(`\n👥 Ajout de ${argv.players} joueurs supplémentaires...`);
     for (let i = 0; i < argv.players; i++) {
+      // Pause minimale pour éviter de spammer la console ou la DB
+      if (i > 0) await delay(200);
+
       const player = await createPlayer(gameId);
       if (player) {
         console.log(`   🤖 Joueur ${i + 1} créé: ${player.id}`);

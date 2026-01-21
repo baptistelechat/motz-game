@@ -14,6 +14,7 @@ import {
 import { Dice } from "@nsmr/pixelart-react";
 import { useEffect, useRef, useState } from "react";
 import { AvatarSelector } from "./avatar-selector";
+import { toast } from "sonner";
 
 interface ProfileFormProps {
   onSaved?: () => void;
@@ -71,6 +72,7 @@ export function ProfileForm({ onSaved }: ProfileFormProps) {
       const validated = playerProfileSchema.parse(data);
 
       await updateProfile(validated);
+      toast.success("Profil sauvegardé avec succès !");
       if (onSaved) onSaved();
     } catch (err) {
       const error = err as {
@@ -79,15 +81,16 @@ export function ProfileForm({ onSaved }: ProfileFormProps) {
         message?: string;
       };
       // Prioritize Zod errors (or similar structured errors) because ZodError.message contains a stringified JSON of the errors
+      let errorMessage = "Une erreur est survenue";
       if (error.issues && error.issues.length > 0) {
-        setError(error.issues[0].message);
+        errorMessage = error.issues[0].message;
       } else if (error.errors && error.errors.length > 0) {
-        setError(error.errors[0].message);
+        errorMessage = error.errors[0].message;
       } else if (error.message) {
-        setError(error.message);
-      } else {
-        setError("Une erreur est survenue");
+        errorMessage = error.message;
       }
+      setError(errorMessage);
+      toast.error(errorMessage);
     } finally {
       setIsSaving(false);
     }

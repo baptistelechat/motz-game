@@ -72,8 +72,8 @@ describe("Home Page", () => {
 
     render(<Home />);
 
-    // Should show "CREATION DU PROFIL..."
-    expect(screen.getByText(/CREATION DU PROFIL.../i)).toBeInTheDocument();
+    // Should show "CHARGEMENT..."
+    expect(screen.getByText(/CHARGEMENT.../i)).toBeInTheDocument();
 
     // Should call updateProfile
     await waitFor(() => {

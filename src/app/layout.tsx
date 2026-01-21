@@ -5,6 +5,7 @@ import { THEME_COLORS } from "@/lib/constants/theme";
 import type { Metadata, Viewport } from "next";
 import { Press_Start_2P, VT323 } from "next/font/google";
 import "./globals.css";
+import { Toaster } from "@/components/ui/sonner";
 
 const defaultUrl = process.env.VERCEL_URL
   ? `https://${process.env.VERCEL_URL}`
@@ -56,6 +57,7 @@ export default function RootLayout({
         <AuthProvider>
           <PWAProvider>
             <CaptchaGuard>{children}</CaptchaGuard>
+            <Toaster />
           </PWAProvider>
         </AuthProvider>
       </body>

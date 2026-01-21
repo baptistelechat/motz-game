@@ -12,6 +12,7 @@ import { LoadingScreen } from "@/components/ui/loading-screen";
 import { usePlayerProfile } from "@/hooks/use-player-profile";
 import { generateRandomPlayer } from "@/lib/utils/generate-player";
 import { useEffect, useState, useTransition } from "react";
+import { toast } from "sonner";
 
 export default function Home() {
   const { user } = useAuth();
@@ -22,15 +23,42 @@ export default function Home() {
   const [creationError, setCreationError] = useState<Error | null>(null);
   const [isPending, startTransition] = useTransition();
 
+  // Reset creation state when pending ends
+  useEffect(() => {
+    if (!isPending && isCreating) {
+      setIsCreating(false);
+    }
+  }, [isPending, isCreating]);
+
   const handleCreateGame = () => {
+    setIsCreating(true);
+    setCreationError(null);
+    const toastId = toast.loading("Création de la partie...");
+
     startTransition(async () => {
       try {
         await createGame();
+        // Redirect will happen, so we might not reach here, but if we do, dismiss
+        toast.dismiss(toastId);
       } catch (error) {
+        // Ignore redirect errors as they are part of normal flow
+        if (
+          error instanceof Error &&
+          (error.message === "NEXT_REDIRECT" ||
+            error.message.includes("NEXT_REDIRECT"))
+        ) {
+          toast.dismiss(toastId); // Ensure dismiss on redirect
+          return;
+        }
+
         console.error("Failed to create game:", error);
-        setCreationError(
-          error instanceof Error ? error : new Error("Impossible de créer la partie"),
-        );
+        toast.dismiss(toastId);
+        const err =
+          error instanceof Error
+            ? error
+            : new Error("Impossible de créer la partie");
+        setCreationError(err);
+        toast.error(err.message);
       }
     });
   };
@@ -77,9 +105,7 @@ export default function Home() {
           <h2 className="font-display text-xl mb-4 text-center border-b-4 border-black/20 pb-2">
             ERREUR CRITIQUE
           </h2>
-          <p className="font-sans mb-4 text-center">
-            Une erreur est survenue.
-          </p>
+          <p className="font-sans mb-4 text-center">Une erreur est survenue.</p>
           <div className="bg-black/20 p-4 font-mono text-xs overflow-auto mb-4 border-2 border-black/10">
             {creationError.message}
           </div>
@@ -106,11 +132,7 @@ export default function Home() {
     (user && !profile) ||
     !isInitialized
   ) {
-    return (
-      <LoadingScreen
-        message={isCreating ? "CREATION DU PROFIL..." : "CHARGEMENT..."}
-      />
-    );
+    return <LoadingScreen message="CHARGEMENT..." />;
   }
 
   // Should not happen if auth is working, but safe guard

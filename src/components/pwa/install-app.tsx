@@ -10,6 +10,7 @@ import {
 import { useInstallStore } from "@/store/use-install-store";
 import { Download, Upload } from "@nsmr/pixelart-react";
 import { useEffect, useState } from "react";
+import { toast } from "sonner";
 
 export function InstallApp() {
   const { deferredPrompt, isIOS, isStandalone, setDeferredPrompt } =
@@ -24,12 +25,7 @@ export function InstallApp() {
     const isTestIOS = urlParams.get("test-ios") === "true";
 
     // Show if test mode, or if iOS and not standalone, or if we have a prompt
-    if (
-      isTestMode ||
-      isTestIOS ||
-      (isIOS && !isStandalone) ||
-      deferredPrompt
-    ) {
+    if (isTestMode || isTestIOS || (isIOS && !isStandalone) || deferredPrompt) {
       setIsVisible(true);
     } else {
       setIsVisible(false);
@@ -50,6 +46,7 @@ export function InstallApp() {
     if (outcome === "accepted") {
       setDeferredPrompt(null);
       setIsVisible(false);
+      toast.success("Installation lancée");
     }
   };
 

@@ -9,6 +9,7 @@ Ce projet contient plusieurs scripts utilitaires pour faciliter le développemen
   - [1. Gestion de Partie (`seed:game`)](#1-gestion-de-partie-seedgame)
     - [Utilisation](#utilisation)
     - [Options](#options)
+    - [Note importante sur l'API](#note-importante-sur-lapi)
     - [Exemples](#exemples)
   - [2. Remove Background (`remove-bg`)](#2-remove-background-remove-bg)
     - [Utilisation](#utilisation-1)
@@ -28,8 +29,8 @@ Ce script permet de créer rapidement une partie de test ou d'ajouter des joueur
 ### Utilisation
 
 ```bash
-# Via script pnpm
-pnpm run seed:game -- [options]
+# Via npx (recommandé pour passer les arguments)
+npx tsx scripts/seed-game.ts [options]
 ```
 
 ### Options
@@ -40,24 +41,31 @@ pnpm run seed:game -- [options]
 | `--code`    | `-c`  | Code d'une partie existante. Si fourni, aucune nouvelle partie n'est créée. | `null` |
 | `--help`    | `-h`  | Affiche l'aide.                                                             |        |
 
+### Note importante sur l'API
+
+Ce script utilise l'API **Admin de Supabase** (`auth.admin.createUser`) au lieu de l'API publique (`signInAnonymously`).
+
+- **Pourquoi ?** Pour contourner les limites de débit (Rate Limits) strictes sur la création de comptes anonymes (souvent limités à ~30/heure).
+- **Conséquence** : Vous devez avoir la variable `SUPABASE_SERVICE_ROLE_KEY` définie dans votre fichier `.env.local`. Les utilisateurs créés sont des "bots" avec des emails fictifs (`bot-xyz@example.com`) et une métadonnée `is_bot: true`.
+
 ### Exemples
 
 **Créer une nouvelle partie avec l'hôte et 3 joueurs supplémentaires (défaut) :**
 
 ```bash
-pnpm run seed:game
+npx tsx scripts/seed-game.ts
 ```
 
 **Créer une partie avec 10 joueurs supplémentaires :**
 
 ```bash
-pnpm run seed:game -- --players 10
+npx tsx scripts/seed-game.ts --players 10
 ```
 
 **Ajouter 5 joueurs à une partie existante (ex: `ABC123`) :**
 
 ```bash
-pnpm run seed:game -- --code ABC123 --players 5
+npx tsx scripts/seed-game.ts --code ABC123 --players 5
 ```
 
 ---

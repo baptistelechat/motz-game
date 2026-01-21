@@ -5,6 +5,7 @@ import { Card } from "@/components/ui/card";
 import { Copy } from "@nsmr/pixelart-react";
 import { useEffect, useState } from "react";
 import QRCode from "react-qr-code";
+import { toast } from "sonner";
 
 interface LobbyInfoProps {
   code: string;
@@ -21,6 +22,7 @@ export function LobbyInfo({ code }: LobbyInfoProps) {
   const handleCopy = () => {
     navigator.clipboard.writeText(roomUrl);
     setCopied(true);
+    toast.success("Lien copié dans le presse-papier !");
     setTimeout(() => setCopied(false), 2000);
   };
 

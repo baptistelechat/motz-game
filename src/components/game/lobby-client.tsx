@@ -10,6 +10,7 @@ import { generateRandomPlayer } from "@/lib/utils/generate-player";
 import { Loader } from "@nsmr/pixelart-react";
 import Link from "next/link";
 import { useEffect, useRef, useState } from "react";
+import { toast } from "sonner";
 
 interface LobbyClientProps {
   code: string;
@@ -29,7 +30,7 @@ export function LobbyClient({ code, gameId, hostId }: LobbyClientProps) {
     players,
     isLoading: isLobbyLoading,
     refreshPlayers,
-  } = useRealtimeLobby(gameId);
+  } = useRealtimeLobby(gameId, user?.id);
   const [isJoining, setIsJoining] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [isTimeout, setIsTimeout] = useState(false);
@@ -45,6 +46,7 @@ export function LobbyClient({ code, gameId, hostId }: LobbyClientProps) {
       } catch (err) {
         console.error("Failed to create auto-profile:", err);
         setError("Erreur lors de la création du profil.");
+        toast.error("Erreur lors de la création du profil.");
       }
     };
 
@@ -55,7 +57,13 @@ export function LobbyClient({ code, gameId, hostId }: LobbyClientProps) {
   useEffect(() => {
     // Wait for profile to be ready and user to be authenticated
     if (!user || !profile) return;
-    if (hasJoinedRef.current) return;
+    if (hasJoinedRef.current || isJoining) return;
+
+    const isInLobby = players.some((p) => p.player_id === user.id);
+    if (isInLobby) {
+      hasJoinedRef.current = true;
+      return;
+    }
 
     const join = async () => {
       setIsJoining(true);
@@ -64,15 +72,18 @@ export function LobbyClient({ code, gameId, hostId }: LobbyClientProps) {
         hasJoinedRef.current = true;
         // Trigger refresh immediately to minimize wait time
         refreshPlayers();
+        // Toast removed: let the realtime subscription handle it or handle it implicitly by UI update
       } catch (err) {
         console.error("Failed to join game:", err);
-        setError("Impossible de rejoindre la partie.");
+        const msg = "Impossible de rejoindre la partie.";
+        setError(msg);
+        toast.error(msg);
       } finally {
         setIsJoining(false);
       }
     };
     join();
-  }, [user, profile, code, refreshPlayers]);
+  }, [user, profile, code, refreshPlayers, players, isJoining]);
 
   const isInLobby = players.some((p) => p.player_id === user?.id);
   const showLoader =
@@ -101,9 +112,7 @@ export function LobbyClient({ code, gameId, hostId }: LobbyClientProps) {
             {isTimeout ? "DÉLAI D'ATTENTE DÉPASSÉ" : "ERREUR"}
           </p>
           <p className="font-sans text-sm">
-            {isTimeout
-              ? "La connexion au lobby prend trop de temps."
-              : error}
+            {isTimeout ? "La connexion au lobby prend trop de temps." : error}
           </p>
         </div>
         <div className="flex flex-col gap-4 w-full">
