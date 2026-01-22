@@ -76,7 +76,8 @@ export function LobbyClient({ code, gameId, hostId }: LobbyClientProps) {
         // Toast removed: let the realtime subscription handle it or handle it implicitly by UI update
       } catch (err) {
         console.error("Failed to join game:", err);
-        const msg = "Impossible de rejoindre la partie.";
+        const msg =
+          err instanceof Error ? err.message : "Impossible de rejoindre la partie.";
         setError(msg);
         toast.error(msg);
       } finally {

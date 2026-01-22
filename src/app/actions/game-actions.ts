@@ -3,10 +3,10 @@
 import { createClient } from "@/lib/supabase/server";
 import { generateGameCode } from "@/lib/utils/game-code";
 import { generateRandomPlayer } from "@/lib/utils/generate-player";
+import { SupabaseClient } from "@supabase/supabase-js";
 import { redirect } from "next/navigation";
 
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-async function ensurePlayerProfile(supabase: any, userId: string) {
+async function ensurePlayerProfile(supabase: SupabaseClient, userId: string) {
   const { data: player } = await supabase
     .from("players")
     .select("id")

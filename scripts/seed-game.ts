@@ -43,9 +43,10 @@ async function createPlayer(gameId: string) {
   const userId = data.user.id;
 
   // Créer le profil public
+  const profileData = generateRandomPlayer("Bot");
   const { error: profileError } = await supabase.from("players").insert({
     id: userId,
-    ...generateRandomPlayer("Bot"),
+    ...profileData,
   });
 
   if (profileError) {
@@ -69,7 +70,7 @@ async function createPlayer(gameId: string) {
     );
   }
 
-  return data.user;
+  return { user: data.user, pseudo: profileData.pseudo };
 }
 
 async function seedGame() {
@@ -96,8 +97,12 @@ async function seedGame() {
 
   if (!gameCode) {
     // 1. Créer un utilisateur hôte (anonyme)
+    // ⚠️ IMPORTANT : On utilise une instance séparée pour l'hôte afin de NE PAS
+    // connecter le client principal 'supabase' (qui doit rester Service Role / Admin).
+    // Si on connecte 'supabase', il perd ses droits de contournement RLS pour les autres users.
+    const hostClient = createClient(supabaseUrl!, supabaseServiceKey!);
     const { data: user, error: userError } =
-      await supabase.auth.signInAnonymously();
+      await hostClient.auth.signInAnonymously();
 
     if (userError || !user.user) {
       console.error(
@@ -110,9 +115,10 @@ async function seedGame() {
     console.log(`✅ Hôte créé: ${hostUser.id}`);
 
     // Créer le profil de l'hôte
+    const hostProfile = generateRandomPlayer("Host");
     const { error: hostProfileError } = await supabase.from("players").insert({
       id: hostUser.id,
-      ...generateRandomPlayer("Host"),
+      ...hostProfile,
     });
 
     if (hostProfileError) {
@@ -183,9 +189,9 @@ async function seedGame() {
       // Pause minimale pour éviter de spammer la console ou la DB
       if (i > 0) await delay(200);
 
-      const player = await createPlayer(gameId);
-      if (player) {
-        console.log(`   🤖 Joueur ${i + 1} créé: ${player.id}`);
+      const result = await createPlayer(gameId);
+      if (result) {
+        console.log(`   🤖 ${result.pseudo} créé (ID: ${result.user.id})`);
       }
     }
   }
