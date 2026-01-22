@@ -27,18 +27,22 @@ export function LobbyInfo({ code }: LobbyInfoProps) {
   };
 
   return (
-    <Card className="flex flex-col items-center gap-4 py-8 md:py-10 px-8 md:px-6 max-w-md mx-auto w-full bg-foreground text-primary-foreground h-full justify-center">
+    <Card className="flex flex-row md:flex-col items-center gap-4 py-4 md:py-6 px-4 md:px-6 max-w-md mx-auto w-full bg-foreground text-primary-foreground justify-center">
       <QRCode value={roomUrl} size={150} bgColor="transparent" />
-      <span className="text-5xl font-bold tracking-widest">{code}</span>
-      <Button
-        size="xl"
-        onClick={handleCopy}
-        className="w-full md:w-64"
-        variant={copied ? "secondary" : "default"}
-      >
-        <Copy className="size-5 md:size-7" />
-        {copied ? "LIEN COPIÉ !" : "COPIER LE LIEN"}
-      </Button>
+      <div className="flex flex-col items-center gap-2 md:gap-4">
+        <span className="text-4xl md:text-5xl font-bold tracking-widest">
+          {code}
+        </span>
+        <Button
+          size="lg"
+          onClick={handleCopy}
+          className="w-full md:w-64"
+          variant={copied ? "secondary" : "default"}
+        >
+          <Copy className="size-5" />
+          {copied ? "COPIÉ !" : "COPIER"}
+        </Button>
+      </div>
     </Card>
   );
 }

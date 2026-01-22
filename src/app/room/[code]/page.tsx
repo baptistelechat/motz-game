@@ -30,25 +30,23 @@ export default async function RoomPage({ params }: RoomPageProps) {
 
   return (
     <MainLayout className="h-dvh overflow-hidden flex flex-col p-4 pt-16 md:pt-4">
-      <div className="flex-none w-full flex justify-center mb-4">
-        <h1 className="font-display text-theme text-3xl md:text-4xl text-center drop-shadow-[4px_4px_0_#000000]">
-          SALLE D&apos;ATTENTE
-        </h1>
-      </div>
-
-      <div className="flex-1 w-full max-w-6xl mx-auto min-h-0 flex flex-col items-center justify-center gap-8">
+      <div className="flex-1 w-full max-w-6xl mx-auto min-h-0 flex flex-col items-center justify-center gap-4 md:gap-8">
         <div
-          className={`grid grid-cols-1 ${
-            isHost ? "lg:grid-cols-2" : ""
-          } gap-8 items-center w-full h-full min-h-0 justify-items-center transition-all duration-500`}
+          className={`flex flex-col ${
+            isHost ? "lg:grid lg:grid-cols-2" : ""
+          } gap-4 md:gap-8 items-center w-full h-full min-h-0 justify-items-center transition-all duration-500`}
         >
           {isHost && (
-            <div className="flex justify-center w-full animate-in fade-in slide-in-from-left-4 lg:h-full lg:items-center">
+            <div className="flex-none flex justify-center w-full animate-in fade-in slide-in-from-left-4 lg:h-full lg:items-center">
               <LobbyInfo code={code} />
             </div>
           )}
 
-          <div className="flex flex-col items-center justify-center w-full h-full min-h-0 md:h-auto md:max-h-full">
+          <div
+            className={`flex-1 flex flex-col items-center justify-center w-full min-h-0 ${
+              isHost ? "h-full overflow-hidden" : "lg:h-auto"
+            }`}
+          >
             <CaptchaGuard>
               <LobbyClient code={code} gameId={game.id} hostId={game.host_id} />
             </CaptchaGuard>

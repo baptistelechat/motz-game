@@ -161,23 +161,46 @@ export function LobbyClient({ code, gameId, hostId }: LobbyClientProps) {
   const isMyPlayerReady =
     players.find((p) => p.player_id === user?.id)?.is_ready || false;
 
+  const isHost = user?.id === hostId;
+
   return (
-    <div className="flex flex-col items-center gap-4 w-full h-full md:h-auto md:max-h-[80vh] animate-in fade-in duration-500">
-      <div className="flex-none text-center space-y-2">
+    <div
+      className={`flex flex-col items-center gap-4 w-full min-h-0 animate-in fade-in duration-500 justify-center ${
+        isHost
+          ? "flex-1 h-full"
+          : "flex-1 md:flex-none md:h-auto md:max-h-[80vh]"
+      }`}
+    >
+      <div
+        className={`flex-none text-center space-y-2 ${
+          isHost ? "mt-0 md:mt-24" : "mt-0"
+        }`}
+      >
+        <h1 className="font-display text-theme text-3xl md:text-4xl text-center drop-shadow-[4px_4px_0_#000000]">
+          SALLE D&apos;ATTENTE
+        </h1>
         <p className="text-xl font-display text-primary drop-shadow-[2px_2px_0_(--border)]">
           {players.length} JOUEUR{players.length > 1 ? "S" : ""}
         </p>
       </div>
 
-      <div className="flex-1 w-full min-h-0">
-        <LobbyPlayerList players={players} hostId={hostId} />
+      <div
+        className={`w-full min-h-0 overflow-hidden flex flex-col justify-center transition-all ${
+          isHost ? "flex-1" : "flex-1 md:flex-none"
+        }`}
+      >
+        <LobbyPlayerList
+          players={players}
+          hostId={hostId}
+          className={isHost ? "max-h-full" : "max-h-[50vh]"}
+        />
       </div>
 
       {user && (
-        <div className="flex-none w-full mt-auto md:mt-4">
+        <div className="flex-none w-full">
           <LobbyControls
             gameId={gameId}
-            isHost={user.id === hostId}
+            isHost={isHost}
             players={players}
             isMyPlayerReady={isMyPlayerReady}
           />

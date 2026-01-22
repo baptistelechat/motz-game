@@ -10,15 +10,20 @@ import { AnimatePresence, motion } from "framer-motion";
 interface LobbyPlayerListProps {
   players: LobbyPlayer[];
   hostId?: string;
+  className?: string;
 }
 
-export function LobbyPlayerList({ players, hostId }: LobbyPlayerListProps) {
+export function LobbyPlayerList({
+  players,
+  hostId,
+  className,
+}: LobbyPlayerListProps) {
   const { user } = useAuth();
   const currentUserId = user?.id;
 
   return (
-    <ScrollArea className="w-full h-full max-w-4xl mx-auto">
-      <div className="grid grid-cols-2 md:flex md:flex-wrap md:justify-center gap-4 w-full p-4 pb-20">
+    <ScrollArea className={cn("w-full max-w-4xl mx-auto", className)}>
+      <div className="grid grid-cols-2 md:flex md:flex-wrap md:justify-center gap-4 w-full p-4">
         <AnimatePresence>
           {players.map((p) => (
             <motion.div
@@ -33,19 +38,15 @@ export function LobbyPlayerList({ players, hostId }: LobbyPlayerListProps) {
               }}
               className="flex flex-col items-center gap-1 group w-full md:w-40"
             >
-              <div className="relative">
-                <div className="rounded-full p-1 transition-colors duration-300 bg-transparent">
-                  <AvatarDisplay
-                    animal={p.player.avatar_config.animal}
-                    color={p.player.avatar_config.color}
-                    size="md"
-                    isHost={hostId === p.player_id}
-                    isPlayer={p.player_id !== hostId}
-                    isBot={p.player.pseudo.startsWith("Bot-")}
-                    isReady={p.is_ready}
-                  />
-                </div>
-              </div>
+              <AvatarDisplay
+                animal={p.player.avatar_config.animal}
+                color={p.player.avatar_config.color}
+                size="md"
+                isHost={hostId === p.player_id}
+                isPlayer={p.player_id !== hostId}
+                isBot={p.player.pseudo.startsWith("Bot-")}
+                isReady={p.is_ready}
+              />
               <div
                 className={cn(
                   "text-lg text-center truncate w-full px-2",
