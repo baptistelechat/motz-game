@@ -11,7 +11,7 @@ vi.mock("@nsmr/pixelart-react", () => ({
 
 import { AvatarSelector } from "@/components/profile/components/avatar-selector";
 import { AVATAR_COLORS } from "@/lib/constants/avatar";
-import { ANIMALS } from "@/lib/utils/random-pseudo";
+import { ANIMALS } from "@/lib/constants/pseudo";
 
 describe("AvatarSelector", () => {
   beforeAll(() => {

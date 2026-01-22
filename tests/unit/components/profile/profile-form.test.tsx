@@ -13,7 +13,7 @@ vi.mock("@nsmr/pixelart-react", () => ({
 import { ProfileForm } from "@/components/profile/components/profile-form";
 import { usePlayerProfile } from "@/hooks/use-player-profile";
 import { AVATAR_COLORS } from "@/lib/constants/avatar";
-import { ANIMALS } from "@/lib/utils/random-pseudo";
+import { ANIMALS } from "@/lib/constants/pseudo";
 
 // Mock the hook
 vi.mock("@/hooks/use-player-profile", () => ({

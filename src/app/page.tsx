@@ -19,6 +19,7 @@ export default function Home() {
   const { user } = useAuth();
   const { profile, isLoading, updateProfile, isInitialized } =
     usePlayerProfile();
+
   const [isCreating, setIsCreating] = useState(false);
   const [isJoinDialogOpen, setIsJoinDialogOpen] = useState(false);
   const [creationError, setCreationError] = useState<Error | null>(null);

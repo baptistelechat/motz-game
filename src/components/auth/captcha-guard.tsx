@@ -101,6 +101,19 @@ export function CaptchaGuard({ children }: { children: React.ReactNode }) {
           Please configure Cloudflare Turnstile to proceed.
         </div>
       )}
+
+      {process.env.NEXT_PUBLIC_IS_E2E === "true" && (
+        <button
+          data-testid="e2e-bypass-captcha"
+          className="fixed bottom-4 right-4 bg-red-500 text-white p-2 rounded text-xs opacity-50 hover:opacity-100 z-50"
+          onClick={() => {
+            console.log("🔒 E2E BUTTON CLICKED");
+            signIn("e2e-bypass-token").catch((e) => console.error("🔒 E2E BUTTON ERROR", e));
+          }}
+        >
+          E2E BYPASS
+        </button>
+      )}
     </div>
   );
 }

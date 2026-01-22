@@ -1,10 +1,15 @@
 import { expect, test } from "./support/fixtures";
+import { setupE2EAuth } from "./support/auth.utils";
 
 test.describe("Player Profile", () => {
   test.beforeEach(async ({ homePage, page }) => {
+    // Force new user to avoid state conflicts from shared cached session
+    await setupE2EAuth(page, { force: true });
     await homePage.goto();
-    
+
     // Wait for initial profile creation/loading (handled by app)
+    // The auth bypass should have set cookies, so we should be logged in
+    
     // The "Modifier mon profil" button appearing confirms profile is loaded
     await expect(
       page.getByRole("button", { name: "Modifier mon profil" }),
