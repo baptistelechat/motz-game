@@ -1,6 +1,7 @@
 "use client";
 
 import { joinGame } from "@/app/actions/game-actions";
+import { LobbyControls } from "@/components/game/lobby-controls";
 import { LobbyPlayerList } from "@/components/game/lobby-player-list";
 import { useAuth } from "@/components/providers/auth-provider";
 import { Button } from "@/components/ui/button";
@@ -9,6 +10,7 @@ import { useRealtimeLobby } from "@/hooks/use-realtime-lobby";
 import { generateRandomPlayer } from "@/lib/utils/generate-player";
 import { Loader } from "@nsmr/pixelart-react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
 import { toast } from "sonner";
 import { ErrorCard } from "../ui/error-card";
@@ -20,6 +22,7 @@ interface LobbyClientProps {
 }
 
 export function LobbyClient({ code, gameId, hostId }: LobbyClientProps) {
+  const router = useRouter();
   const { user } = useAuth();
   const {
     profile,
@@ -29,6 +32,7 @@ export function LobbyClient({ code, gameId, hostId }: LobbyClientProps) {
   } = usePlayerProfile();
   const {
     players,
+    gameStatus,
     isLoading: isLobbyLoading,
     refreshPlayers,
   } = useRealtimeLobby(gameId, user?.id);
@@ -77,7 +81,9 @@ export function LobbyClient({ code, gameId, hostId }: LobbyClientProps) {
       } catch (err) {
         console.error("Failed to join game:", err);
         const msg =
-          err instanceof Error ? err.message : "Impossible de rejoindre la partie.";
+          err instanceof Error
+            ? err.message
+            : "Impossible de rejoindre la partie.";
         setError(msg);
         toast.error(msg);
       } finally {
@@ -87,13 +93,20 @@ export function LobbyClient({ code, gameId, hostId }: LobbyClientProps) {
     join();
   }, [user, profile, code, refreshPlayers, players, isJoining]);
 
+  // 3. Navigation when game starts
+  useEffect(() => {
+    if (gameStatus === "PLAYING") {
+      router.replace(`/game/${code}`);
+    }
+  }, [gameStatus, code, router]);
+
   const isInLobby = players.some((p) => p.player_id === user?.id);
   const showLoader =
     isJoining ||
     (isLobbyLoading && players.length === 0) ||
     (!isInLobby && !error);
 
-  // 3. Timeout handler for connection issues
+  // 4. Timeout handler for connection issues
   useEffect(() => {
     let timeout: NodeJS.Timeout;
     if (showLoader) {
@@ -145,15 +158,31 @@ export function LobbyClient({ code, gameId, hostId }: LobbyClientProps) {
     );
   }
 
+  const isMyPlayerReady =
+    players.find((p) => p.player_id === user?.id)?.is_ready || false;
+
   return (
-    <div className="flex flex-col items-center gap-8 w-full animate-in fade-in duration-500">
-      <div className="text-center space-y-2">
+    <div className="flex flex-col items-center gap-4 w-full h-full md:h-auto md:max-h-[80vh] animate-in fade-in duration-500">
+      <div className="flex-none text-center space-y-2">
         <p className="text-xl font-display text-primary drop-shadow-[2px_2px_0_(--border)]">
           {players.length} JOUEUR{players.length > 1 ? "S" : ""}
         </p>
       </div>
 
-      <LobbyPlayerList players={players} hostId={hostId} />
+      <div className="flex-1 w-full min-h-0">
+        <LobbyPlayerList players={players} hostId={hostId} />
+      </div>
+
+      {user && (
+        <div className="flex-none w-full mt-auto md:mt-4">
+          <LobbyControls
+            gameId={gameId}
+            isHost={user.id === hostId}
+            players={players}
+            isMyPlayerReady={isMyPlayerReady}
+          />
+        </div>
+      )}
     </div>
   );
 }

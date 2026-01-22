@@ -14,8 +14,11 @@ export type LobbyPlayer = {
   };
 };
 
+export type GameStatus = "LOBBY" | "PLAYING" | "FINISHED";
+
 export function useRealtimeLobby(gameId: string, currentUserId?: string) {
   const [players, setPlayers] = useState<LobbyPlayer[]>([]);
+  const [gameStatus, setGameStatus] = useState<GameStatus>("LOBBY");
   const [isLoading, setIsLoading] = useState(true);
   // Keep supabase instance stable across renders
   const [supabase] = useState(() => createClient());
@@ -81,14 +84,30 @@ export function useRealtimeLobby(gameId: string, currentUserId?: string) {
     } else if (data) {
       setPlayers(data as unknown as LobbyPlayer[]);
     }
-    setIsLoading(false);
+  }, [gameId, supabase]);
+
+  const fetchGameStatus = useCallback(async () => {
+    if (!gameId) return;
+    const { data, error } = await supabase
+      .from("games")
+      .select("status")
+      .eq("id", gameId)
+      .single();
+
+    if (error) {
+      console.error("Error fetching game status:", error);
+    } else if (data) {
+      setGameStatus(data.status as GameStatus);
+    }
   }, [gameId, supabase]);
 
   useEffect(() => {
     if (!gameId) return;
 
     // Initial fetch
-    fetchPlayers();
+    Promise.all([fetchPlayers(), fetchGameStatus()]).then(() => {
+      setIsLoading(false);
+    });
 
     const channel = supabase
       .channel(`game_players:${gameId}`)
@@ -98,18 +117,11 @@ export function useRealtimeLobby(gameId: string, currentUserId?: string) {
           event: "*",
           schema: "public",
           table: "game_players",
+          filter: `game_id=eq.${gameId}`,
         },
-        (payload) => {
-          const newRecord = payload.new as { game_id: string } | null;
-          const oldRecord = payload.old as { game_id: string } | null;
-
-          if (
-            (newRecord && newRecord.game_id === gameId) ||
-            (oldRecord && oldRecord.game_id === gameId)
-          ) {
-            console.log("🔄 Realtime update received, fetching players...");
-            fetchPlayers();
-          }
+        () => {
+          console.log("🔄 Realtime update received (game_players), fetching players...");
+          fetchPlayers();
         },
       )
       .on(
@@ -124,6 +136,21 @@ export function useRealtimeLobby(gameId: string, currentUserId?: string) {
           fetchPlayers();
         },
       )
+      .on(
+        "postgres_changes",
+        {
+          event: "UPDATE",
+          schema: "public",
+          table: "games",
+          filter: `id=eq.${gameId}`,
+        },
+        (payload) => {
+          console.log("🔄 Realtime update received (games), updating status...");
+          if (payload.new && "status" in payload.new) {
+            setGameStatus(payload.new.status as GameStatus);
+          }
+        },
+      )
       .subscribe((status) => {
         if (status === "SUBSCRIBED") {
           console.log(`✅ Subscribed to game_players:${gameId}`);
@@ -135,7 +162,7 @@ export function useRealtimeLobby(gameId: string, currentUserId?: string) {
     return () => {
       supabase.removeChannel(channel);
     };
-  }, [gameId, supabase, fetchPlayers]);
+  }, [gameId, supabase, fetchPlayers, fetchGameStatus]);
 
-  return { players, isLoading, refreshPlayers: fetchPlayers };
+  return { players, gameStatus, isLoading, refreshPlayers: fetchPlayers };
 }

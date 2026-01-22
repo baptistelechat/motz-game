@@ -1,30 +1,15 @@
 "use server";
 
 import { createClient } from "@/lib/supabase/server";
-import { generateGameCode } from "@/lib/utils/game-code";
-import { generateRandomPlayer } from "@/lib/utils/generate-player";
-import { SupabaseClient } from "@supabase/supabase-js";
+import { customAlphabet } from "nanoid";
+import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 
-async function ensurePlayerProfile(supabase: SupabaseClient, userId: string) {
-  const { data: player } = await supabase
-    .from("players")
-    .select("id")
-    .eq("id", userId)
-    .single();
-
-  if (!player) {
-    const { error } = await supabase.from("players").insert({
-      id: userId,
-      ...generateRandomPlayer(),
-    });
-    if (error) {
-      console.error("Failed to create default profile:", error);
-      // We don't throw here, hoping it might have been a race condition
-      // and let the next step (FK constraint) catch it if it really failed
-    }
-  }
-}
+// Generate a short code for the game (6 chars, uppercase + numbers)
+const generateGameCode = customAlphabet(
+  "0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ",
+  6,
+);
 
 export async function createGame() {
   const supabase = await createClient();
@@ -34,58 +19,39 @@ export async function createGame() {
   } = await supabase.auth.getUser();
 
   if (authError || !user) {
-    throw new Error("User must be authenticated to create a game");
+    throw new Error("Vous devez être connecté pour créer une partie.");
   }
 
-  // Ensure profile exists before creating game/joining
-  await ensurePlayerProfile(supabase, user.id);
+  const code = generateGameCode();
 
-  let code: string;
-  let retries = 0;
-  const maxRetries = 5;
+  const { data: game, error: createError } = await supabase
+    .from("games")
+    .insert({
+      code,
+      host_id: user.id,
+      status: "LOBBY",
+    })
+    .select("id, code")
+    .single();
 
-  while (retries < maxRetries) {
-    code = generateGameCode();
-
-    const { data, error } = await supabase
-      .from("games")
-      .insert({
-        code,
-        host_id: user.id,
-        status: "LOBBY",
-      })
-      .select("code, id")
-      .single();
-
-    if (!error && data) {
-      // Add host to game_players immediately
-      const { error: joinError } = await supabase.from("game_players").insert({
-        game_id: data.id,
-        player_id: user.id,
-        is_ready: false,
-      });
-
-      if (joinError) {
-        // If host cannot join, we might want to cleanup the game or log error
-        console.error("Failed to add host to game_players", joinError);
-        // But we still redirect, as the user can probably "join" again by visiting the page
-      }
-
-      redirect(`/room/${data.code}`);
-    }
-
-    if (error?.code === "23505") {
-      // Postgres unique_violation
-      retries++;
-      continue;
-    }
-
-    throw new Error(`Failed to create game: ${error.message}`);
+  if (createError) {
+    console.error("Error creating game:", createError);
+    throw new Error("Impossible de créer la partie.");
   }
 
-  throw new Error(
-    "Failed to generate a unique game code after multiple attempts",
-  );
+  // Auto-join the host
+  const { error: joinError } = await supabase.from("game_players").insert({
+    game_id: game.id,
+    player_id: user.id,
+    is_ready: false,
+  });
+
+  if (joinError) {
+    console.error("Error joining game as host:", joinError);
+    throw new Error("Impossible de rejoindre la partie créée.");
+  }
+
+  redirect(`/room/${game.code}`);
 }
 
 export async function joinGame(code: string) {
@@ -96,13 +62,10 @@ export async function joinGame(code: string) {
   } = await supabase.auth.getUser();
 
   if (authError || !user) {
-    throw new Error("User must be authenticated to join a game");
+    throw new Error("Vous devez être connecté pour rejoindre une partie.");
   }
 
-  // Ensure profile exists before joining
-  await ensurePlayerProfile(supabase, user.id);
-
-  // 1. Fetch game details
+  // Get game ID from code
   const { data: game, error: gameError } = await supabase
     .from("games")
     .select("id, status")
@@ -110,26 +73,97 @@ export async function joinGame(code: string) {
     .single();
 
   if (gameError || !game) {
-    throw new Error("Game not found");
+    throw new Error("Partie introuvable.");
   }
 
   if (game.status !== "LOBBY") {
-    throw new Error("Game is already started or finished");
+    throw new Error("La partie a déjà commencé ou est terminée.");
   }
 
-  // 2. Insert into game_players
+  // Check if already joined
+  const { data: existingPlayer } = await supabase
+    .from("game_players")
+    .select("game_id")
+    .eq("game_id", game.id)
+    .eq("player_id", user.id)
+    .single();
+
+  if (existingPlayer) {
+    return { success: true, message: "Déjà dans la partie" };
+  }
+
   const { error: joinError } = await supabase.from("game_players").insert({
     game_id: game.id,
     player_id: user.id,
   });
 
   if (joinError) {
-    // Ignore duplicate key error (player already joined)
-    if (joinError.code === "23505") {
-      return { success: true, gameId: game.id };
-    }
-    throw new Error(`Failed to join game: ${joinError.message}`);
+    console.error("Error joining game:", joinError);
+    throw new Error("Impossible de rejoindre la partie.");
   }
 
-  return { success: true, gameId: game.id };
+  revalidatePath(`/room/${code}`);
+  return { success: true };
+}
+
+export async function toggleReady(gameId: string, isReady: boolean) {
+  const supabase = await createClient();
+  const {
+    data: { user },
+    error: authError,
+  } = await supabase.auth.getUser();
+
+  if (authError || !user) throw new Error("User must be authenticated");
+
+  const { error } = await supabase
+    .from("game_players")
+    .update({ is_ready: isReady })
+    .eq("game_id", gameId)
+    .eq("player_id", user.id);
+
+  if (error) throw new Error(`Failed to update ready status: ${error.message}`);
+
+  return { success: true };
+}
+
+export async function startGame(gameId: string) {
+  const supabase = await createClient();
+  const {
+    data: { user },
+    error: authError,
+  } = await supabase.auth.getUser();
+
+  if (authError || !user) throw new Error("User must be authenticated");
+
+  const { data: game, error: gameError } = await supabase
+    .from("games")
+    .select("host_id")
+    .eq("id", gameId)
+    .single();
+
+  if (gameError || !game) throw new Error("Game not found");
+
+  if (game.host_id !== user.id)
+    throw new Error("Only the host can start the game");
+
+  const { data: players, error: playersError } = await supabase
+    .from("game_players")
+    .select("is_ready")
+    .eq("game_id", gameId);
+
+  if (playersError || !players) throw new Error("Failed to fetch players");
+
+  const allReady = players.every((p) => p.is_ready);
+
+  if (!allReady) throw new Error("Not all players are ready");
+
+  const { error: updateError } = await supabase
+    .from("games")
+    .update({ status: "PLAYING", started_at: new Date().toISOString() })
+    .eq("id", gameId);
+
+  if (updateError)
+    throw new Error(`Failed to start game: ${updateError.message}`);
+
+  return { success: true };
 }

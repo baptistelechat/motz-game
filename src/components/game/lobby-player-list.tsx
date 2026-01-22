@@ -17,8 +17,8 @@ export function LobbyPlayerList({ players, hostId }: LobbyPlayerListProps) {
   const currentUserId = user?.id;
 
   return (
-    <ScrollArea className="w-full max-w-4xl *:data-[slot=scroll-area-viewport]:max-h-[60vh]">
-      <div className="grid grid-cols-2 md:flex md:flex-wrap md:justify-center gap-4 w-full p-4">
+    <ScrollArea className="w-full h-full max-w-4xl mx-auto">
+      <div className="grid grid-cols-2 md:flex md:flex-wrap md:justify-center gap-4 w-full p-4 pb-20">
         <AnimatePresence>
           {players.map((p) => (
             <motion.div
@@ -34,19 +34,17 @@ export function LobbyPlayerList({ players, hostId }: LobbyPlayerListProps) {
               className="flex flex-col items-center gap-1 group w-full md:w-40"
             >
               <div className="relative">
-                <AvatarDisplay
-                  animal={p.player.avatar_config.animal}
-                  color={p.player.avatar_config.color}
-                  size="md"
-                  isHost={hostId === p.player_id}
-                  isPlayer={p.player_id !== hostId}
-                  isBot={p.player.pseudo.startsWith("Bot-")}
-                />
-                {p.is_ready && (
-                  <div className="absolute -top-2 -right-2 bg-green-500 border-2 border-black text-white text-xs px-1 font-display animate-bounce">
-                    PRET
-                  </div>
-                )}
+                <div className="rounded-full p-1 transition-colors duration-300 bg-transparent">
+                  <AvatarDisplay
+                    animal={p.player.avatar_config.animal}
+                    color={p.player.avatar_config.color}
+                    size="md"
+                    isHost={hostId === p.player_id}
+                    isPlayer={p.player_id !== hostId}
+                    isBot={p.player.pseudo.startsWith("Bot-")}
+                    isReady={p.is_ready}
+                  />
+                </div>
               </div>
               <div
                 className={cn(
