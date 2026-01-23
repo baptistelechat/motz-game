@@ -62,8 +62,14 @@ export function LobbyControls({
           ) : isMyPlayerReady ? (
             <div className="flex flex-col items-center leading-tight py-1">
               <div className="flex items-center gap-2">
-                <Loader className="size-5 animate-spin" />
-                <span className="hidden md:inline-block">En attente...</span>
+                <Loader className="size-7 md:size-6 animate-spin" />
+                <span
+                  className={
+                    isHost ? "hidden md:inline-block" : ""
+                  }
+                >
+                  En attente...
+                </span>
               </div>
             </div>
           ) : (

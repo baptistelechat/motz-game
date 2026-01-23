@@ -2,6 +2,7 @@
 
 import { joinGame } from "@/app/actions/game-actions";
 import { LobbyControls } from "@/components/game/lobby-controls";
+import { LobbyInfo } from "@/components/game/lobby-info";
 import { LobbyPlayerList } from "@/components/game/lobby-player-list";
 import { useAuth } from "@/components/providers/auth-provider";
 import { Button } from "@/components/ui/button";
@@ -182,6 +183,11 @@ export function LobbyClient({ code, gameId, hostId }: LobbyClientProps) {
         <p className="text-xl font-display text-primary drop-shadow-[2px_2px_0_(--border)]">
           {players.length} JOUEUR{players.length > 1 ? "S" : ""}
         </p>
+        {isHost && (
+          <div className="lg:hidden w-full mt-2">
+            <LobbyInfo code={code} />
+          </div>
+        )}
       </div>
 
       <div
