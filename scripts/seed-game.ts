@@ -22,7 +22,7 @@ const supabase = createClient(supabaseUrl, supabaseServiceKey);
 
 const delay = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
 
-async function createPlayer(gameId: string) {
+async function createPlayer(gameId: string, isReady: boolean = false) {
   // Utiliser l'API Admin pour créer un utilisateur sans restriction de rate limit
   const fakeEmail = `bot-${Date.now()}-${Math.random().toString(36).substring(7)}@example.com`;
 
@@ -60,7 +60,7 @@ async function createPlayer(gameId: string) {
   const { error: joinError } = await supabase.from("game_players").insert({
     game_id: gameId,
     player_id: userId,
-    is_ready: false, // Par défaut
+    is_ready: isReady, // Par défaut ou forcé
   });
 
   if (joinError) {
@@ -85,6 +85,12 @@ async function seedGame() {
       alias: "c",
       type: "string",
       description: "Code d'une partie existante à rejoindre",
+    })
+    .option("ready", {
+      alias: "r",
+      type: "boolean",
+      description: "Force les bots à être prêts",
+      default: false,
     })
     .help()
     .alias("help", "h").argv;
@@ -178,6 +184,43 @@ async function seedGame() {
     gameId = game.id;
   }
 
+  // Mettre à jour les bots existants si demandé
+  if (argv.ready) {
+    console.log("⚡ Mise à jour du statut 'prêt' pour les bots existants...");
+    const { data: players } = await supabase
+      .from("game_players")
+      .select("player_id")
+      .eq("game_id", gameId);
+
+    if (players) {
+      let updatedCount = 0;
+      for (const p of players) {
+        const {
+          data: { user },
+        } = await supabase.auth.admin.getUserById(p.player_id);
+        // On considère comme bot ceux qui ont is_bot: true (créés par ce script)
+        if (user && user.user_metadata?.is_bot) {
+          const { error: updateError } = await supabase
+            .from("game_players")
+            .update({ is_ready: true })
+            .eq("game_id", gameId)
+            .eq("player_id", p.player_id);
+
+          if (!updateError) {
+            updatedCount++;
+          }
+        }
+      }
+      if (updatedCount > 0) {
+        console.log(
+          `   ✅ ${updatedCount} bots existants marqués comme prêts.`,
+        );
+      } else {
+        console.log(`   ℹ️ Aucun bot existant à mettre à jour.`);
+      }
+    }
+  }
+
   console.log(
     `\n🔗 Lien pour rejoindre: http://localhost:3000/room/${gameCode}`,
   );
@@ -189,7 +232,7 @@ async function seedGame() {
       // Pause minimale pour éviter de spammer la console ou la DB
       if (i > 0) await delay(200);
 
-      const result = await createPlayer(gameId);
+      const result = await createPlayer(gameId, !!argv.ready);
       if (result) {
         console.log(`   🤖 ${result.pseudo} créé (ID: ${result.user.id})`);
       }
