@@ -3,8 +3,7 @@
 import { startGame, toggleReady } from "@/app/actions/game-actions";
 import { Button } from "@/components/ui/button";
 import { LobbyPlayer } from "@/hooks/use-realtime-lobby";
-import { Loader } from "@nsmr/pixelart-react";
-import { Play } from "lucide-react";
+import { Loader, Play } from "@nsmr/pixelart-react";
 import { useTransition } from "react";
 import { toast } from "sonner";
 
@@ -64,9 +63,8 @@ export function LobbyControls({
             <div className="flex flex-col items-center leading-tight py-1">
               <div className="flex items-center gap-2">
                 <Loader className="size-5 animate-spin" />
-                <span>En attente</span>
+                <span className="hidden md:inline-block">En attente...</span>
               </div>
-              <span className="text-sm">des autres joueurs...</span>
             </div>
           ) : (
             <>Prêt ?</>
@@ -81,15 +79,17 @@ export function LobbyControls({
             disabled={!allPlayersReady || isPending}
             className="w-full flex-1 animate-in fade-in slide-in-from-bottom-2"
           >
-            <Play className="mr-2 size-6" />
+            <Play className="size-5" />
             Lancer
           </Button>
         )}
       </div>
 
-      {isHost && !allPlayersReady && (
+      {isHost && (
         <p className="text-lg text-muted-foreground text-center animate-in fade-in">
-          Tous les joueurs doivent être prêts
+          {allPlayersReady
+            ? "Tous les joueurs sont prêts"
+            : "Tous les joueurs doivent être prêts"}
         </p>
       )}
     </div>
