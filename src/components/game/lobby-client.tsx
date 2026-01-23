@@ -186,13 +186,13 @@ export function LobbyClient({ code, gameId, hostId }: LobbyClientProps) {
 
       <div
         className={`w-full min-h-0 overflow-hidden flex flex-col justify-center transition-all ${
-          isHost ? "flex-1" : "flex-1 md:flex-none"
+          isHost ? "flex-1 md:max-h-[50vh]" : "flex-1 md:flex-none"
         }`}
       >
         <LobbyPlayerList
           players={players}
           hostId={hostId}
-          className={isHost ? "max-h-full" : "max-h-[50vh]"}
+          className={isHost ? "md:max-h-full" : "md:max-h-[50vh]"}
         />
       </div>
 

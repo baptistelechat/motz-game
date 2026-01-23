@@ -3,6 +3,7 @@ import { LobbyClient } from "@/components/game/lobby-client";
 import { LobbyInfo } from "@/components/game/lobby-info";
 import { MainLayout } from "@/components/layout/main-layout";
 import { createClient } from "@/lib/supabase/server";
+import { cn } from "@/lib/utils";
 import { notFound } from "next/navigation";
 
 interface RoomPageProps {
@@ -29,7 +30,9 @@ export default async function RoomPage({ params }: RoomPageProps) {
   const isHost = user?.id === game.host_id;
 
   return (
-    <MainLayout className="h-dvh overflow-hidden flex flex-col p-4 pt-16 md:pt-4">
+    <MainLayout
+      className={cn("h-dvh overflow-hidden flex flex-col p-4 md:pt-4", isHost ? "pt-10" : "pt-14")}
+    >
       <div className="flex-1 w-full max-w-6xl mx-auto min-h-0 flex flex-col items-center justify-center gap-4 md:gap-8">
         <div
           className={`flex flex-col ${

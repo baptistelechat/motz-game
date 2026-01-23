@@ -22,7 +22,9 @@ export function LobbyPlayerList({
   const currentUserId = user?.id;
 
   return (
-    <ScrollArea className={cn("w-full max-w-4xl mx-auto", className)}>
+    <ScrollArea
+      className={cn("w-full max-w-4xl mx-auto h-full md:h-auto", className)}
+    >
       <div className="grid grid-cols-2 md:flex md:flex-wrap md:justify-center gap-4 w-full p-4">
         <AnimatePresence>
           {players.map((p) => (
