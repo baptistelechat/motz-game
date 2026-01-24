@@ -37,6 +37,12 @@ export function LobbyClient({ code, gameId, hostId }: LobbyClientProps) {
     isLoading: isLobbyLoading,
     refreshPlayers,
   } = useRealtimeLobby(gameId, user?.id);
+
+  useEffect(() => {
+    // Refresh players on mount to ensure we have the latest list
+    refreshPlayers();
+  }, [refreshPlayers]);
+
   const [isJoining, setIsJoining] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [isTimeout, setIsTimeout] = useState(false);

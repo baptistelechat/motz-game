@@ -1,1 +1,0 @@
-    [webkit] ÔÇ║ tests\e2e\join-game.spec.ts:59:7 ÔÇ║ Join Game (Story 2.2) ÔÇ║ [P1] Manual Join: User enters code on Home Page 

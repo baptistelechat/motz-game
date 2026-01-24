@@ -49,11 +49,6 @@ export async function POST(request: NextRequest) {
       cachedSession &&
       Date.now() - sessionTimestamp < SESSION_TTL
     ) {
-      console.log(
-        "🔒 E2E Bypass: Returning cached session for user",
-        cachedSession.user.id,
-      );
-
       // Refresh the session to ensure cookies are generated
       const { data: refreshData, error: refreshError } =
         await supabase.auth.setSession({
@@ -71,10 +66,6 @@ export async function POST(request: NextRequest) {
         });
         return finalResponse;
       } else {
-        console.warn(
-          "🔒 E2E Bypass: Cached session refresh failed, creating new one:",
-          refreshError,
-        );
         cachedSession = null;
       }
     }

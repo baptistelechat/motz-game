@@ -13,6 +13,10 @@ export default async function RoomPage({ params }: RoomPageProps) {
   const { code } = await params;
   const supabase = await createClient();
 
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+
   const { data: game } = await supabase
     .from("games")
     .select("id, status, host_id")
@@ -23,9 +27,6 @@ export default async function RoomPage({ params }: RoomPageProps) {
     notFound();
   }
 
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
   const isHost = user?.id === game.host_id;
 
   return (
