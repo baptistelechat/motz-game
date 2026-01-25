@@ -1,7 +1,8 @@
-import * as React from "react"
-import { cn } from "@/lib/utils"
+import { ProfileBadge } from "@/components/profile/profile-badge";
+import { cn } from "@/lib/utils";
+import * as React from "react";
 
-type MainLayoutProps = React.HTMLAttributes<HTMLElement>
+type MainLayoutProps = React.HTMLAttributes<HTMLElement>;
 
 const MainLayout = React.forwardRef<HTMLElement, MainLayoutProps>(
   ({ className, children, ...props }, ref) => {
@@ -9,16 +10,17 @@ const MainLayout = React.forwardRef<HTMLElement, MainLayoutProps>(
       <main
         ref={ref}
         className={cn(
-          "flex min-h-[100dvh] flex-col bg-background",
-          className
+          "flex min-h-dvh flex-col bg-background relative",
+          className,
         )}
         {...props}
       >
+        <ProfileBadge className="absolute top-4 right-4 z-20" />
         {children}
       </main>
-    )
-  }
-)
-MainLayout.displayName = "MainLayout"
+    );
+  },
+);
+MainLayout.displayName = "MainLayout";
 
-export { MainLayout }
+export { MainLayout };

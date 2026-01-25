@@ -26,3 +26,7 @@ create policy "Users can update their own profile"
   on public.players for update
   using ( auth.uid() = id )
   with check ( auth.uid() = id );
+
+-- Enable Realtime
+alter publication supabase_realtime add table public.players;
+ALTER TABLE public.players REPLICA IDENTITY FULL;

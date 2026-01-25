@@ -25,8 +25,10 @@ describe("AvatarDisplay", () => {
     const { container } = render(<AvatarDisplay animal={animal} color={color} />);
     
     // The outer div should have the border color style
-    const outerDiv = container.firstChild as HTMLElement;
-    expect(outerDiv).toHaveStyle({ borderColor: color });
+    // The structure is Wrapper > BorderedDiv > ImageWrapper
+    const wrapper = container.firstChild as HTMLElement;
+    const borderedDiv = wrapper.firstChild as HTMLElement;
+    expect(borderedDiv).toHaveStyle({ borderColor: color });
   });
 
   it("applies size classes", () => {
@@ -34,9 +36,14 @@ describe("AvatarDisplay", () => {
     const color = "#000000";
     
     const { container, rerender } = render(<AvatarDisplay animal={animal} color={color} size="sm" />);
-    expect(container.firstChild).toHaveClass("w-8", "h-8");
+    // The structure is Wrapper > BorderedDiv > ImageWrapper
+    const wrapper = container.firstChild as HTMLElement;
+    const borderedDiv = wrapper.firstChild as HTMLElement;
+    expect(borderedDiv).toHaveClass("w-8", "h-8");
     
     rerender(<AvatarDisplay animal={animal} color={color} size="lg" />);
-    expect(container.firstChild).toHaveClass("w-32", "h-32");
+    const updatedWrapper = container.firstChild as HTMLElement;
+    const updatedBorderedDiv = updatedWrapper.firstChild as HTMLElement;
+    expect(updatedBorderedDiv).toHaveClass("w-32", "h-32");
   });
 });

@@ -4,6 +4,7 @@ import { Turnstile, type TurnstileInstance } from "@marsidev/react-turnstile";
 import { useRef, useState } from "react";
 
 import { Card } from "@/components/ui/card";
+import { ErrorCard } from "@/components/ui/error-card";
 import { LoadingScreen } from "@/components/ui/loading-screen";
 
 export function CaptchaGuard({ children }: { children: React.ReactNode }) {
@@ -77,21 +78,21 @@ export function CaptchaGuard({ children }: { children: React.ReactNode }) {
 
         {/* Affichage des erreurs (ex: Anonymous auth disabled) */}
         {error && (
-          <div className="text-destructive font-sans text-sm max-w-xs text-center bg-black p-2 border border-destructive">
-            ERREUR: {error.message}
-          </div>
+          <ErrorCard
+            title="ERREUR CRITIQUE"
+            message={error.message}
+            className="w-full max-w-xs animate-in fade-in slide-in-from-bottom-2"
+            action={
+              <button
+                onClick={() => window.location.reload()}
+                className="px-4 py-2 bg-white text-black font-display text-xs uppercase hover:bg-gray-200 transition-colors shadow-[2px_2px_0_var(--border)] border-2 border-black w-full"
+              >
+                RECHARGER LA PAGE
+              </button>
+            }
+          />
         )}
       </Card>
-
-      {process.env.NEXT_PUBLIC_IS_E2E === "true" && (
-        <button
-          onClick={() => signIn("e2e-bypass-token")}
-          className="fixed bottom-4 right-4 bg-red-600 text-white p-2 font-mono text-xs z-50 opacity-50 hover:opacity-100"
-          data-testid="e2e-bypass-captcha"
-        >
-          [E2E] BYPASS CAPTCHA ({process.env.NEXT_PUBLIC_IS_E2E})
-        </button>
-      )}
 
       {!process.env.NEXT_PUBLIC_TURNSTILE_SITE_KEY && (
         <div className="text-red-500 font-mono text-sm max-w-md text-center bg-black p-4 border border-red-500">
@@ -99,6 +100,19 @@ export function CaptchaGuard({ children }: { children: React.ReactNode }) {
           <br />
           Please configure Cloudflare Turnstile to proceed.
         </div>
+      )}
+
+      {process.env.NEXT_PUBLIC_IS_E2E === "true" && (
+        <button
+          data-testid="e2e-bypass-captcha"
+          className="fixed bottom-4 right-4 bg-red-500 text-white p-2 rounded text-xs opacity-50 hover:opacity-100 z-50"
+          onClick={() => {
+            console.log("🔒 E2E BUTTON CLICKED");
+            signIn("e2e-bypass-token").catch((e) => console.error("🔒 E2E BUTTON ERROR", e));
+          }}
+        >
+          E2E BYPASS
+        </button>
       )}
     </div>
   );

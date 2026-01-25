@@ -1,4 +1,4 @@
-import { useAnonymousAuth } from "@/hooks/use-anonymous-auth";
+import { useAuth } from "@/components/providers/auth-provider";
 import { PlayerProfile } from "@/lib/schemas/player-schema";
 import { usePlayerStore } from "@/store/use-player-store";
 import { useEffect, useRef } from "react";
@@ -10,7 +10,7 @@ export type PlayerRecord = PlayerProfile & {
 };
 
 export function usePlayerProfile() {
-  const { user } = useAnonymousAuth();
+  const { user } = useAuth();
   const {
     profile,
     isLoading,
@@ -46,7 +46,6 @@ export function usePlayerProfile() {
     error,
     isInitialized,
     updateProfile,
-    user,
     // expose fetchProfile if needed manually, wrapping with user check
     fetchProfile: async () => {
       if (user) await fetchProfile(user.id);

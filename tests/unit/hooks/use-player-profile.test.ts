@@ -1,4 +1,3 @@
-import { useAnonymousAuth } from "@/hooks/use-anonymous-auth";
 import { usePlayerProfile } from "@/hooks/use-player-profile";
 import { createClient } from "@/lib/supabase/client";
 import { act, renderHook, waitFor } from "@testing-library/react";
@@ -9,9 +8,15 @@ vi.mock("@/lib/supabase/client", () => ({
   createClient: vi.fn(),
 }));
 
+vi.mock("@/components/providers/auth-provider", () => ({
+  useAuth: vi.fn(),
+}));
+
 vi.mock("@/hooks/use-anonymous-auth", () => ({
   useAnonymousAuth: vi.fn(),
 }));
+
+import { useAuth } from "@/components/providers/auth-provider";
 
 describe("usePlayerProfile", () => {
   const mockSelect = vi.fn();
@@ -22,6 +27,12 @@ describe("usePlayerProfile", () => {
 
   beforeEach(() => {
     vi.clearAllMocks();
+
+    // Mock useAuth
+    (useAuth as Mock).mockReturnValue({
+      user: null,
+      isLoading: false,
+    });
 
     // Setup Supabase mock chain
     mockSingle.mockResolvedValue({ data: null, error: null });
@@ -59,7 +70,7 @@ describe("usePlayerProfile", () => {
     });
 
     // Default auth state: no user
-    (useAnonymousAuth as Mock).mockReturnValue({
+    (useAuth as Mock).mockReturnValue({
       user: null,
       isLoading: false,
     });
@@ -72,7 +83,7 @@ describe("usePlayerProfile", () => {
   });
 
   it("should fetch profile when user exists", async () => {
-    (useAnonymousAuth as Mock).mockReturnValue({
+    (useAuth as Mock).mockReturnValue({
       user: { id: "user-123" },
       isLoading: false,
     });
@@ -107,7 +118,7 @@ describe("usePlayerProfile", () => {
   });
 
   it("should update profile", async () => {
-    (useAnonymousAuth as Mock).mockReturnValue({
+    (useAuth as Mock).mockReturnValue({
       user: { id: "user-123" },
       isLoading: false,
     });

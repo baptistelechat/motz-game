@@ -42,7 +42,6 @@ export function AttributesDialog() {
                             rel="noopener noreferrer"
                             className="hover:underline hover:text-primary transition-colors flex items-center gap-2"
                           >
-                            <span className="mt-1.5 w-1.5 h-1.5 rounded-full bg-primary/50 shrink-0" />
                             <span>{item.text}</span>
                           </a>
                         </li>

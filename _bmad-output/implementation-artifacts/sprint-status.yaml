@@ -48,11 +48,11 @@ development_status:
   epic-1-retrospective: done
 
   # Epic 2
-  epic-2: backlog
-  2-1-creation-salle-routage: backlog
-  2-2-rejoindre-salle-lobby-realtime: backlog
-  2-3-gestion-etat-pret-lancement: backlog
-  epic-2-retrospective: optional
+  epic-2: completed
+  2-1-creation-salle-routage: done
+  2-2-rejoindre-salle-lobby-realtime: done
+  2-3-gestion-etat-pret-lancement: done
+  epic-2-retrospective: done
 
   # Epic 3
   epic-3: backlog

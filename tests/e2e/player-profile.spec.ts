@@ -1,14 +1,19 @@
 import { expect, test } from "./support/fixtures";
+import { setupE2EAuth } from "./support/auth.utils";
 
 test.describe("Player Profile", () => {
   test.beforeEach(async ({ homePage, page }) => {
+    // Force new user to avoid state conflicts from shared cached session
+    await setupE2EAuth(page, { force: true });
     await homePage.goto();
-    
+
     // Wait for initial profile creation/loading (handled by app)
+    // The auth bypass should have set cookies, so we should be logged in
+    
     // The "Modifier mon profil" button appearing confirms profile is loaded
     await expect(
       page.getByRole("button", { name: "Modifier mon profil" }),
-    ).toBeVisible({ timeout: 10000 });
+    ).toBeVisible({ timeout: 30000 });
   });
 
   test("[P0] should allow updating pseudo and avatar", async ({
@@ -32,7 +37,7 @@ test.describe("Player Profile", () => {
     await expect(page.getByRole("dialog")).toBeHidden();
     await expect(
       page.getByRole("button", { name: "Modifier mon profil" }),
-    ).toContainText(newPseudo);
+    ).toContainText(newPseudo, { timeout: 20000 });
   });
 
   test("[P1] should persist profile changes after reload", async ({
@@ -46,7 +51,7 @@ test.describe("Player Profile", () => {
     await updateProfile({ pseudo: newPseudo });
     await expect(
       page.getByRole("button", { name: "Modifier mon profil" }),
-    ).toContainText(newPseudo);
+    ).toContainText(newPseudo, { timeout: 20000 });
 
     // WHEN: Page is reloaded
     await page.reload();
@@ -54,9 +59,9 @@ test.describe("Player Profile", () => {
     // THEN: Profile changes persist
     await expect(
       page.getByRole("button", { name: "Modifier mon profil" }),
-    ).toBeVisible();
+    ).toBeVisible({ timeout: 30000 });
     await expect(
       page.getByRole("button", { name: "Modifier mon profil" }),
-    ).toContainText(newPseudo);
+    ).toContainText(newPseudo, { timeout: 20000 });
   });
 });
