@@ -1,6 +1,6 @@
 # Story 2.3: Gestion État "Prêt" & Lancement
 
-Status: ready-for-dev
+Status: done
 
 ## Story
 
@@ -19,33 +19,33 @@ So that synchroniser le début de la partie.
 
 ## Tasks / Subtasks
 
-- [ ] Database Policies Verification
-  - [ ] Vérifier/Ajouter Policy RLS sur `games` pour `UPDATE` (Host only).
+- [x] Database Policies Verification
+  - [x] Vérifier/Ajouter Policy RLS sur `games` pour `UPDATE` (Host only).
     - `UPDATE`: Authenticated users where `auth.uid() = host_id`.
-    - Colonnes autorisées : `status`, `started_at` uniquement?
+    - Colonnes autorisées : `status`, `started_at` uniquement? (Implemented via `GRANT UPDATE (columns)`)
 
-- [ ] Server Actions & Logic
-  - [ ] Créer `toggleReady(gameId: string, isReady: boolean)` dans `game-actions.ts`
+- [x] Server Actions & Logic
+  - [x] Créer `toggleReady(gameId: string, isReady: boolean)` dans `game-actions.ts`
     - `UPDATE` `game_players` set `is_ready = isReady` where `game_id` and `player_id`.
-  - [ ] Créer `startGame(gameId: string)` dans `game-actions.ts`
+  - [x] Créer `startGame(gameId: string)` dans `game-actions.ts`
     - Vérifier que l'utilisateur est `host_id` (via `games` table).
     - (Validation) Vérifier que tous les joueurs dans `game_players` sont `is_ready`.
     - `UPDATE` `games` set `status = 'PLAYING', started_at = now()`.
 
-- [ ] UI Implementation
-  - [ ] Mettre à jour `src/hooks/use-realtime-lobby.ts`
+- [x] UI Implementation
+  - [x] Mettre à jour `src/hooks/use-realtime-lobby.ts`
     - Ajouter une subscription sur la table `games` (row level via `game_id`).
     - Écouter les changements de `status`.
     - Retourner le `gameStatus` dans le hook.
-  - [ ] Mettre à jour `src/app/room/[code]/page.tsx` (ou composant Lobby)
+  - [x] Mettre à jour `src/app/room/[code]/page.tsx` (ou composant Lobby)
     - `useEffect`: Si `gameStatus === 'PLAYING'`, router.push(`/game/[code]`).
-  - [ ] Créer `src/components/game/lobby-controls.tsx`
+  - [x] Créer `src/components/game/lobby-controls.tsx`
     - Props: `gameId`, `playerId`, `isHost`, `players` (pour calculer `allReady`), `isMyPlayerReady`.
     - Bouton "Je suis prêt" / "Pas prêt" (Toggle).
       - Utiliser `useTransition` pour appel server action.
     - Bouton "Lancer la partie" (Host Only).
       - Disabled si `!allPlayersReady`.
-  - [ ] Mettre à jour `src/components/game/lobby-player-list.tsx`
+  - [x] Mettre à jour `src/components/game/lobby-player-list.tsx`
     - Afficher l'indicateur "Prêt" sur les avatars (ex: bordure verte ou icone check).
 
 ## Dev Notes
@@ -79,3 +79,8 @@ Gemini-3-Pro-Preview
 
 - Story logic deduced from Epics and previous story context.
 - Added specific checks for Host RLS and Realtime subscriptions.
+- **Code Review Fixes (2026-01-24):**
+  - Updated all tasks to `[x]` as implementation is complete.
+  - Hardened `games` table security by revoking generic `UPDATE` and granting column-specific `UPDATE (status, started_at)` privileges.
+  - Verified UI compliance: `thumb-up` icon used for "Ready" state (minor visual deviation accepted).
+  - Verified `LobbyClient` handles profile creation automatically (UX improvement).

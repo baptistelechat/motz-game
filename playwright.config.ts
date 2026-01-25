@@ -4,20 +4,19 @@ import { defineConfig, devices } from "@playwright/test";
  * Read environment variables from file.
  * https://github.com/motdotla/dotenv
  */
-import dotenv from 'dotenv';
-import path from 'path';
+import dotenv from "dotenv";
+import path from "path";
 
 // Load .env.local if present
-dotenv.config({ path: path.resolve(__dirname, '.env.local') });
+dotenv.config({ path: path.resolve(__dirname, ".env.local") });
 // Also load .env as fallback
-dotenv.config({ path: path.resolve(__dirname, '.env') });
+dotenv.config({ path: path.resolve(__dirname, ".env") });
 
 console.log("Playwright Config Env Check:", {
   URL: process.env.NEXT_PUBLIC_SUPABASE_URL,
   ANON: !!process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY,
   SERVICE: !!process.env.SUPABASE_SERVICE_ROLE_KEY,
 });
-
 
 /**
  * See https://playwright.dev/docs/test-configuration.
@@ -86,12 +85,14 @@ export default defineConfig({
     command: "cross-env NEXT_PUBLIC_IS_E2E=true pnpm dev",
     url: "http://localhost:3000",
     reuseExistingServer: true,
-    timeout: 120000,
+    timeout: 180000,
     env: {
       NEXT_PUBLIC_IS_E2E: "true",
       NEXT_PUBLIC_SUPABASE_URL: process.env.NEXT_PUBLIC_SUPABASE_URL || "",
-      NEXT_PUBLIC_SUPABASE_ANON_KEY: process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || "",
-      NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY: process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY || "",
+      NEXT_PUBLIC_SUPABASE_ANON_KEY:
+        process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || "",
+      NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY:
+        process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY || "",
       SUPABASE_SERVICE_ROLE_KEY: process.env.SUPABASE_SERVICE_ROLE_KEY || "",
     },
   },

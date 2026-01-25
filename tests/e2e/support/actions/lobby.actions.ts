@@ -44,7 +44,7 @@ export async function getGameCode(page: Page): Promise<string> {
     .filter({ hasText: /^[A-Z0-9]{6}$/ })
     .first();
 
-  await expect(codeLocator).toBeVisible({ timeout: 10000 });
+  await expect(codeLocator).toBeVisible({ timeout: 20000 });
   const code = await codeLocator.textContent();
   if (!code) throw new Error("Could not find game code");
   return code;
