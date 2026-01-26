@@ -2,7 +2,8 @@
 
 import { startGame, toggleReady } from "@/app/actions/game-actions";
 import { Button } from "@/components/ui/button";
-import { LobbyPlayer } from "@/hooks/use-realtime-lobby";
+import { useAuth } from "@/components/providers/auth-provider";
+import { useGameStore } from "@/store/use-game-store";
 import { Loader, Play } from "@nsmr/pixelart-react";
 import { useTransition } from "react";
 import { toast } from "sonner";
@@ -10,17 +11,17 @@ import { toast } from "sonner";
 interface LobbyControlsProps {
   gameId: string;
   isHost: boolean;
-  players: LobbyPlayer[];
-  isMyPlayerReady: boolean;
 }
 
 export function LobbyControls({
   gameId,
   isHost,
-  players,
-  isMyPlayerReady,
 }: LobbyControlsProps) {
   const [isPending, startTransition] = useTransition();
+  const { user } = useAuth();
+  const players = useGameStore((state) => state.players);
+  
+  const isMyPlayerReady = players.find((p) => p.id === user?.id)?.is_ready || false;
 
   const handleToggleReady = () => {
     startTransition(async () => {

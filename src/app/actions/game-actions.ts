@@ -157,13 +157,12 @@ export async function startGame(gameId: string) {
 
   if (!allReady) throw new Error("Not all players are ready");
 
-  const { error: updateError } = await supabase
-    .from("games")
-    .update({ status: "PLAYING", started_at: new Date().toISOString() })
-    .eq("id", gameId);
+  const { error: rpcError } = await supabase.rpc("start_new_round", {
+    p_game_id: gameId,
+  });
 
-  if (updateError)
-    throw new Error(`Failed to start game: ${updateError.message}`);
+  if (rpcError)
+    throw new Error(`Failed to start game: ${rpcError.message}`);
 
   return { success: true };
 }

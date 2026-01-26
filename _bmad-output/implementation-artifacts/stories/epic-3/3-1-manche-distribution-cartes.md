@@ -1,6 +1,6 @@
 # Story 3.1 : CHARGEMENT DU SYSTÈME Manche & Distribution Cartes
 
-Status: ready-for-dev
+Status: completed
 
 <!-- Note: Validation is optional. Run validate-create-story for quality check before dev-story. -->
 
@@ -21,26 +21,26 @@ Status: ready-for-dev
 
 ## Tâches / Sous-tâches
 
-- [ ] Tâche 1 : Migration & Schéma de Données (AC: 3, 4)
-  - [ ] Créer la migration SQL `create_rounds_table`.
-  - [ ] Définir la table `rounds` : `id` (UUID), `game_id` (FK), `round_number` (INT), `constraints` (JSONB), `status` (ENUM), `created_at`.
-  - [ ] Appliquer les politiques RLS (Lecture pour les joueurs de la partie uniquement).
-  - [ ] Mettre à jour les types TypeScript (`database.types.ts`).
+- [x] Tâche 1 : Migration & Schéma de Données (AC: 3, 4)
+  - [x] Créer la migration SQL `create_rounds_table`.
+  - [x] Définir la table `rounds` : `id` (UUID), `game_id` (FK), `round_number` (INT), `constraints` (JSONB), `status` (ENUM), `created_at`.
+  - [x] Appliquer les politiques RLS (Lecture pour les joueurs de la partie uniquement).
+  - [x] Mettre à jour les types TypeScript (`database.types.ts`).
 
-- [ ] Tâche 2 : Logique Backend (RPC) (AC: 2, 4)
-  - [ ] Implémenter la fonction Postgres `start_new_round(game_id)` (PL/pgSQL).
-  - [ ] Ajouter la logique de génération aléatoire pour les lettres (A-Z) et les thèmes.
-  - [ ] Gérer l'incrémentation du `round_number`.
-  - [ ] Sécuriser l'appel (vérifier que l'utilisateur est légitime/host).
+- [x] Tâche 2 : Logique Backend (RPC) (AC: 2, 4)
+  - [x] Implémenter la fonction Postgres `start_new_round(game_id)` (PL/pgSQL).
+  - [x] Ajouter la logique de génération aléatoire pour les lettres (A-Z) et les thèmes.
+  - [x] Gérer l'incrémentation du `round_number`.
+  - [x] Sécuriser l'appel (vérifier que l'utilisateur est légitime/host).
 
-- [ ] Tâche 3 : Intégration Frontend & State (AC: 5, 6)
-  - [ ] Mettre à jour `useGameStore` pour s'abonner aux changements de la table `rounds` (Realtime).
-  - [ ] Créer un sélecteur atomique `useGameStore(s => s.currentRound)`.
-  - [ ] Ajouter un bouton de test "Démarrer Manche" (visible en dev/admin seulement) pour déclencher le RPC.
+- [x] Tâche 3 : Intégration Frontend & State (AC: 5, 6)
+  - [x] Mettre à jour `useGameStore` pour s'abonner aux changements de la table `rounds` (Realtime).
+  - [x] Créer un sélecteur atomique `useGameStore(s => s.currentRound)`.
+  - [x] Ajouter un bouton de test "Démarrer Manche" (visible en dev/admin seulement) pour déclencher le RPC.
 
-- [ ] Tâche 4 : Vérification & Tests (AC: 1, 5, 6)
-  - [ ] Créer un test E2E (Playwright) vérifiant la synchronisation entre 2 joueurs.
-  - [ ] Vérifier manuellement que les contraintes s'affichent (console log ou UI brute) sur deux navigateurs différents.
+- [x] Tâche 4 : Vérification & Tests (AC: 1, 5, 6)
+  - [x] Créer un test E2E (Playwright) vérifiant la synchronisation entre 2 joueurs.
+  - [x] Vérifier manuellement que les contraintes s'affichent (console log ou UI brute) sur deux navigateurs différents.
 
 ## Notes de développement
 
@@ -51,9 +51,9 @@ Status: ready-for-dev
 
 ### Références
 
-- [Epics: Story 3.1](file:///c:\Users\ASUS\Desktop\DEV\Projet_perso\motz-game\_bmad-output\planning-artifacts\epics.md)
-- [Architecture: State Management](file:///c:\Users\ASUS\Desktop\DEV\Projet_perso\motz-game\_bmad-output\planning-artifacts\architecture.md)
-- [UX: Core Loop](file:///c:\Users\ASUS\Desktop\DEV\Projet_perso\motz-game\_bmad-output\planning-artifacts\ux-design-specification.md)
+- [Epics: Story 3.1](file:///c:\Users\ASUS\Desktop\DEV\Projet_perso\motz-game_bmad-output\planning-artifacts\epics.md)
+- [Architecture: State Management](file:///c:\Users\ASUS\Desktop\DEV\Projet_perso\motz-game_bmad-output\planning-artifacts\architecture.md)
+- [UX: Core Loop](file:///c:\Users\ASUS\Desktop\DEV\Projet_perso\motz-game_bmad-output\planning-artifacts\ux-design-specification.md)
 
 ## Dev Agent Record
 

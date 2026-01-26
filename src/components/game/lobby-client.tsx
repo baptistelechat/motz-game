@@ -6,9 +6,11 @@ import { LobbyInfo } from "@/components/game/lobby-info";
 import { LobbyPlayerList } from "@/components/game/lobby-player-list";
 import { useAuth } from "@/components/providers/auth-provider";
 import { Button } from "@/components/ui/button";
+import { usePlayerNotifications } from "@/hooks/use-player-notifications";
 import { usePlayerProfile } from "@/hooks/use-player-profile";
-import { useRealtimeLobby } from "@/hooks/use-realtime-lobby";
+import { useRealtimeGame } from "@/hooks/use-realtime-game";
 import { generateRandomPlayer } from "@/lib/utils/generate-player";
+import { useGameStore } from "@/store/use-game-store";
 import { Loader } from "@nsmr/pixelart-react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
@@ -22,7 +24,11 @@ interface LobbyClientProps {
   hostId: string;
 }
 
-export function LobbyClient({ code, gameId, hostId }: LobbyClientProps) {
+export function LobbyClient({
+  code,
+  gameId,
+  hostId: initialHostId,
+}: LobbyClientProps) {
   const router = useRouter();
   const { user } = useAuth();
   const {
@@ -31,17 +37,23 @@ export function LobbyClient({ code, gameId, hostId }: LobbyClientProps) {
     updateProfile,
     isInitialized,
   } = usePlayerProfile();
+
+  // Use unified realtime hook (replaces useRealtimeLobby)
+  const { refresh } = useRealtimeGame(gameId);
+
+  // Access global store state
   const {
     players,
-    gameStatus,
+    status: gameStatus,
     isLoading: isLobbyLoading,
-    refreshPlayers,
-  } = useRealtimeLobby(gameId, user?.id);
+    hostId: storeHostId,
+  } = useGameStore();
 
-  useEffect(() => {
-    // Refresh players on mount to ensure we have the latest list
-    refreshPlayers();
-  }, [refreshPlayers]);
+  // Enable toast notifications
+  usePlayerNotifications(user?.id);
+
+  // Use store hostId if available (updated via realtime), fallback to initial
+  const currentHostId = storeHostId || initialHostId;
 
   const [isJoining, setIsJoining] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -71,7 +83,7 @@ export function LobbyClient({ code, gameId, hostId }: LobbyClientProps) {
     if (!user || !profile) return;
     if (hasJoinedRef.current || isJoining) return;
 
-    const isInLobby = players.some((p) => p.player_id === user.id);
+    const isInLobby = players.some((p) => p.id === user.id);
     if (isInLobby) {
       hasJoinedRef.current = true;
       return;
@@ -82,9 +94,7 @@ export function LobbyClient({ code, gameId, hostId }: LobbyClientProps) {
       try {
         await joinGame(code);
         hasJoinedRef.current = true;
-        // Trigger refresh immediately to minimize wait time
-        refreshPlayers();
-        // Toast removed: let the realtime subscription handle it or handle it implicitly by UI update
+        // Trigger refresh implicitly via realtime subscription
       } catch (err) {
         console.error("Failed to join game:", err);
         const msg =
@@ -98,7 +108,7 @@ export function LobbyClient({ code, gameId, hostId }: LobbyClientProps) {
       }
     };
     join();
-  }, [user, profile, code, refreshPlayers, players, isJoining]);
+  }, [user, profile, code, players, isJoining]);
 
   // 3. Navigation when game starts
   useEffect(() => {
@@ -107,7 +117,7 @@ export function LobbyClient({ code, gameId, hostId }: LobbyClientProps) {
     }
   }, [gameStatus, code, router]);
 
-  const isInLobby = players.some((p) => p.player_id === user?.id);
+  const isInLobby = players.some((p) => p.id === user?.id);
   const showLoader =
     isJoining ||
     (isLobbyLoading && players.length === 0) ||
@@ -141,7 +151,7 @@ export function LobbyClient({ code, gameId, hostId }: LobbyClientProps) {
                 variant="outline"
                 onClick={() => {
                   setIsTimeout(false);
-                  refreshPlayers();
+                  refresh();
                 }}
               >
                 RÉESSAYER
@@ -165,10 +175,7 @@ export function LobbyClient({ code, gameId, hostId }: LobbyClientProps) {
     );
   }
 
-  const isMyPlayerReady =
-    players.find((p) => p.player_id === user?.id)?.is_ready || false;
-
-  const isHost = user?.id === hostId;
+  const isHost = user?.id === currentHostId;
 
   return (
     <div
@@ -203,21 +210,14 @@ export function LobbyClient({ code, gameId, hostId }: LobbyClientProps) {
       >
         <LobbyPlayerList
           players={players}
-          hostId={hostId}
+          hostId={currentHostId}
           className={isHost ? "md:max-h-full" : "md:max-h-[50vh]"}
         />
       </div>
 
-      {user && (
-        <div className="flex-none w-full">
-          <LobbyControls
-            gameId={gameId}
-            isHost={isHost}
-            players={players}
-            isMyPlayerReady={isMyPlayerReady}
-          />
-        </div>
-      )}
+      <div className="flex-none w-full max-w-md">
+        <LobbyControls gameId={gameId} isHost={isHost} />
+      </div>
     </div>
   );
 }
