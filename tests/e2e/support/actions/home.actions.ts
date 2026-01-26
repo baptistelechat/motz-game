@@ -1,5 +1,18 @@
 import { Page, expect } from "@playwright/test";
 
+export async function createGame(page: Page) {
+  // Wait for button to be visible
+  await expect(
+    page.getByRole("button", { name: "CRÉER UNE PARTIE" }),
+  ).toBeVisible({ timeout: 15000 });
+
+  // Click Create Game
+  await page.getByRole("button", { name: "CRÉER UNE PARTIE" }).click();
+
+  // Wait for redirection to room
+  await expect(page).toHaveURL(/\/room\/[A-Z0-9]{6}/, { timeout: 20000 });
+}
+
 export async function joinGame(page: Page, code: string) {
   // Click Join to open dialog
   try {

@@ -1,6 +1,7 @@
 import { test as base } from "@playwright/test";
 import {
   bypassCaptcha,
+  createGame,
   verifyHomePageElements,
   verifySystemStatus,
 } from "../actions/home.actions";
@@ -11,6 +12,7 @@ type HomeFixture = {
     verifyElements: () => Promise<void>;
     verifyStatus: () => Promise<void>;
     bypassCaptcha: () => Promise<void>;
+    createGame: (playerName?: string) => Promise<void>;
     goto: () => Promise<void>;
     userId: string | null;
   };
@@ -29,6 +31,7 @@ export const test = base.extend<HomeFixture>({
         await page.goto("/");
       },
       bypassCaptcha: async () => bypassCaptcha(page),
+      createGame: async () => createGame(page),
       verifyElements: async () => verifyHomePageElements(page),
       verifyStatus: async () => verifySystemStatus(),
     });
