@@ -1,9 +1,11 @@
 "use client";
 
 import { LoadingScreen } from "@/components/ui/loading-screen";
+import { ScrollArea } from "@/components/ui/scroll-area";
 import { useRealtimeGame } from "@/hooks/use-realtime-game";
 import { useGameStore } from "@/store/use-game-store";
 import { mapGamePlayerToDisplayPlayer } from "@/utils/player-mapper";
+import { GameTitle } from "./game-title";
 import { PlayerListDisplay } from "./player-list-display";
 
 interface GameClientProps {
@@ -24,30 +26,28 @@ export function GameClient({ gameId, currentUserId }: GameClientProps) {
   );
 
   return (
-    <div className="flex flex-col items-center justify-center h-full w-full gap-8">
-      <div className="text-center space-y-4">
-        <h1 className="font-display text-4xl text-theme drop-shadow-[4px_4px_0_#000000]">
-          MANCHE {currentRound?.round_number || 1}
-        </h1>
+    <div className="flex flex-col items-center h-full w-full gap-4 md:gap-8 overflow-hidden p-2 md:p-4">
+      <div className="flex-none text-center space-y-2 md:space-y-4 w-full max-w-md">
+        <GameTitle game>MANCHE {currentRound?.round_number || 1}</GameTitle>
 
         {currentRound ? (
-          <div className="bg-card border-4 border-border p-8 rounded-xl shadow-[8px_8px_0_0_#000000] space-y-6 max-w-md mx-auto animate-in zoom-in duration-300">
-            <div className="space-y-2">
-              <p className="font-display text-xl text-muted-foreground uppercase">
+          <div className="bg-card border-2 md:border-4 border-border p-4 md:p-8 rounded-xl shadow-[4px_4px_0_0_#000000] md:shadow-[8px_8px_0_0_#000000] space-y-2 md:space-y-6 animate-in zoom-in duration-300">
+            <div className="space-y-1 md:space-y-2">
+              <p className="font-display text-sm md:text-xl text-muted-foreground uppercase">
                 LETTRE
               </p>
-              <p className="font-display text-6xl text-primary">
+              <p className="font-display text-4xl md:text-6xl text-primary">
                 {currentRound.constraints.letter}
               </p>
             </div>
 
-            <div className="w-full h-1 bg-border/20" />
+            <div className="w-full h-0.5 md:h-1 bg-border/20" />
 
-            <div className="space-y-2">
-              <p className="font-display text-xl text-muted-foreground uppercase">
-                THÈME
+            <div className="space-y-1 md:space-y-2">
+              <p className="font-display text-sm md:text-xl text-muted-foreground uppercase">
+                THEME
               </p>
-              <p className="font-display text-3xl text-foreground">
+              <p className="font-display text-xl md:text-3xl text-foreground wrap-break-word leading-tight">
                 {currentRound.constraints.theme}
               </p>
             </div>
@@ -59,11 +59,13 @@ export function GameClient({ gameId, currentUserId }: GameClientProps) {
         )}
       </div>
 
-      <PlayerListDisplay
-        players={displayPlayers}
-        currentUserId={currentUserId}
-        className="max-w-4xl"
-      />
+      <ScrollArea className="w-full max-w-4xl mx-auto h-full md:h-auto">
+        <PlayerListDisplay
+          players={displayPlayers}
+          currentUserId={currentUserId}
+          className="w-full"
+        />
+      </ScrollArea>
     </div>
   );
 }

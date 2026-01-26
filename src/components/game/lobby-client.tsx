@@ -17,6 +17,7 @@ import { useRouter } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
 import { toast } from "sonner";
 import { ErrorCard } from "../ui/error-card";
+import { GameTitle } from "./game-title";
 
 interface LobbyClientProps {
   code: string;
@@ -190,9 +191,7 @@ export function LobbyClient({
           isHost ? "mt-0 md:mt-24" : "mt-0"
         }`}
       >
-        <h1 className="font-display text-theme text-3xl md:text-4xl text-center drop-shadow-[4px_4px_0_#000000]">
-          SALLE D&apos;ATTENTE
-        </h1>
+        <GameTitle>SALLE D&apos;ATTENTE</GameTitle>
         <p className="text-xl font-display text-primary drop-shadow-[2px_2px_0_(--border)]">
           {players.length} JOUEUR{players.length > 1 ? "S" : ""}
         </p>

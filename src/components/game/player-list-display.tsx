@@ -59,7 +59,7 @@ export function PlayerListDisplay({
             />
             <div
               className={cn(
-                "text-center truncate w-full px-2",
+                "text-center truncate w-full px-2 font-display text-sm md:text-base",
                 p.id === currentUserId
                   ? "text-theme"
                   : "text-muted-foreground",
