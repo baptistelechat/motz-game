@@ -166,3 +166,27 @@ export async function startGame(gameId: string) {
 
   return { success: true };
 }
+
+export async function forceStartGame(gameId: string) {
+  const supabase = await createClient();
+  const {
+    data: { user },
+    error: authError,
+  } = await supabase.auth.getUser();
+
+  if (authError || !user) throw new Error("User must be authenticated");
+
+  // Only allow in E2E/Dev mode
+  if (process.env.NEXT_PUBLIC_IS_E2E !== "true" && process.env.NODE_ENV !== "development") {
+    throw new Error("Action not allowed");
+  }
+
+  const { error: rpcError } = await supabase.rpc("start_new_round", {
+    p_game_id: gameId,
+  });
+
+  if (rpcError)
+    throw new Error(`Failed to force start game: ${rpcError.message}`);
+
+  return { success: true };
+}

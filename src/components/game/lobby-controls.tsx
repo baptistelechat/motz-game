@@ -56,6 +56,7 @@ export function LobbyControls({
           size="xl"
           onClick={handleToggleReady}
           disabled={isPending}
+          data-testid="toggle-ready-button"
           className="w-full flex-1"
         >
           {isPending ? (
@@ -84,6 +85,7 @@ export function LobbyControls({
             size="xl"
             onClick={handleStartGame}
             disabled={!allPlayersReady || isPending}
+            data-testid="start-round-button"
             className="w-full flex-1 animate-in fade-in slide-in-from-bottom-2"
           >
             <Play className="size-5" />

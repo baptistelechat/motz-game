@@ -31,7 +31,10 @@ export function GameClient({ gameId, currentUserId }: GameClientProps) {
         <GameTitle game>MANCHE {currentRound?.round_number || 1}</GameTitle>
 
         {currentRound ? (
-          <div className="bg-card border-2 md:border-4 border-border p-4 md:p-8 rounded-xl shadow-[4px_4px_0_0_#000000] md:shadow-[8px_8px_0_0_#000000] space-y-2 md:space-y-6 animate-in zoom-in duration-300">
+          <div
+            className="bg-card border-2 md:border-4 border-border p-4 md:p-8 rounded-xl shadow-[4px_4px_0_0_#000000] md:shadow-[8px_8px_0_0_#000000] space-y-2 md:space-y-6 animate-in zoom-in duration-300"
+            data-testid="constraint-display"
+          >
             <div className="space-y-1 md:space-y-2">
               <p className="font-display text-sm md:text-xl text-muted-foreground uppercase">
                 LETTRE

@@ -13,6 +13,7 @@ test.describe("Story 3.1: Manche & Distribution Cartes", () => {
     lobbyPage,
     browser,
   }) => {
+    test.setTimeout(60000); // Increase timeout for Realtime sync
     // 1. Host creates game
     // Host is already authenticated via homePage fixture
     await homePage.goto();
@@ -51,9 +52,16 @@ test.describe("Story 3.1: Manche & Distribution Cartes", () => {
     await lobbyPage.verifyPlayerInList(guestName); // Host sees Guest
     await verifyPlayerInList(guestPage, hostName); // Guest sees Host
 
-    // 3. Host starts the round (using the Dev/Admin button)
-    // Note: This button will be implemented in Task 3 of Story 3.1
-    // It should be visible only in E2E/Dev mode
+    // 2.5. Both players toggle Ready
+    await hostPage.getByTestId("toggle-ready-button").click();
+    await guestPage.getByTestId("toggle-ready-button").click();
+
+    // Wait for "All players ready" message on Host
+    await expect(
+      hostPage.getByText("Tous les joueurs sont prêts"),
+    ).toBeVisible({ timeout: 15000 });
+
+    // 3. Host starts the round
     const startRoundButton = hostPage.getByTestId("start-round-button");
 
     // Check if button exists
@@ -65,8 +73,8 @@ test.describe("Story 3.1: Manche & Distribution Cartes", () => {
     const constraintDisplayHost = hostPage.getByTestId("constraint-display");
     const constraintDisplayGuest = guestPage.getByTestId("constraint-display");
 
-    await expect(constraintDisplayHost).toBeVisible();
-    await expect(constraintDisplayGuest).toBeVisible();
+    await expect(constraintDisplayHost).toBeVisible({ timeout: 15000 });
+    await expect(constraintDisplayGuest).toBeVisible({ timeout: 15000 });
 
     // 5. Verify Constraints are Identical
     // We expect the text content to contain the constraints (Letter and Theme)

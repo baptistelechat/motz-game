@@ -63,4 +63,11 @@ Status: completed
 
 ### Completion Notes List
 
+- **Verification Update (2026-01-26):**
+  - Code Review & Fixes performed by Dev Agent.
+  - E2E tests `tests/e2e/round-distribution.spec.ts` updated to verify real user flow (removing debug bypass).
+  - Validated synchronization of "Ready" state and constraint distribution across multiple browsers (Chromium, Firefox, Webkit).
+  - Confirmed `start_new_round` RPC and Realtime subscription integration.
+  - Removed debug "FORCE START" button from `LobbyControls` in favor of robust E2E testing of the actual UI.
+
 ### File List
