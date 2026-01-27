@@ -169,6 +169,7 @@ export type Database = {
     }
     Functions: {
       start_new_round: { Args: { p_game_id: string }; Returns: Json }
+      debug_regenerate_round_constraints: { Args: { p_round_id: string }; Returns: Json }
     }
     Enums: {
       game_status: "LOBBY" | "PLAYING" | "FINISHED"

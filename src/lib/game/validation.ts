@@ -94,6 +94,7 @@ export function validateWord(
       break;
     case "free":
     case "invert_letters":
+    case "theme":
       // No extra check
       break;
   }

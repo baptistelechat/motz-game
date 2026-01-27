@@ -135,7 +135,7 @@ export function ProfileForm({ onSaved }: ProfileFormProps) {
                 onClick={handleRandomize}
                 variant="outline"
                 disabled={isSaving}
-                className="aspect-square p-0 w-12 h-12"
+                className="aspect-square p-0 size-12"
               >
                 <Dice className="size-7" />
               </Button>

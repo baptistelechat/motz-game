@@ -7,7 +7,8 @@ export type ConstraintType =
   | "ends_with_imposed"
   | "unique_chars"
   | "min_vowels"
-  | "invert_letters";
+  | "invert_letters"
+  | "theme";
 
 export interface ConstraintCard {
   type: ConstraintType;

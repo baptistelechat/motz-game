@@ -130,10 +130,9 @@ export function GameInput({ constraints, onValidate, disabled }: GameInputProps)
               placeholder={
                 dictionary.isLoading ? "Chargement..." : "Votre mot..."
               }
-              className={cn(
-                "pr-10 font-mono text-lg uppercase tracking-widest border-2 transition-colors duration-200",
-                getBorderClass(),
-              )}
+              className={
+                getBorderClass()
+              }
               autoComplete="off"
               autoCorrect="off"
               autoCapitalize="characters"
