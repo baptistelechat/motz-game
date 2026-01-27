@@ -4,7 +4,8 @@
   "description": "Jeu de mots multijoueur temps réel avec design Pixel-Pop",
   "private": true,
   "scripts": {
-    "dev": "next dev --turbo",
+    "dev": "concurrently -n \"NEXT,GREP\" -c \"cyan.dim,magenta.dim\" \"next dev --turbo\" \"grepai watch\"",
+    "dev:next": "next dev --turbo",
     "build": "next build --webpack",
     "start": "next start",
     "lint": "eslint .",
@@ -69,6 +70,7 @@
     "@types/react-dom": "^19",
     "@types/yargs": "^17.0.35",
     "@vitejs/plugin-react": "^5.1.2",
+    "concurrently": "^9.2.1",
     "cross-env": "^10.1.0",
     "dotenv": "^17.2.3",
     "eslint": "^9",
