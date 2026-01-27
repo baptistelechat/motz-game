@@ -1,5 +1,6 @@
 "use client";
 
+import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { LoadingScreen } from "@/components/ui/loading-screen";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { useRealtimeGame } from "@/hooks/use-realtime-game";
@@ -28,33 +29,47 @@ export function GameClient({ gameId, currentUserId }: GameClientProps) {
   return (
     <div className="flex flex-col items-center h-full w-full gap-4 md:gap-8 overflow-hidden p-2 md:p-4">
       <div className="flex-none text-center space-y-2 md:space-y-4 w-full max-w-md">
-        <GameTitle game>MANCHE {currentRound?.round_number || 1}</GameTitle>
+        <GameTitle>MANCHE {currentRound?.round_number || 1}</GameTitle>
 
         {currentRound ? (
-          <div
-            className="bg-card border-2 md:border-4 border-border p-4 md:p-8 rounded-xl shadow-[4px_4px_0_0_#000000] md:shadow-[8px_8px_0_0_#000000] space-y-2 md:space-y-6 animate-in zoom-in duration-300"
+          <Card
+            className="border-2 md:border-4 shadow-[4px_4px_0_0_#000000] md:shadow-[8px_8px_0_0_#000000] animate-in zoom-in duration-300"
             data-testid="constraint-display"
           >
-            <div className="space-y-1 md:space-y-2">
-              <p className="font-display text-sm md:text-xl text-muted-foreground uppercase">
-                LETTRE
-              </p>
-              <p className="font-display text-4xl md:text-6xl text-primary">
-                {currentRound.constraints.letter}
-              </p>
-            </div>
+            <CardHeader className="pb-2 md:pb-4">
+              <div className="grid grid-cols-2 gap-4">
+                <div className="space-y-1 md:space-y-2">
+                  <p className="font-display text-xs md:text-sm text-muted-foreground uppercase">
+                    IMPOSEE
+                  </p>
+                  <p className="font-display text-4xl md:text-6xl text-primary drop-shadow-[2px_2px_0_rgba(0,0,0,0.2)]">
+                    {currentRound.constraints.mandatory_letter}
+                  </p>
+                </div>
+                <div className="space-y-1 md:space-y-2">
+                  <p className="font-display text-xs md:text-sm text-muted-foreground uppercase">
+                    INTERDITE
+                  </p>
+                  <p className="font-display text-4xl md:text-6xl text-destructive drop-shadow-[2px_2px_0_rgba(0,0,0,0.1)]">
+                    {currentRound.constraints.forbidden_letter}
+                  </p>
+                </div>
+              </div>
+            </CardHeader>
 
-            <div className="w-full h-0.5 md:h-1 bg-border/20" />
+            <CardContent className="pt-0">
+              <div className="w-full h-0.5 md:h-1 bg-border/20 mb-2 md:mb-4" />
 
-            <div className="space-y-1 md:space-y-2">
-              <p className="font-display text-sm md:text-xl text-muted-foreground uppercase">
-                THEME
-              </p>
-              <p className="font-display text-xl md:text-3xl text-foreground wrap-break-word leading-tight">
-                {currentRound.constraints.theme}
-              </p>
-            </div>
-          </div>
+              <div className="space-y-1 md:space-y-2">
+                <p className="font-display text-sm md:text-xl text-muted-foreground uppercase">
+                  THEME
+                </p>
+                <p className="text-3xl text-foreground wrap-break-word leading-tight">
+                  {currentRound.constraints.theme}
+                </p>
+              </div>
+            </CardContent>
+          </Card>
         ) : (
           <div className="text-xl font-display text-muted-foreground">
             En attente du début de la manche...
@@ -62,7 +77,7 @@ export function GameClient({ gameId, currentUserId }: GameClientProps) {
         )}
       </div>
 
-      <ScrollArea className="w-full max-w-4xl mx-auto h-full md:h-auto">
+      <ScrollArea className="flex-1 w-full max-w-4xl rounded-xl border-2 border-border/50 bg-black/20 p-4">
         <PlayerListDisplay
           players={displayPlayers}
           currentUserId={currentUserId}

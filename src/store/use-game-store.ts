@@ -17,7 +17,8 @@ export interface GameRound {
   id: string;
   round_number: number;
   constraints: {
-    letter: string;
+    mandatory_letter: string;
+    forbidden_letter: string;
     theme: string;
   };
   status: RoundStatus;
