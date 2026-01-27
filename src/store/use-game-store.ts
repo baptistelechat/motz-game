@@ -1,5 +1,6 @@
 import { AvatarConfig } from "@/interface/AvatarConfig";
 import { Database } from "@/types/database.types";
+import { RoundConstraints } from "@/types/game";
 import { create } from "zustand";
 
 type GameStatus = Database["public"]["Enums"]["game_status"];
@@ -16,11 +17,8 @@ export interface GamePlayer {
 export interface GameRound {
   id: string;
   round_number: number;
-  constraints: {
-    mandatory_letter: string;
-    forbidden_letter: string;
-    theme: string;
-  };
+  constraints: RoundConstraints;
+  theme?: string;
   status: RoundStatus;
 }
 
@@ -38,6 +36,7 @@ interface GameState {
   setPlayers: (players: GamePlayer[]) => void;
   setCurrentRound: (round: GameRound | null) => void;
   setIsLoading: (isLoading: boolean) => void;
+  submitWord: (word: string) => Promise<void>;
 }
 
 export const useGameStore = create<GameState>((set) => ({
@@ -54,4 +53,12 @@ export const useGameStore = create<GameState>((set) => ({
   setPlayers: (players) => set({ players }),
   setCurrentRound: (round) => set({ currentRound: round }),
   setIsLoading: (isLoading) => set({ isLoading }),
+
+  submitWord: async (word) => {
+    // Mock implementation for Story 3.2
+    console.log(`[Store] Submitting word: ${word}`);
+    // Here we would call the RPC function
+    await new Promise((resolve) => setTimeout(resolve, 500)); // Simulate network
+    console.log(`[Store] Word submitted successfully`);
+  },
 }));

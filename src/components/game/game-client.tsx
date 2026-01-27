@@ -5,7 +5,9 @@ import { LoadingScreen } from "@/components/ui/loading-screen";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { useRealtimeGame } from "@/hooks/use-realtime-game";
 import { useGameStore } from "@/store/use-game-store";
+import { ConstraintCard } from "@/types/game";
 import { mapGamePlayerToDisplayPlayer } from "@/utils/player-mapper";
+import { GameInput } from "./game-input";
 import { GameTitle } from "./game-title";
 import { PlayerListDisplay } from "./player-list-display";
 
@@ -14,9 +16,35 @@ interface GameClientProps {
   currentUserId: string;
 }
 
+function getConstraintLabel(card: ConstraintCard): string {
+  switch (card.type) {
+    case "free":
+      return "LIBRE";
+    case "min_len":
+      return `MIN ${card.value} LETTRES`;
+    case "max_len":
+      return `MAX ${card.value} LETTRES`;
+    case "exact_len":
+      return `${card.value} LETTRES`;
+    case "starts_with_imposed":
+      return "DEBUTE PAR IMPOSEE";
+    case "ends_with_imposed":
+      return "FINIT PAR IMPOSEE";
+    case "unique_chars":
+      return "LETTRES UNIQUES";
+    case "min_vowels":
+      return `MIN ${card.value} VOYELLES`;
+    case "invert_letters":
+      return "INVERSION";
+    default:
+      return "INCONNU";
+  }
+}
+
 export function GameClient({ gameId, currentUserId }: GameClientProps) {
   useRealtimeGame(gameId);
-  const { players, currentRound, isLoading, hostId } = useGameStore();
+  const { players, currentRound, isLoading, hostId, submitWord } =
+    useGameStore();
 
   if (isLoading) {
     return <LoadingScreen message="CHARGEMENT DE LA PARTIE..." />;
@@ -27,9 +55,9 @@ export function GameClient({ gameId, currentUserId }: GameClientProps) {
   );
 
   return (
-    <div className="flex flex-col items-center h-full w-full gap-4 md:gap-8 overflow-hidden p-2 md:p-4">
+    <div className="flex flex-col items-center h-full w-full gap-4 md:gap-8 overflow-hidden p-2 md:p-4 pb-24">
       <div className="flex-none text-center space-y-2 md:space-y-4 w-full max-w-md">
-        <GameTitle>MANCHE {currentRound?.round_number || 1}</GameTitle>
+        <GameTitle game>MANCHE {currentRound?.round_number || 1}</GameTitle>
 
         {currentRound ? (
           <Card
@@ -43,7 +71,7 @@ export function GameClient({ gameId, currentUserId }: GameClientProps) {
                     IMPOSEE
                   </p>
                   <p className="font-display text-4xl md:text-6xl text-primary drop-shadow-[2px_2px_0_rgba(0,0,0,0.2)]">
-                    {currentRound.constraints.mandatory_letter}
+                    {currentRound.constraints.imposed_letter}
                   </p>
                 </div>
                 <div className="space-y-1 md:space-y-2">
@@ -57,15 +85,27 @@ export function GameClient({ gameId, currentUserId }: GameClientProps) {
               </div>
             </CardHeader>
 
-            <CardContent className="pt-0">
-              <div className="w-full h-0.5 md:h-1 bg-border/20 mb-2 md:mb-4" />
+            <CardContent className="pt-0 space-y-4">
+              <div className="w-full h-0.5 md:h-1 bg-border/20" />
+
+              {/* Constraint Card Display */}
+              <div className="bg-muted/50 p-2 rounded-lg border-2 border-dashed border-muted-foreground/30">
+                <p className="font-display text-xs text-muted-foreground uppercase mb-1">
+                  CONTRAINTE SPECIALE
+                </p>
+                <p className="text-3xl text-foreground">
+                  {getConstraintLabel(currentRound.constraints.constraint_card)}
+                </p>
+              </div>
 
               <div className="space-y-1 md:space-y-2">
                 <p className="font-display text-sm md:text-xl text-muted-foreground uppercase">
                   THEME
                 </p>
                 <p className="text-3xl text-foreground wrap-break-word leading-tight">
-                  {currentRound.constraints.theme}
+                  {currentRound.theme ||
+                    currentRound.constraints.theme ||
+                    "Aucun thème"}
                 </p>
               </div>
             </CardContent>
@@ -77,13 +117,20 @@ export function GameClient({ gameId, currentUserId }: GameClientProps) {
         )}
       </div>
 
-      <ScrollArea className="flex-1 w-full max-w-4xl rounded-xl border-2 border-border/50 bg-black/20 p-4">
+      <ScrollArea>
         <PlayerListDisplay
           players={displayPlayers}
           currentUserId={currentUserId}
           className="w-full"
         />
       </ScrollArea>
+
+      {currentRound && (
+        <GameInput
+          constraints={currentRound.constraints}
+          onValidate={(word) => submitWord(word)}
+        />
+      )}
     </div>
   );
 }

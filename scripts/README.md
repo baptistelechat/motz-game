@@ -19,6 +19,8 @@ Ce projet contient plusieurs scripts utilitaires pour faciliter le développemen
     - [Options](#options-2)
   - [4. Génération de Types d'Icônes (`generate:icons`)](#4-génération-de-types-dicônes-generateicons)
     - [Utilisation](#utilisation-3)
+  - [5. Génération de Dictionnaire (`generate:dictionary`)](#5-génération-de-dictionnaire-generatedictionary)
+    - [Utilisation](#utilisation-4)
 
 ---
 
@@ -130,3 +132,23 @@ pnpm run generate:icons
 ```
 
 À exécuter après avoir ajouté de nouvelles icônes SVG dans le dossier `public/assets/icons`. Le script va mettre à jour le fichier `src/types/pixel-icons.ts`.
+
+---
+
+## 5. Génération de Dictionnaire (`generate:dictionary`)
+
+Convertit le dictionnaire source (format texte, un mot par ligne) en un **Bloom Filter** compressé (format JSON). Cela permet de réduire considérablement la taille du fichier chargé par le client tout en conservant une vérification rapide des mots.
+
+### Utilisation
+
+```bash
+# Via script pnpm
+pnpm run generate:dictionary
+```
+
+### Détails Techniques
+
+- **Source** : `public/assets/dictionary.txt`
+- **Destination** : `public/assets/dictionary.json`
+- **Optimisation** : Utilise un Bloom Filter avec un taux d'erreur de **1%** (`0.01`). Cela signifie qu'il y a une chance sur 100 qu'un mot invalide soit accepté, ce qui est considéré comme acceptable pour un jeu.
+- **Gain de taille** : Réduit généralement la taille du fichier de ~4.5MB (TXT) à <1MB (JSON).
