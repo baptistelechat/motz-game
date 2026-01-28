@@ -5,6 +5,7 @@ import { LoadingScreen } from "@/components/ui/loading-screen";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { useRealtimeGame } from "@/hooks/use-realtime-game";
 import { getConstraintLabel } from "@/lib/game/formatting";
+import { cn } from "@/lib/utils";
 import { useGameStore } from "@/store/use-game-store";
 import { mapGamePlayerToDisplayPlayer } from "@/utils/player-mapper";
 import { GameDebugControls } from "./game-debug-controls";
@@ -15,6 +16,25 @@ import { PlayerListDisplay } from "./player-list-display";
 interface GameClientProps {
   gameId: string;
   currentUserId: string;
+}
+
+function SectionLabel({
+  children,
+  className,
+}: {
+  children: React.ReactNode;
+  className?: string;
+}) {
+  return (
+    <p
+      className={cn(
+        "font-display text-xs text-muted-foreground uppercase mb-4",
+        className,
+      )}
+    >
+      {children}
+    </p>
+  );
 }
 
 export function GameClient({ gameId, currentUserId }: GameClientProps) {
@@ -31,31 +51,27 @@ export function GameClient({ gameId, currentUserId }: GameClientProps) {
   );
 
   return (
-    <div className="flex flex-col items-center h-full w-full gap-4 md:gap-8 overflow-hidden p-2 md:p-4 pb-24 relative">
+    <div className="flex flex-col items-center h-full w-full gap-4 overflow-hidden p-2 md:p-4 pb-24 relative">
       {currentRound && <GameDebugControls currentRound={currentRound} />}
 
-      <div className="flex-none text-center space-y-2 md:space-y-4 w-full max-w-md">
+      <div className="flex-none text-center space-y-6 w-full max-w-md">
         <GameTitle game>MANCHE {currentRound?.round_number || 1}</GameTitle>
 
         {currentRound ? (
           <Card
-            className="border-2 md:border-4 shadow-[4px_4px_0_0_#000000] md:shadow-[8px_8px_0_0_#000000] animate-in zoom-in duration-300"
+            className="animate-in zoom-in duration-300"
             data-testid="constraint-display"
           >
             <CardHeader className="pb-2 md:pb-4">
               <div className="grid grid-cols-2 gap-4">
                 <div className="space-y-1 md:space-y-2">
-                  <p className="font-display text-xs md:text-sm text-muted-foreground uppercase">
-                    IMPOSEE
-                  </p>
+                  <SectionLabel>IMPOSEE</SectionLabel>
                   <p className="font-display text-4xl md:text-6xl text-primary drop-shadow-[2px_2px_0_rgba(0,0,0,0.2)]">
                     {currentRound.constraints.imposed_letter}
                   </p>
                 </div>
                 <div className="space-y-1 md:space-y-2">
-                  <p className="font-display text-xs md:text-sm text-muted-foreground uppercase">
-                    INTERDITE
-                  </p>
+                  <SectionLabel>INTERDITE</SectionLabel>
                   <p className="font-display text-4xl md:text-6xl text-destructive drop-shadow-[2px_2px_0_rgba(0,0,0,0.1)]">
                     {currentRound.constraints.forbidden_letter}
                   </p>
@@ -64,13 +80,9 @@ export function GameClient({ gameId, currentUserId }: GameClientProps) {
             </CardHeader>
 
             <CardContent className="pt-0 space-y-4">
-              <div className="w-full h-0.5 md:h-1 bg-border/20" />
-
               {/* Constraint Card Display */}
-              <div className="bg-muted/50 p-2 rounded-lg border-2 border-dashed border-muted-foreground/30">
-                <p className="font-display text-xs text-muted-foreground uppercase mb-1">
-                  CONTRAINTE SPECIALE
-                </p>
+              <div className="bg-muted/50 p-4 rounded-lg border-2 border-dashed border-muted-foreground/30">
+                <SectionLabel>CONTRAINTE</SectionLabel>
                 <p className="text-3xl text-foreground">
                   {getConstraintLabel(
                     currentRound.constraints.constraint_card,
@@ -93,6 +105,7 @@ export function GameClient({ gameId, currentUserId }: GameClientProps) {
           players={displayPlayers}
           currentUserId={currentUserId}
           className="w-full"
+          hideReadyStatus
         />
       </ScrollArea>
 

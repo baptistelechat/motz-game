@@ -1,14 +1,15 @@
-'use client';
+"use client";
 
-import { useState, useRef, useEffect } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
-import { Send, Loader2 } from 'lucide-react';
-import { useDictionary } from '@/hooks/use-dictionary';
-import { validateWord } from '@/lib/game/validation';
-import { RoundConstraints } from '@/types/game';
-import { Input } from '@/components/ui/input';
-import { Button } from '@/components/ui/button';
-import { cn } from '@/lib/utils';
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { useDictionary } from "@/hooks/use-dictionary";
+import { validateWord } from "@/lib/game/validation";
+import { cn } from "@/lib/utils";
+import { RoundConstraints } from "@/types/game";
+import { ArrowRight, Loader } from "@nsmr/pixelart-react";
+import { motion } from "framer-motion";
+import { useEffect, useRef, useState } from "react";
+import { toast } from "sonner";
 
 interface GameInputProps {
   constraints: RoundConstraints;
@@ -16,9 +17,12 @@ interface GameInputProps {
   disabled?: boolean;
 }
 
-export function GameInput({ constraints, onValidate, disabled }: GameInputProps) {
-  const [value, setValue] = useState('');
-  const [error, setError] = useState<string | null>(null);
+export function GameInput({
+  constraints,
+  onValidate,
+  disabled,
+}: GameInputProps) {
+  const [value, setValue] = useState("");
   const [isValid, setIsValid] = useState(false);
   const [isShaking, setIsShaking] = useState(false);
   const dictionary = useDictionary();
@@ -37,16 +41,15 @@ export function GameInput({ constraints, onValidate, disabled }: GameInputProps)
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const newValue = e.target.value.toUpperCase();
     setValue(newValue);
-    setError(null);
     setIsValid(false);
-    
+
     // Optional: Real-time validation feedback?
     // Story says: "Validation locale effectuée (à la frappe ou soumission)"
     // If we validate on type, we might annoy user with "Too short" while typing.
     // Usually, we validate format on type (imposed letters etc) but Dictionary on submit?
     // Or full validation on type but only show "Valid" state, hide "Error" until submit or delay?
     // Let's validate on type to show "Optimistic" state (Yellow border) if valid.
-    
+
     if (newValue.length > 0 && dictionary.isReady) {
       const result = validateWord(newValue, constraints, dictionary.has);
       setIsValid(result.isValid);
@@ -67,54 +70,41 @@ export function GameInput({ constraints, onValidate, disabled }: GameInputProps)
     if (result.isValid) {
       // Success
       // Play sound "Success" (placeholder)
-      console.log('Audio: Success');
+      console.log("Audio: Success");
       onValidate(value);
-      setValue('');
+      setValue("");
       setIsValid(false);
-      setError(null);
       // Keep focus
       inputRef.current?.focus();
     } else {
       // Error
       // Play sound "Bloop" (placeholder)
-      console.log('Audio: Bloop');
-      setError(result.error || 'Mot invalide');
+      console.log("Audio: Bloop");
+      toast.error(result.error || "Mot invalide", {
+        className:
+          "!fixed !top-4 !left-0 !right-0 !mx-auto !w-fit !bottom-auto",
+      });
       setIsShaking(true);
       setTimeout(() => setIsShaking(false), 400); // Reset shake
     }
   };
 
   const handleKeyDown = (e: React.KeyboardEvent) => {
-    if (e.key === 'Enter') {
+    if (e.key === "Enter") {
       handleSubmit();
     }
   };
 
   // Border color logic
   const getBorderClass = () => {
-    if (error || isShaking) return 'border-[#FF00FF] focus-visible:ring-[#FF00FF]'; // Hot Pink
-    if (isValid) return 'border-[#FFFF00] focus-visible:ring-[#FFFF00]'; // Laser Lemon
-    return 'border-border';
+    if (isShaking) return "border-[#FF00FF] focus-visible:ring-[#FF00FF]"; // Hot Pink
+    if (isValid) return "border-[#FFFF00] focus-visible:ring-[#FFFF00]"; // Laser Lemon
+    return "border-border";
   };
 
   return (
-    <div className="fixed bottom-0 left-0 right-0 p-4 pb-[env(safe-area-inset-bottom,16px)] bg-background/95 backdrop-blur supports-backdrop-filter:bg-background/60 border-t z-50">
+    <div className="fixed bottom-0 left-0 right-0 p-4 bg-background/95 backdrop-blur supports-backdrop-filter:bg-background/60 border-t z-50">
       <div className="max-w-md mx-auto relative">
-        <AnimatePresence>
-          {error && (
-            <motion.div
-              initial={{ opacity: 0, y: 10 }}
-              animate={{ opacity: 1, y: -40 }}
-              exit={{ opacity: 0, y: 0 }}
-              className="absolute left-0 right-0 -top-2 flex justify-center"
-            >
-              <span className="bg-[#FF00FF] text-white text-xs font-bold px-3 py-1 rounded-full shadow-lg border-2 border-white">
-                {error}
-              </span>
-            </motion.div>
-          )}
-        </AnimatePresence>
-
         <motion.div
           animate={isShaking ? { x: [0, -10, 10, -10, 10, 0] } : {}}
           transition={{ duration: 0.4 }}
@@ -130,16 +120,14 @@ export function GameInput({ constraints, onValidate, disabled }: GameInputProps)
               placeholder={
                 dictionary.isLoading ? "Chargement..." : "Votre mot..."
               }
-              className={
-                getBorderClass()
-              }
+              className={getBorderClass()}
               autoComplete="off"
               autoCorrect="off"
               autoCapitalize="characters"
             />
             {dictionary.isLoading && (
               <div className="absolute right-3 top-1/2 -translate-y-1/2">
-                <Loader2 className="h-4 w-4 animate-spin text-muted-foreground" />
+                <Loader className="size-4 animate-spin text-muted-foreground" />
               </div>
             )}
           </div>
@@ -147,13 +135,14 @@ export function GameInput({ constraints, onValidate, disabled }: GameInputProps)
           <Button
             onClick={() => handleSubmit()}
             disabled={disabled || !value || dictionary.isLoading}
-            size="icon"
+            variant="outline"
             className={cn(
-              "transition-colors",
+              "transition-colors aspect-square size-12",
               isValid ? "bg-[#FFFF00] text-black hover:bg-[#E6E600]" : "",
             )}
+            title="DEBUG: Relancer les contraintes"
           >
-            <Send className="h-5 w-5" />
+            <ArrowRight className="size-7" />
           </Button>
         </motion.div>
       </div>

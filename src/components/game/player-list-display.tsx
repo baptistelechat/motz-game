@@ -19,6 +19,7 @@ interface PlayerListDisplayProps {
   currentUserId?: string;
   className?: string;
   emptyMessage?: string;
+  hideReadyStatus?: boolean;
 }
 
 export function PlayerListDisplay({
@@ -26,6 +27,7 @@ export function PlayerListDisplay({
   currentUserId,
   className,
   emptyMessage = "En attente de joueurs...",
+  hideReadyStatus = false,
 }: PlayerListDisplayProps) {
   return (
     <div
@@ -55,14 +57,12 @@ export function PlayerListDisplay({
               isHost={p.isHost}
               isPlayer={!p.isHost && !p.isBot}
               isBot={p.isBot}
-              isReady={p.isReady}
+              isReady={hideReadyStatus ? undefined : p.isReady}
             />
             <div
               className={cn(
                 "text-center truncate w-full px-2 font-display text-sm md:text-base",
-                p.id === currentUserId
-                  ? "text-theme"
-                  : "text-muted-foreground",
+                p.id === currentUserId ? "text-theme" : "text-muted-foreground",
               )}
             >
               {p.pseudo}
