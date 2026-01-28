@@ -18,8 +18,10 @@
     "pixelate": "tsx scripts/pixelate.ts",
     "pixelate:avatar": "tsx scripts/pixelate.ts \"src/assets/avatar/*.png\" \"public/assets/avatar/\" --pixel-size 32 --keep-resolution",
     "generate:icons": "tsx scripts/generate-icon-types.ts",
+    "dictionary:download": "tsx scripts/download-dictionaries.ts",
     "dictionary:merge": "tsx scripts/merge-dictionaries.ts",
     "dictionary:generate": "tsx scripts/generate-dictionary.ts",
+    "dictionary:build": "pnpm run dictionary:download && pnpm run dictionary:merge && pnpm run dictionary:generate",
     "dictionary:analyze": "tsx scripts/analyze-dictionary.ts",
     "db:reset": "tsx scripts/reset-db.ts",
     "seed:game": "tsx scripts/seed-game.ts"

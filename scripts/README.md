@@ -19,10 +19,17 @@ Ce projet contient plusieurs scripts utilitaires pour faciliter le développemen
     - [Options](#options-2)
   - [4. Génération de Types d'Icônes (`generate:icons`)](#4-génération-de-types-dicônes-generateicons)
     - [Utilisation](#utilisation-3)
-  - [5. Génération de Dictionnaire (`generate:dictionary`)](#5-génération-de-dictionnaire-generatedictionary)
+  - [5. Téléchargement de Dictionnaires (`dictionary:download`)](#5-téléchargement-de-dictionnaires-dictionarydownload)
     - [Utilisation](#utilisation-4)
+  - [6. Génération de Dictionnaire (`dictionary:generate`)](#6-génération-de-dictionnaire-dictionarygenerate)
+    - [Utilisation](#utilisation-5)
     - [Détails Techniques](#détails-techniques)
-    - [Configuration**Source** : `public/assets/dictionary.txt`](#configurationsource--publicassetsdictionarytxt)
+    - [Configuration](#configuration)
+  - [7. Workflow Complet (`dictionary:build`)](#7-workflow-complet-dictionarybuild)
+    - [Utilisation](#utilisation-6)
+  - [8. Analyse du Dictionnaire (`dictionary:analyze`)](#8-analyse-du-dictionnaire-dictionaryanalyze)
+    - [Utilisation](#utilisation-7)
+    - [Fonctionnalités](#fonctionnalités)
 
 ---
 
@@ -137,7 +144,32 @@ pnpm run generate:icons
 
 ---
 
-## 5. Génération de Dictionnaire (`generate:dictionary`)
+## 5. Téléchargement de Dictionnaires (`dictionary:download`)
+
+Ce script télécharge et extrait automatiquement des listes de mots supplémentaires depuis des sources externes fiables pour enrichir le dictionnaire.
+
+### Utilisation
+
+```bash
+# Via script pnpm
+pnpm run dictionary:download
+```
+
+Le script va :
+
+1.  Télécharger `Lexique383.tsv` (Lexique.org).
+2.  Télécharger `kaikki.org-dictionary-French.jsonl` (Wiktionnaire).
+3.  Télécharger `ODS8` (Scrabble).
+4.  Télécharger `Gutenberg` (Liste de mots français).
+5.  Télécharger `Taknok` (French Wordlist).
+6.  Télécharger `Words` (JSON Array of French Words).
+7.  Télécharger `Hbenbel` (Full French Dictionary).
+8.  Extraire les mots valides.
+9.  Générer des fichiers sources dans `src/assets/dictionary/temp/` prêts à être fusionnés.
+
+---
+
+## 6. Génération de Dictionnaire (`dictionary:generate`)
 
 Convertit le dictionnaire source (format texte, un mot par ligne) en un **Bloom Filter** compressé (format JSON). Cela permet de réduire considérablement la taille du fichier chargé par le client tout en conservant une vérification rapide des mots.
 
@@ -145,7 +177,7 @@ Convertit le dictionnaire source (format texte, un mot par ligne) en un **Bloom 
 
 ```bash
 # Via script pnpm
-pnpm run generate:dictionary
+pnpm run dictionary:generate
 ```
 
 ### Détails Techniques
@@ -167,3 +199,48 @@ Ce système de métadonnées est utilisé par le client pour :
 - **Destination** : `public/assets/dictionary.json`
 - **Optimisation** : Utilise un Bloom Filter avec un taux d'erreur de **0.1%** (`0.001`). Cela garantit une très haute précision tout en réduisant la taille du fichier de ~75%.
 - **Gain de taille** : Réduit généralement la taille du fichier de ~4.5MB (TXT) à <1MB (JSON).
+
+---
+
+## 7. Workflow Complet (`dictionary:build`)
+
+Cette commande exécute l'ensemble du workflow de génération de dictionnaire en une seule fois.
+
+### Utilisation
+
+```bash
+# Via script pnpm
+pnpm run dictionary:build
+```
+
+Elle enchaîne automatiquement :
+
+1.  `dictionary:download` : Téléchargement des sources.
+2.  `dictionary:merge` : Fusion et nettoyage des sources pour créer `dictionary.txt`.
+3.  `dictionary:generate` : Création du Bloom Filter optimisé `dictionary.json`.
+
+C'est la commande recommandée à exécuter lorsque vous voulez mettre à jour intégralement le dictionnaire.
+
+---
+
+## 8. Analyse du Dictionnaire (`dictionary:analyze`)
+
+Ce script fournit des statistiques détaillées sur le dictionnaire actuel (`src/assets/dictionary/dictionary.txt`). Il est utile pour vérifier la qualité du corpus, détecter des anomalies ou des anglicismes.
+
+### Utilisation
+
+```bash
+# Via script pnpm
+pnpm run dictionary:analyze
+```
+
+### Fonctionnalités
+
+Le script affiche dans la console :
+
+1.  **Statistiques Générales** : Nombre total de mots.
+2.  **Distribution par Longueur** : Tableau montrant combien de mots existent pour chaque longueur (utile pour équilibrer le jeu).
+3.  **Fréquence des Caractères** : Pourcentage d'apparition de chaque lettre (utile pour ajuster les tirages de lettres).
+4.  **Palindromes** : Liste des palindromes de plus de 2 lettres.
+5.  **Anglicismes Potentiels** : Détection basée sur une liste commune et des heuristiques (ex: terminaisons en "-ing").
+6.  **Mots "Spam"** : Détection de mots composés uniquement de voyelles.

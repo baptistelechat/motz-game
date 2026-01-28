@@ -55,3 +55,6 @@ public/swe-worker-*.js
 
 # grepai
 .grepai/
+
+# dictionary sources
+src/assets/dictionary/temp/
