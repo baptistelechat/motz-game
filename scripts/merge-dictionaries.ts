@@ -107,7 +107,15 @@ async function mergeDictionaries() {
   console.log(`📂 Found ${sourceFiles.length} source files:`, sourceFiles);
 
   const uniqueWords = new Set<string>();
-  const stats: Record<string, { count: number; added: number }> = {};
+  const stats: Record<
+    string,
+    {
+      count: number;
+      added: number;
+      rejectedShort: number;
+      rejectedNoVowels: number;
+    }
+  > = {};
 
   for (const file of sourceFiles) {
     console.log(`📖 Processing ${file}...`);
@@ -125,26 +133,45 @@ async function mergeDictionaries() {
 
     let count = 0;
     let added = 0;
+    let rejectedShort = 0;
+    let rejectedNoVowels = 0;
 
     for (const rawWord of words) {
       if (!rawWord) continue;
 
       const normalized = normalizeString(rawWord);
 
-      // Filter: length > 1 and only letters A-Z
-      if (normalized.length > 1 && /^[A-Z]+$/.test(normalized)) {
-        count++;
-        if (!uniqueWords.has(normalized)) {
-          uniqueWords.add(normalized);
-          added++;
-        }
+      // Must contain only letters A-Z
+      if (!/^[A-Z]+$/.test(normalized)) {
+        continue;
+      }
+
+      // Filter: length > 2
+      if (normalized.length <= 2) {
+        rejectedShort++;
+        continue;
+      }
+
+      // Filter: MUST contain at least one vowel
+      if (!/[AEIOUY]/.test(normalized)) {
+        rejectedNoVowels++;
+        continue;
+      }
+
+      // If we got here, the word is valid
+      count++;
+      if (!uniqueWords.has(normalized)) {
+        uniqueWords.add(normalized);
+        added++;
       }
     }
 
-    stats[file] = { count, added };
+    stats[file] = { count, added, rejectedShort, rejectedNoVowels };
     console.log(`   - Raw words: ${words.length}`);
     console.log(`   - Valid words: ${count}`);
     console.log(`   - New unique words: ${added}`);
+    console.log(`   - Rejected (<= 2 chars): ${rejectedShort}`);
+    console.log(`   - Rejected (no vowels): ${rejectedNoVowels}`);
   }
 
   console.log("💾 Writing merged dictionary...");
