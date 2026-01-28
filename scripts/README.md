@@ -21,6 +21,8 @@ Ce projet contient plusieurs scripts utilitaires pour faciliter le développemen
     - [Utilisation](#utilisation-3)
   - [5. Génération de Dictionnaire (`generate:dictionary`)](#5-génération-de-dictionnaire-generatedictionary)
     - [Utilisation](#utilisation-4)
+    - [Détails Techniques](#détails-techniques)
+    - [Configuration**Source** : `public/assets/dictionary.txt`](#configurationsource--publicassetsdictionarytxt)
 
 ---
 
@@ -148,7 +150,20 @@ pnpm run generate:dictionary
 
 ### Détails Techniques
 
-- **Source** : `public/assets/dictionary.txt`
+Le script génère deux fichiers dans `public/assets/` :
+
+1. **`dictionary.json`** : Le Bloom Filter sérialisé (~1MB vs ~4MB pour le texte brut).
+2. **`dictionary-meta.json`** : Métadonnées contenant la version (timestamp), le taux d'erreur (0.1%) et le nombre de mots.
+
+Ce système de métadonnées est utilisé par le client pour :
+
+- Vérifier si le dictionnaire local (IndexedDB) est à jour.
+- Éviter de retélécharger le gros fichier JSON si la version n'a pas changé.
+- Permettre le fonctionnement hors-ligne (Offline First).
+
+### Configuration
+
+- **Source** : `src/assets/dictionary/dictionary.txt`
 - **Destination** : `public/assets/dictionary.json`
-- **Optimisation** : Utilise un Bloom Filter avec un taux d'erreur de **1%** (`0.01`). Cela signifie qu'il y a une chance sur 100 qu'un mot invalide soit accepté, ce qui est considéré comme acceptable pour un jeu.
+- **Optimisation** : Utilise un Bloom Filter avec un taux d'erreur de **0.1%** (`0.001`). Cela garantit une très haute précision tout en réduisant la taille du fichier de ~75%.
 - **Gain de taille** : Réduit généralement la taille du fichier de ~4.5MB (TXT) à <1MB (JSON).

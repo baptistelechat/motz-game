@@ -1,15 +1,14 @@
 "use server";
 
+import { generateRoundConstraints } from "@/lib/game/constraint-generation";
+import { getServerDictionary } from "@/lib/game/server-dictionary";
+import { validateWord } from "@/lib/game/validation";
 import { createClient } from "@/lib/supabase/server";
-import { customAlphabet } from "nanoid";
+import { generateGameCode } from "@/lib/utils/game-code";
+import { normalizeString } from "@/lib/utils/string";
+import { RoundConstraints } from "@/types/game";
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
-
-// Generate a short code for the game (6 chars, uppercase + numbers)
-const generateGameCode = customAlphabet(
-  "0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ",
-  6,
-);
 
 export async function createGame() {
   const supabase = await createClient();
@@ -137,7 +136,7 @@ export async function startGame(gameId: string) {
 
   const { data: game, error: gameError } = await supabase
     .from("games")
-    .select("host_id")
+    .select("host_id, status")
     .eq("id", gameId)
     .single();
 
@@ -157,12 +156,7 @@ export async function startGame(gameId: string) {
 
   if (!allReady) throw new Error("Not all players are ready");
 
-  const { error: rpcError } = await supabase.rpc("start_new_round", {
-    p_game_id: gameId,
-  });
-
-  if (rpcError)
-    throw new Error(`Failed to start game: ${rpcError.message}`);
+  await startNewRoundLogic(supabase, gameId);
 
   return { success: true };
 }
@@ -177,16 +171,160 @@ export async function forceStartGame(gameId: string) {
   if (authError || !user) throw new Error("User must be authenticated");
 
   // Only allow in E2E/Dev mode
-  if (process.env.NEXT_PUBLIC_IS_E2E !== "true" && process.env.NODE_ENV !== "development") {
+  if (
+    process.env.NEXT_PUBLIC_IS_E2E !== "true" &&
+    process.env.NODE_ENV !== "development"
+  ) {
     throw new Error("Action not allowed");
   }
 
-  const { error: rpcError } = await supabase.rpc("start_new_round", {
-    p_game_id: gameId,
+  try {
+    await startNewRoundLogic(supabase, gameId);
+    return { success: true };
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  } catch (error: any) {
+    throw new Error(`Failed to force start game: ${error.message}`);
+  }
+}
+
+export async function debugRegenerateRound(roundId: string) {
+  const supabase = await createClient();
+  const {
+    data: { user },
+    error: authError,
+  } = await supabase.auth.getUser();
+
+  if (authError || !user) throw new Error("User must be authenticated");
+
+  // Only allow in E2E/Dev mode
+  if (
+    process.env.NEXT_PUBLIC_IS_E2E !== "true" &&
+    process.env.NODE_ENV !== "development"
+  ) {
+    throw new Error("Action not allowed");
+  }
+
+  // Verify host ownership via the round -> game relationship
+  const { data: round, error: roundError } = await supabase
+    .from("rounds")
+    .select("game_id, games!inner(host_id)")
+    .eq("id", roundId)
+    .single();
+
+  if (roundError || !round) throw new Error("Round not found");
+
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  if ((round.games as any).host_id !== user.id) {
+    throw new Error("Only the host can regenerate the round");
+  }
+
+  try {
+    const constraints = await generateSolvableConstraints(supabase);
+
+    const { error: updateError } = await supabase
+      .from("rounds")
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      .update({ constraints: constraints as any })
+      .eq("id", roundId);
+
+    if (updateError) {
+      throw new Error(`Failed to update round: ${updateError.message}`);
+    }
+
+    return { success: true };
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  } catch (error: any) {
+    throw new Error(`Failed to regenerate round: ${error.message}`);
+  }
+}
+
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+async function generateSolvableConstraints(supabase: any) {
+  // 1. Load Dictionary (Cached in memory)
+  const dictionary = await getServerDictionary();
+  const dictionarySet = new Set(dictionary.map((w) => normalizeString(w)));
+  const dictionaryCheck = (w: string) => dictionarySet.has(w);
+
+  // 2. Fetch Themes
+  const { data: themesData } = await supabase
+    .from("themes")
+    .select("label")
+    .eq("locale", "fr"); // Default to French
+
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const themes = themesData?.map((t: any) => t.label) || ["Général"];
+
+  // 3. Generate Valid Constraints (Loop)
+  let constraints: RoundConstraints | undefined;
+  let attempts = 0;
+  const MAX_ATTEMPTS = 50;
+  let validFound = false;
+
+  while (attempts < MAX_ATTEMPTS) {
+    constraints = generateRoundConstraints(themes);
+    const currentConstraints = constraints;
+
+    // Check if at least one word exists
+    const hasSolution = dictionary.some((word) => {
+      // validateWord normalizes internaly, and calls dictionaryCheck with normalized word
+      // dictionaryCheck checks against normalized set.
+      return validateWord(word, currentConstraints, dictionaryCheck).isValid;
+    });
+
+    if (hasSolution) {
+      validFound = true;
+      break;
+    }
+    attempts++;
+  }
+
+  if (!validFound) {
+    throw new Error(
+      "Failed to generate a solvable round after multiple attempts.",
+    );
+  }
+
+  return constraints;
+}
+
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+async function startNewRoundLogic(supabase: any, gameId: string) {
+  const constraints = await generateSolvableConstraints(supabase);
+
+  // 4. Update Game Status (if LOBBY)
+  // Fetch current game status to decide
+  const { data: game } = await supabase
+    .from("games")
+    .select("status")
+    .eq("id", gameId)
+    .single();
+
+  if (game?.status === "LOBBY") {
+    await supabase
+      .from("games")
+      .update({ status: "PLAYING", started_at: new Date().toISOString() })
+      .eq("id", gameId);
+  }
+
+  // 5. Determine Round Number
+  const { data: rounds } = await supabase
+    .from("rounds")
+    .select("round_number")
+    .eq("game_id", gameId)
+    .order("round_number", { ascending: false })
+    .limit(1);
+
+  const nextRoundNumber = (rounds?.[0]?.round_number || 0) + 1;
+
+  // 6. Insert Round
+  const { error: insertError } = await supabase.from("rounds").insert({
+    game_id: gameId,
+    round_number: nextRoundNumber,
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    constraints: constraints as any,
+    status: "PLAYING",
   });
 
-  if (rpcError)
-    throw new Error(`Failed to force start game: ${rpcError.message}`);
-
-  return { success: true };
+  if (insertError)
+    throw new Error(`Failed to create round: ${insertError.message}`);
 }

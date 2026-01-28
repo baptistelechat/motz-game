@@ -22,7 +22,7 @@ test.describe("Game Input & Validation", () => {
     homePage,
   }) => {
     // 1. Mock Dictionary to be small and fast
-    await page.route("**/assets/dictionary.json", (route) => {
+    await page.route("**/assets/dictionary/dictionary.json", (route) => {
       const filter = BloomFilter.create(10, 0.01);
       filter.add("BATEAU");
       filter.add("AVION");

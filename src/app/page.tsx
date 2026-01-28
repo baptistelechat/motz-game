@@ -1,6 +1,7 @@
 "use client";
 
 import { createGame } from "@/app/actions/game-actions";
+import { DictionaryLoader } from "@/components/game/dictionary-loader";
 import { JoinGameDialog } from "@/components/game/join-game-dialog";
 import { AttributesDialog } from "@/components/info/attributes-dialog";
 import { MainLayout } from "@/components/layout/main-layout";
@@ -146,6 +147,7 @@ export default function Home() {
   // If profile exists, show main menu
   return (
     <MainLayout>
+      <DictionaryLoader />
       <div className="flex-1 flex flex-col items-center justify-center p-4 gap-12 min-h-dvh relative">
         <div className="text-center space-y-6">
           <h1 className="font-display text-4xl md:text-7xl text-theme drop-shadow-[6px_6px_0_var(--border)] uppercase text-center">
