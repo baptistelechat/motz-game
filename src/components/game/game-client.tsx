@@ -66,13 +66,13 @@ export function GameClient({ gameId, currentUserId }: GameClientProps) {
               <div className="grid grid-cols-2 gap-4">
                 <div className="space-y-1 md:space-y-2">
                   <SectionLabel>IMPOSEE</SectionLabel>
-                  <p className="font-display text-4xl md:text-6xl text-primary drop-shadow-[2px_2px_0_rgba(0,0,0,0.2)]">
+                  <p className="font-display text-4xl md:text-6xl text-allow drop-shadow-[2px_2px_0_rgba(0,0,0,0.2)]">
                     {currentRound.constraints.imposed_letter}
                   </p>
                 </div>
                 <div className="space-y-1 md:space-y-2">
                   <SectionLabel>INTERDITE</SectionLabel>
-                  <p className="font-display text-4xl md:text-6xl text-destructive drop-shadow-[2px_2px_0_rgba(0,0,0,0.1)]">
+                  <p className="font-display text-4xl md:text-6xl text-disallow drop-shadow-[2px_2px_0_rgba(0,0,0,0.1)]">
                     {currentRound.constraints.forbidden_letter}
                   </p>
                 </div>

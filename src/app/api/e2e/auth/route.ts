@@ -43,6 +43,10 @@ export async function POST(request: NextRequest) {
     const { searchParams } = new URL(request.url);
     const forceNew = searchParams.get("force") === "true";
 
+    console.log(
+      `🔒 E2E Auth Request: forceNew=${forceNew}, hasCached=${!!cachedSession}`,
+    );
+
     // Return cached session if valid and not forced
     if (
       !forceNew &&
@@ -64,6 +68,7 @@ export async function POST(request: NextRequest) {
         cookiesToSet.forEach(({ name, value, options }) => {
           finalResponse.cookies.set(name, value, options);
         });
+        finalResponse.headers.set("X-Debug-Source", "cache");
         return finalResponse;
       } else {
         cachedSession = null;
@@ -171,9 +176,11 @@ export async function POST(request: NextRequest) {
     const session = sessionData.session;
     const user = session.user;
 
-    // Cache the session
-    cachedSession = session;
-    sessionTimestamp = Date.now();
+    // Cache the session only if not forced (to avoid polluting cache with specific test users)
+    if (!forceNew) {
+      cachedSession = session;
+      sessionTimestamp = Date.now();
+    }
 
     // Ensure cookies are set on the response via SSR client
     await supabase.auth.setSession({
@@ -198,6 +205,7 @@ export async function POST(request: NextRequest) {
     cookiesToSet.forEach(({ name, value, options }) => {
       finalResponse.cookies.set(name, value, options);
     });
+    finalResponse.headers.set("X-Debug-Source", "new");
 
     return finalResponse;
     // eslint-disable-next-line @typescript-eslint/no-explicit-any

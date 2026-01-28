@@ -82,7 +82,7 @@ export function GameInput({
       console.log("Audio: Bloop");
       toast.error(result.error || "Mot invalide", {
         className:
-          "!fixed !top-4 !left-0 !right-0 !mx-auto !w-fit !bottom-auto",
+          "!fixed !bottom-28 !left-0 !right-0 !mx-auto !w-fit !top-auto",
       });
       setIsShaking(true);
       setTimeout(() => setIsShaking(false), 400); // Reset shake

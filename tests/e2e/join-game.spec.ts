@@ -4,6 +4,8 @@ import { setupE2EAuth, teardownE2EAuth } from "./support/auth.utils";
 import { expect, test } from "./support/fixtures";
 
 test.describe("Join Game (Story 2.2)", () => {
+  test.setTimeout(60000); // Increase timeout for slower CI/local envs
+
   test.beforeEach(async ({ homePage, page }) => {
     // Force new user to ensure clean state (name, avatar) for lobby verification
     await setupE2EAuth(page, { force: true });

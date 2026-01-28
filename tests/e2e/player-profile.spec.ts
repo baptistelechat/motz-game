@@ -1,10 +1,17 @@
-import { expect, test } from "./support/fixtures";
+import { teardownE2EAuth } from "./support/auth.utils";
 import { setupE2EAuth } from "./support/auth.utils";
+import { expect, test } from "./support/fixtures";
 
 test.describe("Player Profile", () => {
+  let activeUserId: string | null = null;
+
   test.beforeEach(async ({ homePage, page }) => {
     // Force new user to avoid state conflicts from shared cached session
-    await setupE2EAuth(page, { force: true });
+    const auth = await setupE2EAuth(page, { force: true });
+    if (auth?.cleanupUserId) {
+      activeUserId = auth.cleanupUserId;
+    }
+
     await homePage.goto();
 
     // Wait for initial profile creation/loading (handled by app)
@@ -14,6 +21,13 @@ test.describe("Player Profile", () => {
     await expect(
       page.getByRole("button", { name: "Modifier mon profil" }),
     ).toBeVisible({ timeout: 30000 });
+  });
+
+  test.afterEach(async ({ page }) => {
+    if (activeUserId) {
+      await teardownE2EAuth(page, activeUserId);
+      activeUserId = null;
+    }
   });
 
   test("[P0] should allow updating pseudo and avatar", async ({

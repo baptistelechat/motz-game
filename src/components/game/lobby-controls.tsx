@@ -1,8 +1,8 @@
 "use client";
 
 import { startGame, toggleReady } from "@/app/actions/game-actions";
-import { Button } from "@/components/ui/button";
 import { useAuth } from "@/components/providers/auth-provider";
+import { Button } from "@/components/ui/button";
 import { useGameStore } from "@/store/use-game-store";
 import { Loader, Play } from "@nsmr/pixelart-react";
 import { useTransition } from "react";
@@ -11,17 +11,20 @@ import { toast } from "sonner";
 interface LobbyControlsProps {
   gameId: string;
   isHost: boolean;
+  onGameStarted?: () => void;
 }
 
 export function LobbyControls({
   gameId,
   isHost,
+  onGameStarted,
 }: LobbyControlsProps) {
   const [isPending, startTransition] = useTransition();
   const { user } = useAuth();
   const players = useGameStore((state) => state.players);
-  
-  const isMyPlayerReady = players.find((p) => p.id === user?.id)?.is_ready || false;
+
+  const isMyPlayerReady =
+    players.find((p) => p.id === user?.id)?.is_ready || false;
 
   const handleToggleReady = () => {
     startTransition(async () => {
@@ -38,6 +41,8 @@ export function LobbyControls({
     startTransition(async () => {
       try {
         await startGame(gameId);
+        // Force refresh to update status immediately and trigger navigation
+        onGameStarted?.();
       } catch (error) {
         toast.error("Impossible de lancer la partie");
         console.error(error);
@@ -65,11 +70,7 @@ export function LobbyControls({
             <div className="flex flex-col items-center leading-tight py-1">
               <div className="flex items-center gap-2">
                 <Loader className="size-7 md:size-6 animate-spin" />
-                <span
-                  className={
-                    isHost ? "hidden md:inline-block" : ""
-                  }
-                >
+                <span className={isHost ? "hidden md:inline-block" : ""}>
                   En attente...
                 </span>
               </div>

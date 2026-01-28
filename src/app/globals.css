@@ -52,8 +52,10 @@
   --sidebar-ring: #39ff14;
 
   --allow: #39ff14;
+  --allow-foreground: #20990c;
   --disallow: #ff00ff;
   --theme: #ffff00;
+  --theme-foreground: #aeb102;
 }
 
 .dark {
@@ -85,8 +87,10 @@
   --sidebar-border: #000000;
   --sidebar-ring: #39ff14;
   --allow: #39ff14;
+  --allow-foreground: #20990c;
   --disallow: #ff00ff;
   --theme: #ffff00;
+  --theme-foreground: #aeb102;
 }
 
 @theme inline {
@@ -131,8 +135,10 @@
   --color-sidebar-ring: var(--sidebar-ring);
 
   --color-allow: var(--allow);
+  --color-allow-foreground: var(--allow-foreground);
   --color-disallow: var(--disallow);
   --color-theme: var(--theme);
+  --color-theme-foreground: var(--theme-foreground);
 
   --shadow-hard: 6px 6px 0px 0px #000000;
 

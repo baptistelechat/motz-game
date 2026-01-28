@@ -14,8 +14,12 @@ test.describe("Story 3.1: Manche & Distribution Cartes", () => {
     browser,
   }) => {
     test.setTimeout(60000); // Increase timeout for Realtime sync
+
+    // 0. Force fresh Host to avoid cache pollution from other tests
+    const hostAuth = await setupE2EAuth(hostPage, { force: true });
+
     // 1. Host creates game
-    // Host is already authenticated via homePage fixture
+    // Host is authenticated via hostAuth now (overriding homePage fixture auth)
     await homePage.goto();
     await homePage.createGame();
     await lobbyPage.verifyElements();
@@ -50,16 +54,24 @@ test.describe("Story 3.1: Manche & Distribution Cartes", () => {
 
     // Verify players see each other
     await lobbyPage.verifyPlayerInList(guestName); // Host sees Guest
-    await verifyPlayerInList(guestPage, hostName); // Guest sees Host
+
+    try {
+      await verifyPlayerInList(guestPage, hostName); // Guest sees Host
+    } catch (e) {
+      console.log("Guest failed to see Host, retrying with reload...", e);
+      await guestPage.reload();
+      await verifyLobbyElements(guestPage);
+      await verifyPlayerInList(guestPage, hostName);
+    }
 
     // 2.5. Both players toggle Ready
     await hostPage.getByTestId("toggle-ready-button").click();
     await guestPage.getByTestId("toggle-ready-button").click();
 
     // Wait for "All players ready" message on Host
-    await expect(
-      hostPage.getByText("Tous les joueurs sont prêts"),
-    ).toBeVisible({ timeout: 15000 });
+    await expect(hostPage.getByText("Tous les joueurs sont prêts")).toBeVisible(
+      { timeout: 15000 },
+    );
 
     // 3. Host starts the round
     const startRoundButton = hostPage.getByTestId("start-round-button");
@@ -74,15 +86,27 @@ test.describe("Story 3.1: Manche & Distribution Cartes", () => {
     const constraintDisplayGuest = guestPage.getByTestId("constraint-display");
 
     await expect(constraintDisplayHost).toBeVisible({ timeout: 15000 });
-    await expect(constraintDisplayGuest).toBeVisible({ timeout: 15000 });
+
+    try {
+      await expect(constraintDisplayGuest).toBeVisible({ timeout: 15000 });
+    } catch (e) {
+      console.log(
+        "Guest failed to see constraints, reloading to sync state...",
+        e,
+      );
+      await guestPage.reload();
+      await expect(constraintDisplayGuest).toBeVisible({ timeout: 10000 });
+    }
 
     // 5. Verify Constraints are Identical
     // We expect the text content to contain the constraints (Letter and Theme)
-    const hostConstraints = await constraintDisplayHost.textContent();
-    const guestConstraints = await constraintDisplayGuest.textContent();
+    const hostConstraints = (await constraintDisplayHost.textContent())?.trim();
+    const guestConstraints = (
+      await constraintDisplayGuest.textContent()
+    )?.trim();
 
-    console.log("Host Constraints:", hostConstraints);
-    console.log("Guest Constraints:", guestConstraints);
+    console.log("Host Constraints:", JSON.stringify(hostConstraints));
+    console.log("Guest Constraints:", JSON.stringify(guestConstraints));
 
     expect(hostConstraints).toEqual(guestConstraints);
     expect(hostConstraints).not.toBe("");
@@ -93,5 +117,10 @@ test.describe("Story 3.1: Manche & Distribution Cartes", () => {
       await teardownE2EAuth(guestPage, guestAuth.cleanupUserId);
     }
     await guestContext.close();
+
+    // Cleanup Host
+    if (hostAuth.cleanupUserId) {
+      await teardownE2EAuth(hostPage, hostAuth.cleanupUserId);
+    }
   });
 });

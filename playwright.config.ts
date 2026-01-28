@@ -82,7 +82,7 @@ export default defineConfig({
 
   /* Run your local dev server before starting the tests */
   webServer: {
-    command: "cross-env NEXT_PUBLIC_IS_E2E=true pnpm dev",
+    command: "pnpm run dev:next",
     url: "http://localhost:3000",
     reuseExistingServer: true,
     timeout: 180000,

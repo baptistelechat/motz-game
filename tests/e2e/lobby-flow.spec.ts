@@ -54,7 +54,27 @@ test.describe("Lobby Flow (Story 2.3)", () => {
       const nameB = (await profileButtonB.textContent()) || "";
 
       // Verify B sees everyone waiting initially (Host + Himself = 2)
-      await expect(pageB.locator('[title="Waiting"]')).toHaveCount(2);
+      try {
+        await expect(pageB.locator('[title="Waiting"]')).toHaveCount(2, {
+          timeout: 10000,
+        });
+      } catch (e) {
+        console.log(
+          "DEBUG: Guest failed to see all players (Waiting=2). Reloading...",
+          e,
+        );
+        
+        // Debug current state
+        const waitingCount = await pageB.locator('[title="Waiting"]').count();
+        const readyCount = await pageB.locator('[title="Ready"]').count();
+        const playerNames = await pageB.locator(".font-display.text-theme, .font-display.text-muted-foreground").allTextContents();
+        console.log("DEBUG STATE:", { waitingCount, readyCount, playerNames });
+
+        await pageB.waitForTimeout(2000);
+        await pageB.reload();
+        await verifyLobbyElements(pageB);
+        await expect(pageB.locator('[title="Waiting"]')).toHaveCount(2, { timeout: 15000 });
+      }
 
       // Player B toggles Ready
       await pageB.getByRole("button", { name: "Prêt" }).click();

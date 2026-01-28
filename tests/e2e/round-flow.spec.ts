@@ -55,22 +55,27 @@ test.describe("Round Flow", () => {
 
     // 8. Verify Game UI
     await expect(page.getByText("MANCHE 1")).toBeVisible();
-    await expect(page.getByText("LETTRE")).toBeVisible();
-    await expect(page.getByText("THÈME")).toBeVisible();
+    await expect(page.getByText("IMPOSEE")).toBeVisible();
+    await expect(page.getByText("INTERDITE")).toBeVisible();
+    await expect(page.getByText("CONTRAINTE")).toBeVisible();
 
     // 9. Verify Round Content (Letter and Theme should be non-empty)
     // We expect a single letter for the letter constraint
-    const letterConstraint = page.locator(".text-6xl");
-    await expect(letterConstraint).toBeVisible();
-    await expect(letterConstraint).toHaveText(/^[A-Z]$/);
+    const imposedLetter = page.locator(".text-allow");
+    await expect(imposedLetter).toBeVisible();
+    await expect(imposedLetter).toHaveText(/^[A-Z]$/);
 
-    // Look for the theme value (text-3xl inside the card)
+    const forbiddenLetter = page.locator(".text-disallow");
+    await expect(forbiddenLetter).toBeVisible();
+    await expect(forbiddenLetter).toHaveText(/^[A-Z]$/);
+
+    // Look for the constraint value (text-3xl inside the card)
     // We use a more specific selector to avoid conflict with other 3xl texts
-    const themeConstraint = page.locator(".bg-card .text-3xl");
-    await expect(themeConstraint).toBeVisible();
+    const constraintTextEl = page.locator(".bg-muted\\/50 .text-3xl");
+    await expect(constraintTextEl).toBeVisible();
 
-    const themeText = await themeConstraint.innerText();
-    console.log(`[TEST] Round started with Theme: ${themeText}`);
-    expect(themeText.length).toBeGreaterThan(0);
+    const constraintText = await constraintTextEl.innerText();
+    console.log(`[TEST] Round started with Constraint: ${constraintText}`);
+    expect(constraintText.length).toBeGreaterThan(0);
   });
 });

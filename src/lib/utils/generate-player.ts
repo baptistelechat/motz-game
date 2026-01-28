@@ -18,8 +18,17 @@ export const generateRandomAvatar = (): AvatarConfig => {
 };
 
 export const generateRandomPlayer = (prefix: string = "") => {
+  let effectivePrefix = prefix;
+  if (
+    !effectivePrefix &&
+    typeof window !== "undefined" &&
+    window.localStorage.getItem("motz-e2e-mode") === "true"
+  ) {
+    effectivePrefix = "E2E";
+  }
+
   return {
-    pseudo: `${prefix ? `${prefix}-` : ""}${generateRandomPseudo()}`,
+    pseudo: `${effectivePrefix ? `${effectivePrefix}-` : ""}${generateRandomPseudo()}`,
     avatar_config: generateRandomAvatar(),
   };
 };

@@ -4,6 +4,9 @@ export async function setupE2EAuth(
   page: Page,
   options: { force?: boolean } = {},
 ) {
+  // Clear any existing cookies to prevent session leakage
+  await page.context().clearCookies();
+
   let userId = "fake-user-id";
   let cleanupUserId: string | null = null;
 
@@ -20,9 +23,19 @@ export async function setupE2EAuth(
   });
 
   try {
-    const url = options.force ? "/api/e2e/auth?force=true" : "/api/e2e/auth";
-    const response = await page.request.post(url);
+    const timestamp = Date.now();
+    const url = options.force 
+      ? `/api/e2e/auth?force=true&t=${timestamp}` 
+      : `/api/e2e/auth?t=${timestamp}`;
+    
+    const response = await page.request.post(url, {
+      headers: {
+        'Cache-Control': 'no-cache, no-store',
+        'Pragma': 'no-cache'
+      }
+    });
     const session = await response.json();
+    console.log(`🔒 E2E Auth: ${url} -> Source: ${response.headers()["x-debug-source"] || "unknown"} | User: ${session?.user?.id}`);
 
     if (session?.user?.id) {
       userId = session.user.id;

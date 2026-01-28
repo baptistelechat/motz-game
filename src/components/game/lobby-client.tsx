@@ -95,7 +95,8 @@ export function LobbyClient({
       try {
         await joinGame(code);
         hasJoinedRef.current = true;
-        // Trigger refresh implicitly via realtime subscription
+        // Explicitly refresh to ensure state is updated even if Realtime is slow
+        await refresh();
       } catch (err) {
         console.error("Failed to join game:", err);
         const msg =
@@ -109,7 +110,7 @@ export function LobbyClient({
       }
     };
     join();
-  }, [user, profile, code, players, isJoining]);
+  }, [user, profile, code, players, isJoining, refresh]);
 
   // 3. Navigation when game starts
   useEffect(() => {
@@ -215,7 +216,11 @@ export function LobbyClient({
       </div>
 
       <div className="flex-none w-full max-w-md">
-        <LobbyControls gameId={gameId} isHost={isHost} />
+        <LobbyControls
+          gameId={gameId}
+          isHost={isHost}
+          onGameStarted={refresh}
+        />
       </div>
     </div>
   );

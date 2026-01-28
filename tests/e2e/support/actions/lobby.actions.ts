@@ -54,7 +54,21 @@ export async function verifyPlayerInList(page: Page, playerName: string) {
   // Assuming players are listed in a way that their name is visible text
   // We check that the text is visible on the page
   // Use exact: true to avoid matching toast notifications like "Name joined the game"
-  await expect(page.getByText(playerName, { exact: true })).toBeVisible({
-    timeout: 10000,
-  });
+  try {
+    // Scope to the player list item to avoid matching the profile button in the header
+    // The list item has classes "text-center" and "font-display"
+    await expect(
+      page
+        .locator(".text-center.font-display")
+        .getByText(playerName, { exact: true }),
+    ).toBeVisible({
+      timeout: 15000,
+    });
+  } catch (e) {
+    console.log(
+      `Verify Player ${playerName} Failed. Visible text on page:`,
+      await page.locator("body").innerText(),
+    );
+    throw e;
+  }
 }
