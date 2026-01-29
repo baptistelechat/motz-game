@@ -45,11 +45,13 @@ export default function Home() {
         toast.dismiss(toastId);
       } catch (error) {
         // Ignore redirect errors as they are part of normal flow
-        if (
-          error instanceof Error &&
-          (error.message === "NEXT_REDIRECT" ||
-            error.message.includes("NEXT_REDIRECT"))
-        ) {
+        // Check for NEXT_REDIRECT in message, handling both Error objects and plain objects
+        const errorMessage = 
+          error instanceof Error ? error.message : 
+          typeof error === 'object' && error && 'message' in error ? String((error as any).message) : 
+          String(error);
+
+        if (errorMessage.includes("NEXT_REDIRECT")) {
           toast.dismiss(toastId); // Ensure dismiss on redirect
           return;
         }

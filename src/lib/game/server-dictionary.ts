@@ -1,12 +1,11 @@
 import fs from "fs";
 import path from "path";
 
-let cachedDictionary: string[] | null = null;
+let cachedDictionaryList: string[] | null = null;
+let cachedDictionarySet: Set<string> | null = null;
 
-export async function getServerDictionary(): Promise<string[]> {
-  if (cachedDictionary) {
-    return cachedDictionary;
-  }
+async function loadDictionary() {
+  if (cachedDictionaryList && cachedDictionarySet) return;
 
   try {
     const dictionaryPath = path.join(
@@ -20,13 +19,29 @@ export async function getServerDictionary(): Promise<string[]> {
 
     const words = text
       .split("\n")
-      .map((w) => w.trim())
+      .map((w) => w.trim().toUpperCase())
       .filter((w) => w.length > 0);
 
-    cachedDictionary = words;
-    return words;
+    cachedDictionaryList = words;
+    cachedDictionarySet = new Set(words);
   } catch (error) {
     console.error("[ServerDictionary] Failed to load dictionary:", error);
-    return [];
+    cachedDictionaryList = [];
+    cachedDictionarySet = new Set();
   }
+}
+
+export async function getServerDictionary(): Promise<string[]> {
+  await loadDictionary();
+  return cachedDictionaryList || [];
+}
+
+export async function getServerDictionarySet(): Promise<Set<string>> {
+  await loadDictionary();
+  return cachedDictionarySet || new Set();
+}
+
+export async function checkWordServer(word: string): Promise<boolean> {
+  await loadDictionary();
+  return cachedDictionarySet?.has(word.toUpperCase()) || false;
 }

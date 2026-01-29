@@ -1,6 +1,8 @@
+import { submitWord as submitWordAction } from "@/app/actions/game-actions";
 import { AvatarConfig } from "@/interface/AvatarConfig";
 import { Database } from "@/types/database.types";
 import { RoundConstraints } from "@/types/game";
+import { toast } from "sonner";
 import { create } from "zustand";
 
 type GameStatus = Database["public"]["Enums"]["game_status"];
@@ -39,7 +41,7 @@ interface GameState {
   submitWord: (word: string) => Promise<void>;
 }
 
-export const useGameStore = create<GameState>((set) => ({
+export const useGameStore = create<GameState>((set, get) => ({
   gameId: null,
   hostId: null,
   status: "LOBBY",
@@ -55,10 +57,37 @@ export const useGameStore = create<GameState>((set) => ({
   setIsLoading: (isLoading) => set({ isLoading }),
 
   submitWord: async (word) => {
-    // Mock implementation for Story 3.2
-    console.log(`[Store] Submitting word: ${word}`);
-    // Here we would call the RPC function
-    await new Promise((resolve) => setTimeout(resolve, 500)); // Simulate network
-    console.log(`[Store] Word submitted successfully`);
+    const { gameId, currentRound } = get();
+    
+    if (!gameId || !currentRound) {
+      console.error("Cannot submit word: Game or Round not active");
+      toast.error("Erreur: Partie non active");
+      return;
+    }
+
+    try {
+      const result = await submitWordAction({
+        gameId,
+        roundId: currentRound.id,
+        word,
+      });
+
+      if (!result.success) {
+        toast.error(result.message || "Mot refusé par le serveur");
+        // Could also trigger a "shake" or specific feedback here if we had state for it
+      } else {
+        // Success
+        // Ideally show points earned from result.submission
+        const points = result.submission?.score;
+        if (points) {
+          toast.success(`Mot validé ! +${points} pts`);
+        } else {
+          toast.success("Mot validé !");
+        }
+      }
+    } catch (err) {
+      console.error("Failed to submit word:", err);
+      toast.error("Erreur de communication avec le serveur");
+    }
   },
 }));

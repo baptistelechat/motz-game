@@ -1,75 +1,80 @@
 "use server";
 
 import { generateRoundConstraints } from "@/lib/game/constraint-generation";
-import { getServerDictionary } from "@/lib/game/server-dictionary";
-import { THEMES } from "@/lib/game/themes";
-import { validateWord } from "@/lib/game/validation";
+import { calculateWordScore } from "@/lib/game/scoring";
+import { validateWordServer } from "@/lib/game/validation-server";
+import { submitWordSchema } from "@/lib/schemas/submission-schema";
 import { createClient } from "@/lib/supabase/server";
-import { generateGameCode } from "@/lib/utils/game-code";
-import { normalizeString } from "@/lib/utils/string";
 import { RoundConstraints } from "@/types/game";
-import { revalidatePath } from "next/cache";
+import { customAlphabet } from "nanoid";
 import { redirect } from "next/navigation";
+import { z } from "zod";
+
+const generateGameCode = customAlphabet(
+  "0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ",
+  6,
+);
 
 export async function createGame() {
   const supabase = await createClient();
+
   const {
     data: { user },
     error: authError,
   } = await supabase.auth.getUser();
-
   if (authError || !user) {
     throw new Error("Vous devez être connecté pour créer une partie.");
   }
 
   const code = generateGameCode();
 
-  const { data: game, error: createError } = await supabase
+  // Create game
+  const { data: game, error: gameError } = await supabase
     .from("games")
     .insert({
       code,
       host_id: user.id,
       status: "LOBBY",
     })
-    .select("id, code")
+    .select()
     .single();
 
-  if (createError) {
-    console.error("Error creating game:", createError);
-    throw new Error("Impossible de créer la partie.");
+  if (gameError) {
+    console.error("Error creating game:", gameError);
+    throw new Error("Erreur lors de la création de la partie.");
   }
 
-  // Auto-join the host
-  const { error: joinError } = await supabase.from("game_players").insert({
+  // Add host as player
+  const { error: playerError } = await supabase.from("game_players").insert({
     game_id: game.id,
     player_id: user.id,
-    is_ready: false,
+    is_ready: false, // Host is not ready by default? Or yes? Usually explicit ready.
   });
 
-  if (joinError) {
-    console.error("Error joining game as host:", joinError);
-    throw new Error("Impossible de rejoindre la partie créée.");
+  if (playerError) {
+    console.error("Error adding host:", playerError);
+    throw new Error("Erreur lors de l'ajout du joueur.");
   }
 
-  redirect(`/room/${game.code}`);
+  redirect(`/room/${code}`);
 }
 
 export async function joinGame(code: string) {
   const supabase = await createClient();
+
   const {
     data: { user },
     error: authError,
   } = await supabase.auth.getUser();
-
   if (authError || !user) {
     throw new Error("Vous devez être connecté pour rejoindre une partie.");
   }
 
-  // Get game ID from code
+  // Find game
   const { data: game, error: gameError } = await supabase
     .from("games")
     .select("id, status")
-    .eq("code", code)
+    .eq("code", code.toUpperCase())
     .single();
 
   if (gameError || !game) {
@@ -81,39 +86,34 @@ export async function joinGame(code: string) {
   }
 
   // Check if already joined
-  const { data: existingPlayer } = await supabase
+  const { data: existing } = await supabase
     .from("game_players")
-    .select("game_id")
+    .select("player_id")
     .eq("game_id", game.id)
     .eq("player_id", user.id)
     .single();
 
-  if (existingPlayer) {
-    return { success: true, message: "Déjà dans la partie" };
+  if (!existing) {
+    const { error: joinError } = await supabase.from("game_players").insert({
+      game_id: game.id,
+      player_id: user.id,
+    });
+
+    if (joinError) {
+      console.error("Error joining game:", joinError);
+      throw new Error("Impossible de rejoindre la partie.");
+    }
   }
 
-  const { error: joinError } = await supabase.from("game_players").insert({
-    game_id: game.id,
-    player_id: user.id,
-  });
-
-  if (joinError) {
-    console.error("Error joining game:", joinError);
-    throw new Error("Impossible de rejoindre la partie.");
-  }
-
-  revalidatePath(`/room/${code}`);
-  return { success: true };
+  redirect(`/room/${code.toUpperCase()}`);
 }
 
 export async function toggleReady(gameId: string, isReady: boolean) {
   const supabase = await createClient();
   const {
     data: { user },
-    error: authError,
   } = await supabase.auth.getUser();
-
-  if (authError || !user) throw new Error("User must be authenticated");
+  if (!user) throw new Error("Unauthorized");
 
   const { error } = await supabase
     .from("game_players")
@@ -121,186 +121,58 @@ export async function toggleReady(gameId: string, isReady: boolean) {
     .eq("game_id", gameId)
     .eq("player_id", user.id);
 
-  if (error) throw new Error(`Failed to update ready status: ${error.message}`);
+  if (error) throw error;
 
-  return { success: true };
+  // Revalidate is tricky with dynamic routes, usually client updates via realtime.
+  // But for good measure:
+  // revalidatePath(`/room/${...}`);
+  // We don't have code here easily without query.
+  // Realtime should handle it.
 }
 
 export async function startGame(gameId: string) {
   const supabase = await createClient();
   const {
     data: { user },
-    error: authError,
   } = await supabase.auth.getUser();
+  if (!user) throw new Error("User must be authenticated");
 
-  if (authError || !user) throw new Error("User must be authenticated");
-
-  const { data: game, error: gameError } = await supabase
-    .from("games")
-    .select("host_id, status")
-    .eq("id", gameId)
-    .single();
-
-  if (gameError || !game) throw new Error("Game not found");
-
-  if (game.host_id !== user.id)
-    throw new Error("Only the host can start the game");
-
-  const { data: players, error: playersError } = await supabase
-    .from("game_players")
-    .select("is_ready")
-    .eq("game_id", gameId);
-
-  if (playersError || !players) throw new Error("Failed to fetch players");
-
-  const allReady = players.every((p) => p.is_ready);
-
-  if (!allReady) throw new Error("Not all players are ready");
-
-  await startNewRoundLogic(supabase, gameId);
-
-  return { success: true };
-}
-
-export async function forceStartGame(gameId: string) {
-  const supabase = await createClient();
-  const {
-    data: { user },
-    error: authError,
-  } = await supabase.auth.getUser();
-
-  if (authError || !user) throw new Error("User must be authenticated");
-
-  // Only allow in E2E/Dev mode
-  if (
-    process.env.NEXT_PUBLIC_IS_E2E !== "true" &&
-    process.env.NODE_ENV !== "development"
-  ) {
-    throw new Error("Action not allowed");
-  }
-
-  try {
-    await startNewRoundLogic(supabase, gameId);
-    return { success: true };
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  } catch (error: any) {
-    throw new Error(`Failed to force start game: ${error.message}`);
-  }
-}
-
-export async function debugRegenerateRound(roundId: string) {
-  const supabase = await createClient();
-  const {
-    data: { user },
-    error: authError,
-  } = await supabase.auth.getUser();
-
-  if (authError || !user) throw new Error("User must be authenticated");
-
-  // Only allow in E2E/Dev mode
-  if (
-    process.env.NEXT_PUBLIC_IS_E2E !== "true" &&
-    process.env.NODE_ENV !== "development"
-  ) {
-    throw new Error("Action not allowed");
-  }
-
-  // Verify host ownership via the round -> game relationship
-  const { data: round, error: roundError } = await supabase
-    .from("rounds")
-    .select("game_id, games!inner(host_id)")
-    .eq("id", roundId)
-    .single();
-
-  if (roundError || !round) throw new Error("Round not found");
-
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  if ((round.games as any).host_id !== user.id) {
-    throw new Error("Only the host can regenerate the round");
-  }
-
-  try {
-    const constraints = await generateSolvableConstraints();
-
-    const { error: updateError } = await supabase
-      .from("rounds")
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      .update({ constraints: constraints as any })
-      .eq("id", roundId);
-
-    if (updateError) {
-      throw new Error(`Failed to update round: ${updateError.message}`);
-    }
-
-    return { success: true };
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  } catch (error: any) {
-    throw new Error(`Failed to regenerate round: ${error.message}`);
-  }
-}
-
-async function generateSolvableConstraints() {
-  // 1. Load Dictionary (Cached in memory)
-  const dictionary = await getServerDictionary();
-  const dictionarySet = new Set(dictionary.map((w) => normalizeString(w)));
-  const dictionaryCheck = (w: string) => dictionarySet.has(w);
-
-  // 2. Fetch Themes
-  const themes = THEMES.map((t) => t.label);
-
-  // 3. Generate Valid Constraints (Loop)
-  let constraints: RoundConstraints | undefined;
-  let attempts = 0;
-  const MAX_ATTEMPTS = 50;
-  let validFound = false;
-
-  while (attempts < MAX_ATTEMPTS) {
-    constraints = generateRoundConstraints(themes);
-    const currentConstraints = constraints;
-
-    // Check if at least one word exists
-    const hasSolution = dictionary.some((word) => {
-      // validateWord normalizes internaly, and calls dictionaryCheck with normalized word
-      // dictionaryCheck checks against normalized set.
-      return validateWord(word, currentConstraints, dictionaryCheck).isValid;
-    });
-
-    if (hasSolution) {
-      validFound = true;
-      break;
-    }
-    attempts++;
-  }
-
-  if (!validFound) {
-    throw new Error(
-      "Failed to generate a solvable round after multiple attempts.",
-    );
-  }
-
-  return constraints;
-}
-
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-async function startNewRoundLogic(supabase: any, gameId: string) {
-  const constraints = await generateSolvableConstraints();
-
-  // 4. Update Game Status (if LOBBY)
-  // Fetch current game status to decide
+  // Verify host
   const { data: game } = await supabase
     .from("games")
-    .select("status")
+    .select("host_id, code")
     .eq("id", gameId)
     .single();
 
-  if (game?.status === "LOBBY") {
-    await supabase
-      .from("games")
-      .update({ status: "PLAYING", started_at: new Date().toISOString() })
-      .eq("id", gameId);
+  if (!game) {
+    throw new Error("Game not found");
   }
 
-  // 5. Determine Round Number
+  if (game.host_id !== user.id) {
+    throw new Error("Only the host can start the game");
+  }
+
+  // Check if all players are ready
+  const { count } = await supabase
+    .from("game_players")
+    .select("*", { count: "exact", head: true })
+    .eq("game_id", gameId)
+    .eq("is_ready", false);
+
+  if (count !== null && count > 0) {
+    throw new Error("Not all players are ready");
+  }
+
+  // 1. Update status
+  const { error: updateError } = await supabase
+    .from("games")
+    .update({ status: "PLAYING", started_at: new Date().toISOString() })
+    .eq("id", gameId);
+
+  if (updateError) throw updateError;
+
+  // 2. Start first round
+  // RPC was removed, logic moved to TS as per memory/migration
   const { data: rounds } = await supabase
     .from("rounds")
     .select("round_number")
@@ -309,16 +181,125 @@ async function startNewRoundLogic(supabase: any, gameId: string) {
     .limit(1);
 
   const nextRoundNumber = (rounds?.[0]?.round_number || 0) + 1;
+  const constraints = generateRoundConstraints();
 
-  // 6. Insert Round
   const { error: insertError } = await supabase.from("rounds").insert({
     game_id: gameId,
     round_number: nextRoundNumber,
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    constraints: constraints as any,
+    constraints: constraints as unknown as Record<string, unknown>,
     status: "PLAYING",
   });
 
-  if (insertError)
-    throw new Error(`Failed to create round: ${insertError.message}`);
+  if (insertError) {
+    console.error("Error creating round:", insertError);
+    throw new Error("Erreur lors du lancement de la manche.");
+  }
+
+  redirect(`/game/${game.code}`);
+}
+
+export async function debugRegenerateRound(roundId: string) {
+  const supabase = await createClient();
+
+  // RPC was removed, logic moved to TS
+  const constraints = generateRoundConstraints();
+
+  const { error } = await supabase
+    .from("rounds")
+    .update({ constraints: constraints as unknown as Record<string, unknown> })
+    .eq("id", roundId);
+
+  if (error) throw error;
+}
+
+export type SubmitWordResult = {
+  success: boolean;
+  message?: string;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  submission?: any;
+  validationError?: string;
+};
+
+export async function submitWord(
+  input: z.infer<typeof submitWordSchema>,
+): Promise<SubmitWordResult> {
+  const result = submitWordSchema.safeParse(input);
+  if (!result.success) {
+    return { success: false, message: "Données invalides" };
+  }
+
+  const { gameId, roundId, word } = result.data;
+  const supabase = await createClient();
+
+  // 1. Auth check
+  const {
+    data: { user },
+    error: authError,
+  } = await supabase.auth.getUser();
+  if (authError || !user) {
+    return { success: false, message: "Non autorisé" };
+  }
+
+  // 2. Get Round Constraints
+  const { data: round, error: roundError } = await supabase
+    .from("rounds")
+    .select("constraints, status")
+    .eq("id", roundId)
+    .single();
+
+  if (roundError || !round) {
+    return { success: false, message: "Manche introuvable" };
+  }
+
+  if (round.status !== "PLAYING") {
+    return { success: false, message: "La manche est terminée" };
+  }
+
+  // 3. Validate Word
+  const constraints = round.constraints as unknown as RoundConstraints;
+  let validation;
+
+  try {
+    validation = validateWordServer(word, constraints);
+  } catch (e) {
+    console.error("Validation error:", e);
+    return { success: false, message: "Erreur de validation serveur" };
+  }
+
+  // 4. Calculate Score
+  let baseScore = 0;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  let letterDetails: any[] = [];
+
+  if (validation.isValid) {
+    const scoreData = calculateWordScore(word);
+    baseScore = scoreData.word_score;
+    letterDetails = scoreData.letters;
+  }
+
+  // 5. Call RPC
+  const { data: submissionData, error: rpcError } = await supabase.rpc(
+    "submit_word",
+    {
+      p_game_id: gameId,
+      p_round_id: roundId,
+      p_player_id: user.id,
+      p_word: word,
+      p_base_score: baseScore,
+      p_letter_details: letterDetails,
+      p_is_valid: validation.isValid,
+      p_rejection_reason: validation.error || null,
+    },
+  );
+
+  if (rpcError) {
+    console.error("Submit word RPC error:", rpcError);
+    return { success: false, message: "Erreur lors de la soumission" };
+  }
+
+  return {
+    success: true,
+    submission: submissionData,
+    validationError: validation.isValid ? undefined : validation.error,
+  };
 }

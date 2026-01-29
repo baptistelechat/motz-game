@@ -98,13 +98,20 @@ export function LobbyClient({
         // Explicitly refresh to ensure state is updated even if Realtime is slow
         await refresh();
       } catch (err) {
+        // Ignore redirect errors
+        const errorMessage = 
+          err instanceof Error ? err.message : 
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+          typeof err === 'object' && err && 'message' in err ? String((err as any).message) : 
+          String(err);
+
+        if (errorMessage.includes("NEXT_REDIRECT")) {
+          return;
+        }
+
         console.error("Failed to join game:", err);
-        const msg =
-          err instanceof Error
-            ? err.message
-            : "Impossible de rejoindre la partie.";
-        setError(msg);
-        toast.error(msg);
+        setError(errorMessage);
+        toast.error(errorMessage);
       } finally {
         setIsJoining(false);
       }
