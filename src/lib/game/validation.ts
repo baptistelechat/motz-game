@@ -98,9 +98,11 @@ export function validateWord(
       // No extra check
       break;
     case "theme":
-      if (themeCheck && !themeCheck(normalizedWord)) {
-        return { isValid: false, error: "Ne correspond pas au thème" };
-      }
+      // Validation sociale : on ne bloque plus techniquement le mot pour le thème.
+      // C'est aux joueurs de valider si le mot correspond (style Petit Bac).
+      // if (themeCheck && !themeCheck(normalizedWord)) {
+      //   return { isValid: false, error: "Ne correspond pas au thème" };
+      // }
       break;
   }
 

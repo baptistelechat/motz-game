@@ -14,6 +14,7 @@ const THEMES_SOURCE_PATH = path.join(
   process.cwd(),
   "src",
   "assets",
+  "themes",
   "themes.json",
 );
 
@@ -32,10 +33,58 @@ const THEMES_LIST_DIR = path.join(
   "lists",
 );
 
-const OLLAMA_API = "http://localhost:11434/api/embeddings";
-const MODEL = "nomic-embed-text";
-const SIMILARITY_THRESHOLD = 0.55;
-const ERROR_RATE = 0.01; // 1% error rate is enough for themes (smaller set)
+const OLLAMA_SERVER = "http://localhost:11434";
+const MODEL = "bge-m3"; // Default high quality
+const SIMILARITY_THRESHOLD = 0.62;
+const ERROR_RATE = 0.01;
+const BATCH_SIZE = 200; // Mots par requête Ollama
+const MAX_CONCURRENT_BATCHES = 3; // Nombre de requêtes Ollama en parallèle
+
+// Parse args
+const args = process.argv.slice(2);
+const limitArg = args.find((a) => a.startsWith("--limit="));
+const themeArg = args.find((a) => a.startsWith("--theme="));
+const modelArg = args.find((a) => a.startsWith("--model="));
+
+const WORD_LIMIT = limitArg ? parseInt(limitArg.split("=")[1]) : Infinity;
+const THEME_FILTER = themeArg ? themeArg.split("=")[1].toLowerCase() : null;
+const SELECTED_MODEL = modelArg ? modelArg.split("=")[1] : MODEL;
+
+// ----------------------------------------------------------------------------
+// Cache Logic
+// ----------------------------------------------------------------------------
+const CACHE_DIR = path.join(process.cwd(), "src", "assets", "themes", "data");
+const CACHE_FILE = path.join(
+  CACHE_DIR,
+  `embeddings_cache_${SELECTED_MODEL}.json`,
+);
+
+let embeddingsCache: Record<string, number[]> = {};
+
+function loadCache() {
+  if (fs.existsSync(CACHE_FILE)) {
+    console.log(`📦 Loading embeddings cache from ${CACHE_FILE}...`);
+    try {
+      const data = fs.readFileSync(CACHE_FILE, "utf-8");
+      // Use line-based JSON parsing if file is huge, but for now simple JSON
+      // If it's too big, we might need a stream or DB.
+      // 300k words * 1024 floats is big. Let's try/catch.
+      embeddingsCache = JSON.parse(data);
+      console.log(`   - Cached ${Object.keys(embeddingsCache).length} words.`);
+    } catch (e) {
+      console.warn("   - Cache corrupt or empty, starting fresh.");
+      console.warn("   - Error:", e);
+      embeddingsCache = {};
+    }
+  } else {
+    if (!fs.existsSync(CACHE_DIR)) fs.mkdirSync(CACHE_DIR);
+  }
+}
+
+function saveCache() {
+  console.log("💾 Saving embeddings cache...");
+  fs.writeFileSync(CACHE_FILE, JSON.stringify(embeddingsCache));
+}
 
 // ----------------------------------------------------------------------------
 // Types & Helpers
@@ -83,14 +132,16 @@ function cosineSimilarity(a: number[], b: number[]): number {
   return dotProduct(a, b) / (magnitude(a) * magnitude(b));
 }
 
-async function getEmbedding(text: string): Promise<number[] | null> {
+async function getEmbeddingsBatch(
+  texts: string[],
+): Promise<(number[] | null)[]> {
   try {
-    const response = await fetch(OLLAMA_API, {
+    const response = await fetch(`${OLLAMA_SERVER}/api/embed`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
-        model: MODEL,
-        prompt: text,
+        model: SELECTED_MODEL,
+        input: texts,
       }),
     });
 
@@ -99,7 +150,23 @@ async function getEmbedding(text: string): Promise<number[] | null> {
     }
 
     const data = await response.json();
-    return data.embedding;
+    return data.embeddings || [];
+  } catch (error) {
+    console.error(`Failed to embed batch of ${texts.length}:`, error);
+    return new Array(texts.length).fill(null);
+  }
+}
+
+async function getEmbedding(text: string): Promise<number[] | null> {
+  if (embeddingsCache[text]) return embeddingsCache[text];
+
+  try {
+    // Single embedding fallback
+    const result = await getEmbeddingsBatch([text]);
+    if (result[0]) {
+      embeddingsCache[text] = result[0];
+    }
+    return result[0];
   } catch (error) {
     console.error(`Failed to embed "${text}":`, error);
     return null;
@@ -122,15 +189,17 @@ async function main() {
   }
 
   // 1. Check Ollama
+  loadCache();
+
   try {
-    await fetch("http://localhost:11434");
+    await fetch(OLLAMA_SERVER);
     console.log("✅ Ollama is running");
   } catch (e) {
-    console.error("❌ Ollama is NOT running at http://localhost:11434");
+    console.error(`❌ Ollama is NOT running at ${OLLAMA_SERVER}`);
     console.error(e);
     console.error("Please start Ollama with:");
     console.error(`> ollama serve`);
-    console.error(`> ollama pull ${MODEL}`);
+    console.error(`> ollama pull ${SELECTED_MODEL}`);
     process.exit(1);
   }
 
@@ -145,7 +214,7 @@ async function main() {
   console.log(`ℹ️ Dictionary size: ${allWords.length} words`);
 
   // 3. Load Themes (Local JSON)
-  console.log("🌍 Loading themes from src/assets/themes.json...");
+  console.log("🌍 Loading themes from src/assets/themes/themes.json...");
   if (!fs.existsSync(THEMES_SOURCE_PATH)) {
     console.error("❌ Themes file not found at:", THEMES_SOURCE_PATH);
     process.exit(1);
@@ -168,6 +237,11 @@ async function main() {
   for (const t of themesData) {
     if (t.locale !== "fr") continue;
 
+    // Filter by theme arg if provided
+    if (THEME_FILTER && !t.label.toLowerCase().includes(THEME_FILTER)) {
+      continue;
+    }
+
     const slug = slugify(t.label);
     const listPath = path.join(THEMES_LIST_DIR, `${slug}.txt`);
     const themeObj = { ...t, slug };
@@ -185,7 +259,7 @@ async function main() {
       themes.push(themeObj);
     } else {
       console.log(`   - ${t.label} 🔍 Needs analysis`);
-      const embedding = await getEmbedding(t.label);
+      const embedding = await getEmbedding(t.label.toLowerCase());
       if (embedding) {
         themes.push({ ...themeObj, embedding });
         themesToAnalyze.push({ ...themeObj, embedding });
@@ -200,33 +274,90 @@ async function main() {
   if (themesToAnalyze.length > 0) {
     console.log(`🔄 Processing words for ${themesToAnalyze.length} themes...`);
 
-    let processed = 0;
-    const total = allWords.length;
+    const wordsToProcess = allWords.slice(0, WORD_LIMIT);
+    console.log(
+      `ℹ️ Processing ${wordsToProcess.length} words (Limit: ${WORD_LIMIT})...`,
+    );
 
-    for (const word of allWords) {
-      processed++;
-      if (processed % 1000 === 0) {
-        process.stdout.write(
-          `\rProgress: ${((processed / total) * 100).toFixed(1)}%`,
-        );
+    let processed = 0;
+    const total = wordsToProcess.length;
+
+    // Process words in chunks with parallelism
+
+    // Create chunks of BATCH_SIZE
+    const chunks: string[][] = [];
+    for (let i = 0; i < total; i += BATCH_SIZE) {
+      chunks.push(wordsToProcess.slice(i, i + BATCH_SIZE));
+    }
+
+    // Process chunks in parallel using a queue
+    const processChunk = async (batchWords: string[]) => {
+      // Filter out small words first to save API calls
+      const validWords = batchWords; // On garde tout, même les mots courts (ex: "Ski", "Golf", "Or")
+      const validWordsLower = validWords.map((w) => w.toLowerCase());
+
+      // Identify which need embedding (not in cache)
+      const needed = validWordsLower.filter((w) => !embeddingsCache[w]);
+
+      // Fetch missing embeddings in ONE batch call
+      if (needed.length > 0) {
+        const newEmbeddings = await getEmbeddingsBatch(needed);
+        needed.forEach((w, idx) => {
+          if (newEmbeddings[idx]) {
+            embeddingsCache[w] = newEmbeddings[idx]!;
+          }
+        });
       }
 
-      // Skip very short words for semantic analysis
-      if (word.length < 3) continue;
+      // Now process similarities using cache (CPU bound, fast)
+      for (const word of validWords) {
+        const wLower = word.toLowerCase();
+        const wordEmbedding = embeddingsCache[wLower];
+        if (!wordEmbedding) continue;
 
-      const wordEmbedding = await getEmbedding(word);
-      if (!wordEmbedding) continue;
+        for (const theme of themesToAnalyze) {
+          if (!theme.embedding) continue;
 
-      for (const theme of themesToAnalyze) {
-        if (!theme.embedding) continue;
-
-        const similarity = cosineSimilarity(wordEmbedding, theme.embedding);
-        if (similarity >= SIMILARITY_THRESHOLD) {
-          themeWords[theme.id].add(normalizeString(word));
+          const similarity = cosineSimilarity(wordEmbedding, theme.embedding);
+          if (similarity >= SIMILARITY_THRESHOLD) {
+            console.log(
+              `   ✅ MATCH: ${word} <-> ${theme.label} (Score: ${similarity.toFixed(4)})`,
+            );
+            themeWords[theme.id].add(normalizeString(word));
+          }
         }
       }
+
+      processed += batchWords.length;
+      if (processed % (BATCH_SIZE * 5) === 0 || processed >= total) {
+        process.stdout.write(
+          `\rProgress: ${((processed / total) * 100).toFixed(1)}% (${processed}/${total}) [Cache Size: ${Object.keys(embeddingsCache).length}]`,
+        );
+        // Periodic save
+        saveCache();
+      }
+    };
+
+    // Run with concurrency limit
+    const activePromises: Promise<void>[] = [];
+    for (const chunk of chunks) {
+      const p = processChunk(chunk).then(() => {
+        activePromises.splice(activePromises.indexOf(p), 1);
+      });
+      activePromises.push(p);
+
+      if (activePromises.length >= MAX_CONCURRENT_BATCHES) {
+        await Promise.race(activePromises);
+      }
     }
+
+    // Wait for remaining
+    await Promise.all(activePromises);
+
     console.log("\n✅ Processing complete.");
+
+    // Final save
+    saveCache();
 
     // Save generated lists
     console.log("💾 Saving intermediate lists...");
