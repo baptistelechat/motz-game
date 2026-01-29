@@ -12,3 +12,19 @@ export function normalizeString(str: string): string {
     .toUpperCase()
     .trim();
 }
+
+/**
+ * Converts a string to a URL-friendly slug.
+ * 
+ * Example: "Sport & Loisirs" -> "sport-loisirs"
+ */
+export function slugify(text: string): string {
+  return text
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .toLowerCase()
+    .trim()
+    .replace(/[^a-z0-9 -]/g, "")
+    .replace(/\s+/g, "-")
+    .replace(/-+/g, "-");
+}

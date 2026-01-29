@@ -23,6 +23,7 @@
     "dictionary:generate": "tsx scripts/generate-dictionary.ts",
     "dictionary:build": "pnpm run dictionary:download && pnpm run dictionary:merge && pnpm run dictionary:generate",
     "dictionary:analyze": "tsx scripts/analyze-dictionary.ts",
+    "theme:generate": "tsx scripts/analyze-themes.ts",
     "db:reset": "tsx scripts/reset-db.ts",
     "seed:game": "tsx scripts/seed-game.ts"
   },

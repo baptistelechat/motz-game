@@ -38,7 +38,7 @@ export function useDictionary(): DictionaryState {
         setIsLoading(false);
         setError(err);
       });
-  }, []);
+  }, [manager]);
 
   const has = (word: string): boolean => {
     const filter = manager.getFilter();

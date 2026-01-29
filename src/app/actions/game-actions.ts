@@ -2,10 +2,11 @@
 
 import { generateRoundConstraints } from "@/lib/game/constraint-generation";
 import { getServerDictionary } from "@/lib/game/server-dictionary";
+import { getServerThemeFilter, getServerThemes } from "@/lib/game/server-theme";
 import { validateWord } from "@/lib/game/validation";
 import { createClient } from "@/lib/supabase/server";
 import { generateGameCode } from "@/lib/utils/game-code";
-import { normalizeString } from "@/lib/utils/string";
+import { normalizeString, slugify } from "@/lib/utils/string";
 import { RoundConstraints } from "@/types/game";
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
@@ -219,7 +220,7 @@ export async function debugRegenerateRound(roundId: string) {
   }
 
   try {
-    const constraints = await generateSolvableConstraints(supabase);
+    const constraints = await generateSolvableConstraints();
 
     const { error: updateError } = await supabase
       .from("rounds")
@@ -238,21 +239,14 @@ export async function debugRegenerateRound(roundId: string) {
   }
 }
 
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-async function generateSolvableConstraints(supabase: any) {
+async function generateSolvableConstraints() {
   // 1. Load Dictionary (Cached in memory)
   const dictionary = await getServerDictionary();
   const dictionarySet = new Set(dictionary.map((w) => normalizeString(w)));
   const dictionaryCheck = (w: string) => dictionarySet.has(w);
 
   // 2. Fetch Themes
-  const { data: themesData } = await supabase
-    .from("themes")
-    .select("label")
-    .eq("locale", "fr"); // Default to French
-
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const themes = themesData?.map((t: any) => t.label) || ["Général"];
+  const themes = await getServerThemes();
 
   // 3. Generate Valid Constraints (Loop)
   let constraints: RoundConstraints | undefined;
@@ -264,11 +258,22 @@ async function generateSolvableConstraints(supabase: any) {
     constraints = generateRoundConstraints(themes);
     const currentConstraints = constraints;
 
+    // Prepare Theme Check
+    let themeCheck: ((w: string) => boolean) | undefined;
+    if (currentConstraints.theme && currentConstraints.theme !== "Général") {
+      const slug = slugify(currentConstraints.theme);
+      const filter = await getServerThemeFilter(slug);
+      if (filter) {
+        themeCheck = (w: string) => filter.has(normalizeString(w));
+      }
+    }
+
     // Check if at least one word exists
     const hasSolution = dictionary.some((word) => {
       // validateWord normalizes internaly, and calls dictionaryCheck with normalized word
       // dictionaryCheck checks against normalized set.
-      return validateWord(word, currentConstraints, dictionaryCheck).isValid;
+      return validateWord(word, currentConstraints, dictionaryCheck, themeCheck)
+        .isValid;
     });
 
     if (hasSolution) {
@@ -289,7 +294,7 @@ async function generateSolvableConstraints(supabase: any) {
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 async function startNewRoundLogic(supabase: any, gameId: string) {
-  const constraints = await generateSolvableConstraints(supabase);
+  const constraints = await generateSolvableConstraints();
 
   // 4. Update Game Status (if LOBBY)
   // Fetch current game status to decide

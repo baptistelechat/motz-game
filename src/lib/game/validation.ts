@@ -15,6 +15,7 @@ export function validateWord(
   word: string,
   constraints: RoundConstraints,
   dictionaryCheck: (w: string) => boolean,
+  themeCheck?: (w: string) => boolean,
 ): ValidationResult {
   const normalizedWord = normalizeString(word);
 
@@ -94,8 +95,12 @@ export function validateWord(
       break;
     case "free":
     case "invert_letters":
-    case "theme":
       // No extra check
+      break;
+    case "theme":
+      if (themeCheck && !themeCheck(normalizedWord)) {
+        return { isValid: false, error: "Ne correspond pas au thème" };
+      }
       break;
   }
 

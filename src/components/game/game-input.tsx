@@ -3,6 +3,7 @@
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { useDictionary } from "@/hooks/use-dictionary";
+import { useTheme } from "@/hooks/use-theme";
 import { validateWord } from "@/lib/game/validation";
 import { cn } from "@/lib/utils";
 import { RoundConstraints } from "@/types/game";
@@ -26,6 +27,7 @@ export function GameInput({
   const [isValid, setIsValid] = useState(false);
   const [isShaking, setIsShaking] = useState(false);
   const dictionary = useDictionary();
+  const theme = useTheme(constraints.theme);
   const inputRef = useRef<HTMLInputElement>(null);
 
   // Focus mode: Keep input focused if possible, or provide easy way to refocus
@@ -51,7 +53,12 @@ export function GameInput({
     // Let's validate on type to show "Optimistic" state (Yellow border) if valid.
 
     if (newValue.length > 0 && dictionary.isReady) {
-      const result = validateWord(newValue, constraints, dictionary.has);
+      const result = validateWord(
+        newValue,
+        constraints,
+        dictionary.has,
+        theme.isValid,
+      );
       setIsValid(result.isValid);
     }
   };
@@ -65,7 +72,12 @@ export function GameInput({
       return;
     }
 
-    const result = validateWord(value, constraints, dictionary.has);
+    const result = validateWord(
+      value,
+      constraints,
+      dictionary.has,
+      theme.isValid,
+    );
 
     if (result.isValid) {
       // Success
