@@ -3,7 +3,6 @@
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { useDictionary } from "@/hooks/use-dictionary";
-import { useTheme } from "@/hooks/use-theme";
 import { validateWord } from "@/lib/game/validation";
 import { cn } from "@/lib/utils";
 import { RoundConstraints } from "@/types/game";
@@ -27,7 +26,6 @@ export function GameInput({
   const [isValid, setIsValid] = useState(false);
   const [isShaking, setIsShaking] = useState(false);
   const dictionary = useDictionary();
-  const theme = useTheme(constraints.theme);
   const inputRef = useRef<HTMLInputElement>(null);
 
   // Focus mode: Keep input focused if possible, or provide easy way to refocus
@@ -57,7 +55,6 @@ export function GameInput({
         newValue,
         constraints,
         dictionary.has,
-        theme.isValid,
       );
       setIsValid(result.isValid);
     }
@@ -76,7 +73,6 @@ export function GameInput({
       value,
       constraints,
       dictionary.has,
-      theme.isValid,
     );
 
     if (result.isValid) {

@@ -15,7 +15,6 @@ export function validateWord(
   word: string,
   constraints: RoundConstraints,
   dictionaryCheck: (w: string) => boolean,
-  themeCheck?: (w: string) => boolean,
 ): ValidationResult {
   const normalizedWord = normalizeString(word);
 
@@ -98,11 +97,7 @@ export function validateWord(
       // No extra check
       break;
     case "theme":
-      // Validation sociale : on ne bloque plus techniquement le mot pour le thème.
-      // C'est aux joueurs de valider si le mot correspond (style Petit Bac).
-      // if (themeCheck && !themeCheck(normalizedWord)) {
-      //   return { isValid: false, error: "Ne correspond pas au thème" };
-      // }
+      // Validation sociale : le thème n'est plus validé algorithmiquement.
       break;
   }
 

@@ -2,11 +2,11 @@
 
 import { generateRoundConstraints } from "@/lib/game/constraint-generation";
 import { getServerDictionary } from "@/lib/game/server-dictionary";
-import { getServerThemeFilter, getServerThemes } from "@/lib/game/server-theme";
+import { THEMES } from "@/lib/game/themes";
 import { validateWord } from "@/lib/game/validation";
 import { createClient } from "@/lib/supabase/server";
 import { generateGameCode } from "@/lib/utils/game-code";
-import { normalizeString, slugify } from "@/lib/utils/string";
+import { normalizeString } from "@/lib/utils/string";
 import { RoundConstraints } from "@/types/game";
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
@@ -246,7 +246,7 @@ async function generateSolvableConstraints() {
   const dictionaryCheck = (w: string) => dictionarySet.has(w);
 
   // 2. Fetch Themes
-  const themes = await getServerThemes();
+  const themes = THEMES.map((t) => t.label);
 
   // 3. Generate Valid Constraints (Loop)
   let constraints: RoundConstraints | undefined;
@@ -258,22 +258,11 @@ async function generateSolvableConstraints() {
     constraints = generateRoundConstraints(themes);
     const currentConstraints = constraints;
 
-    // Prepare Theme Check
-    let themeCheck: ((w: string) => boolean) | undefined;
-    if (currentConstraints.theme && currentConstraints.theme !== "Général") {
-      const slug = slugify(currentConstraints.theme);
-      const filter = await getServerThemeFilter(slug);
-      if (filter) {
-        themeCheck = (w: string) => filter.has(normalizeString(w));
-      }
-    }
-
     // Check if at least one word exists
     const hasSolution = dictionary.some((word) => {
       // validateWord normalizes internaly, and calls dictionaryCheck with normalized word
       // dictionaryCheck checks against normalized set.
-      return validateWord(word, currentConstraints, dictionaryCheck, themeCheck)
-        .isValid;
+      return validateWord(word, currentConstraints, dictionaryCheck).isValid;
     });
 
     if (hasSolution) {
