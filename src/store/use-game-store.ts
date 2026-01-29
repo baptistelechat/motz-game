@@ -58,9 +58,11 @@ export const useGameStore = create<GameState>((set, get) => ({
 
   submitWord: async (word) => {
     const { gameId, currentRound } = get();
-    
+
     if (!gameId || !currentRound) {
-      console.error("Cannot submit word: Game or Round not active");
+      console.error(
+        `Cannot submit word: Game (${gameId}) or Round (${currentRound?.id}) not active`,
+      );
       toast.error("Erreur: Partie non active");
       return;
     }
@@ -77,10 +79,14 @@ export const useGameStore = create<GameState>((set, get) => ({
         // Could also trigger a "shake" or specific feedback here if we had state for it
       } else {
         // Success
-        // Ideally show points earned from result.submission
-        const points = result.submission?.score;
-        if (points) {
-          toast.success(`Mot validé ! +${points} pts`);
+        const { score, rank, speed_bonus, word_score } =
+          result.submission || {};
+
+        if (score !== undefined) {
+          toast.success(`Mot validé ! +${score} pts`, {
+            description: `Mot: ${word_score} pts | Vitesse: ${speed_bonus} pts | Place: #${rank}`,
+            duration: 3000,
+          });
         } else {
           toast.success("Mot validé !");
         }

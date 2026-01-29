@@ -2,9 +2,11 @@
 
 import { generateRoundConstraints } from "@/lib/game/constraint-generation";
 import { calculateWordScore } from "@/lib/game/scoring";
+import { THEMES } from "@/lib/game/themes";
 import { validateWordServer } from "@/lib/game/validation-server";
 import { submitWordSchema } from "@/lib/schemas/submission-schema";
 import { createClient } from "@/lib/supabase/server";
+import { Json } from "@/types/database.types";
 import { RoundConstraints } from "@/types/game";
 import { customAlphabet } from "nanoid";
 import { redirect } from "next/navigation";
@@ -181,12 +183,12 @@ export async function startGame(gameId: string) {
     .limit(1);
 
   const nextRoundNumber = (rounds?.[0]?.round_number || 0) + 1;
-  const constraints = generateRoundConstraints();
+  const constraints = generateRoundConstraints(THEMES.map((t) => t.label));
 
   const { error: insertError } = await supabase.from("rounds").insert({
     game_id: gameId,
     round_number: nextRoundNumber,
-    constraints: constraints as unknown as Record<string, unknown>,
+    constraints: constraints as unknown as Json,
     status: "PLAYING",
   });
 
@@ -194,19 +196,17 @@ export async function startGame(gameId: string) {
     console.error("Error creating round:", insertError);
     throw new Error("Erreur lors du lancement de la manche.");
   }
-
-  redirect(`/game/${game.code}`);
 }
 
 export async function debugRegenerateRound(roundId: string) {
   const supabase = await createClient();
 
   // RPC was removed, logic moved to TS
-  const constraints = generateRoundConstraints();
+  const constraints = generateRoundConstraints(THEMES.map((t) => t.label));
 
   const { error } = await supabase
     .from("rounds")
-    .update({ constraints: constraints as unknown as Record<string, unknown> })
+    .update({ constraints: constraints as unknown as Json })
     .eq("id", roundId);
 
   if (error) throw error;

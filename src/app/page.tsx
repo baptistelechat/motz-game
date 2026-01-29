@@ -48,6 +48,7 @@ export default function Home() {
         // Check for NEXT_REDIRECT in message, handling both Error objects and plain objects
         const errorMessage = 
           error instanceof Error ? error.message : 
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
           typeof error === 'object' && error && 'message' in error ? String((error as any).message) : 
           String(error);
 

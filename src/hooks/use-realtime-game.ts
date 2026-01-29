@@ -3,8 +3,14 @@ import { GamePlayer, useGameStore } from "@/store/use-game-store";
 import { useCallback, useEffect, useState } from "react";
 
 export function useRealtimeGame(gameId: string) {
-  const { setPlayers, setStatus, setCurrentRound, setIsLoading, setHostId } =
-    useGameStore();
+  const {
+    setPlayers,
+    setStatus,
+    setCurrentRound,
+    setIsLoading,
+    setHostId,
+    setGameId,
+  } = useGameStore();
   const [supabase] = useState(() => createClient());
 
   const fetchPlayers = useCallback(async () => {
@@ -82,6 +88,7 @@ export function useRealtimeGame(gameId: string) {
   useEffect(() => {
     if (!gameId) return;
 
+    setGameId(gameId);
     fetchGameData();
 
     const channel = supabase
@@ -164,6 +171,7 @@ export function useRealtimeGame(gameId: string) {
     fetchPlayers,
     setStatus,
     setCurrentRound,
+    setGameId,
   ]);
 
   return { refresh: fetchGameData };
