@@ -24,12 +24,24 @@ export interface GameRound {
   status: RoundStatus;
 }
 
+export interface RoundSubmission {
+  id: string;
+  player_id: string;
+  word: string;
+  score: number;
+  is_valid: boolean;
+  created_at: string;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  points_details?: any;
+}
+
 interface GameState {
   gameId: string | null;
   hostId: string | null;
   status: GameStatus;
   players: GamePlayer[];
   currentRound: GameRound | null;
+  roundSubmissions: RoundSubmission[];
   isLoading: boolean;
 
   setGameId: (id: string) => void;
@@ -37,8 +49,11 @@ interface GameState {
   setStatus: (status: GameStatus) => void;
   setPlayers: (players: GamePlayer[]) => void;
   setCurrentRound: (round: GameRound | null) => void;
+  setRoundSubmissions: (submissions: RoundSubmission[]) => void;
+  addRoundSubmission: (submission: RoundSubmission) => void;
+  removeRoundSubmission: (id: string) => void;
   setIsLoading: (isLoading: boolean) => void;
-  submitWord: (word: string) => Promise<void>;
+  submitWord: (word: string) => Promise<boolean>;
 }
 
 export const useGameStore = create<GameState>((set, get) => ({
@@ -47,6 +62,7 @@ export const useGameStore = create<GameState>((set, get) => ({
   status: "LOBBY",
   players: [],
   currentRound: null,
+  roundSubmissions: [],
   isLoading: true,
 
   setGameId: (id) => set({ gameId: id }),
@@ -54,6 +70,19 @@ export const useGameStore = create<GameState>((set, get) => ({
   setStatus: (status) => set({ status }),
   setPlayers: (players) => set({ players }),
   setCurrentRound: (round) => set({ currentRound: round }),
+  setRoundSubmissions: (submissions) => set({ roundSubmissions: submissions }),
+  addRoundSubmission: (submission) =>
+    set((state) => {
+      const exists = state.roundSubmissions.some((s) => s.id === submission.id);
+      if (exists) return state;
+      return {
+        roundSubmissions: [...state.roundSubmissions, submission],
+      };
+    }),
+  removeRoundSubmission: (id) =>
+    set((state) => ({
+      roundSubmissions: state.roundSubmissions.filter((s) => s.id !== id),
+    })),
   setIsLoading: (isLoading) => set({ isLoading }),
 
   submitWord: async (word) => {
@@ -64,7 +93,7 @@ export const useGameStore = create<GameState>((set, get) => ({
         `Cannot submit word: Game (${gameId}) or Round (${currentRound?.id}) not active`,
       );
       toast.error("Erreur: Partie non active");
-      return;
+      return false;
     }
 
     try {
@@ -76,7 +105,7 @@ export const useGameStore = create<GameState>((set, get) => ({
 
       if (!result.success) {
         toast.error(result.message || "Mot refusé par le serveur");
-        // Could also trigger a "shake" or specific feedback here if we had state for it
+        return false;
       } else {
         // Success
         const { score, rank, speed_bonus, word_score } =
@@ -90,10 +119,12 @@ export const useGameStore = create<GameState>((set, get) => ({
         } else {
           toast.success("Mot validé !");
         }
+        return true;
       }
     } catch (err) {
       console.error("Failed to submit word:", err);
       toast.error("Erreur de communication avec le serveur");
+      return false;
     }
   },
 }));

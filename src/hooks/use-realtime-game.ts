@@ -10,6 +10,10 @@ export function useRealtimeGame(gameId: string) {
     setIsLoading,
     setHostId,
     setGameId,
+    currentRound,
+    setRoundSubmissions,
+    addRoundSubmission,
+    removeRoundSubmission,
   } = useGameStore();
   const [supabase] = useState(() => createClient());
 
@@ -86,6 +90,28 @@ export function useRealtimeGame(gameId: string) {
   ]);
 
   useEffect(() => {
+    if (!currentRound?.id) {
+      setRoundSubmissions([]);
+      return;
+    }
+
+    const fetchSubmissions = async () => {
+      const { data } = await supabase
+        .from("submissions")
+        .select("*")
+        .eq("round_id", currentRound.id)
+        .eq("is_valid", true);
+
+      if (data) {
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        setRoundSubmissions(data as any[]);
+      }
+    };
+
+    fetchSubmissions();
+  }, [currentRound?.id, supabase, setRoundSubmissions]);
+
+  useEffect(() => {
     if (!gameId) return;
 
     setGameId(gameId);
@@ -93,6 +119,44 @@ export function useRealtimeGame(gameId: string) {
 
     const channel = supabase
       .channel(`game_main:${gameId}`)
+      .on(
+        "postgres_changes",
+        {
+          event: "INSERT",
+          schema: "public",
+          table: "submissions",
+          filter: `game_id=eq.${gameId}`,
+        },
+        (payload) => {
+          const currentRound = useGameStore.getState().currentRound;
+          if (
+            payload.new &&
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
+            (payload.new as any).is_valid &&
+            currentRound &&
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
+            (payload.new as any).round_id === currentRound.id
+          ) {
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
+            addRoundSubmission(payload.new as any);
+          }
+        },
+      )
+      .on(
+        "postgres_changes",
+        {
+          event: "DELETE",
+          schema: "public",
+          table: "submissions",
+        },
+        (payload) => {
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+          if (payload.old && (payload.old as any).id) {
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
+            removeRoundSubmission((payload.old as any).id);
+          }
+        },
+      )
       .on(
         "postgres_changes",
         {
@@ -172,6 +236,8 @@ export function useRealtimeGame(gameId: string) {
     setStatus,
     setCurrentRound,
     setGameId,
+    addRoundSubmission,
+    removeRoundSubmission,
   ]);
 
   return { refresh: fetchGameData };

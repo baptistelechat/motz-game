@@ -8,6 +8,7 @@ import { getConstraintLabel } from "@/lib/game/formatting";
 import { cn } from "@/lib/utils";
 import { useGameStore } from "@/store/use-game-store";
 import { mapGamePlayerToDisplayPlayer } from "@/utils/player-mapper";
+import { useEffect, useMemo, useState } from "react";
 import { GameDebugControls } from "./game-debug-controls";
 import { GameInput } from "./game-input";
 import { GameTitle } from "./game-title";
@@ -39,20 +40,74 @@ function SectionLabel({
 
 export function GameClient({ gameId, currentUserId }: GameClientProps) {
   useRealtimeGame(gameId);
-  const { players, currentRound, isLoading, hostId, submitWord } =
-    useGameStore();
+  const {
+    players,
+    currentRound,
+    isLoading,
+    hostId,
+    submitWord,
+    roundSubmissions,
+  } = useGameStore();
+
+  const displayPlayers = useMemo(() => {
+    // 1. Map basic info and attach submission data
+    const mapped = players.map((p) => {
+      const display = mapGamePlayerToDisplayPlayer(p, hostId);
+
+      const sub = roundSubmissions.find((s) => s.player_id === p.id);
+      if (sub) {
+        display.score = sub.score;
+        display.rank = sub.points_details?.rank;
+      }
+      return display;
+    });
+
+    // 2. Filter: Only show players who have submitted (have a rank)
+    const filtered = mapped.filter((p) => p.rank !== undefined);
+
+    // 3. Sort: Ranked players first (by rank)
+    return filtered.sort((a, b) => {
+      const rankA = a.rank ?? Number.MAX_SAFE_INTEGER;
+      const rankB = b.rank ?? Number.MAX_SAFE_INTEGER;
+
+      return rankA - rankB;
+    });
+  }, [players, hostId, roundSubmissions]);
+
+  const [optimisticSubmitted, setOptimisticSubmitted] = useState(false);
+
+  // Reset optimistic state when round changes
+  useEffect(() => {
+    setOptimisticSubmitted(false);
+  }, [currentRound?.id, currentRound?.constraints]);
+
+  const hasSubmitted = useMemo(() => {
+    return (
+      optimisticSubmitted ||
+      roundSubmissions.some((s) => s.player_id === currentUserId)
+    );
+  }, [roundSubmissions, currentUserId, optimisticSubmitted]);
+
+  const handleValidate = async (word: string) => {
+    setOptimisticSubmitted(true);
+    const success = await submitWord(word);
+    if (!success) {
+      setOptimisticSubmitted(false);
+    }
+  };
 
   if (isLoading) {
     return <LoadingScreen message="CHARGEMENT DE LA PARTIE..." />;
   }
 
-  const displayPlayers = players.map((p) =>
-    mapGamePlayerToDisplayPlayer(p, hostId),
-  );
-
   return (
     <div className="flex flex-col items-center h-full w-full gap-4 overflow-hidden p-2 md:p-4 pb-24 relative">
-      {currentRound && <GameDebugControls currentRound={currentRound} />}
+      {currentRound && (
+        <GameDebugControls
+          currentRound={currentRound}
+          isHost={hostId === currentUserId}
+        />
+      )}
 
       <div className="flex-none text-center space-y-6 w-full max-w-md">
         <GameTitle game>MANCHE {currentRound?.round_number || 1}</GameTitle>
@@ -106,13 +161,15 @@ export function GameClient({ gameId, currentUserId }: GameClientProps) {
           currentUserId={currentUserId}
           className="w-full"
           hideReadyStatus
+          emptyMessage="En attente de réponses..."
         />
       </ScrollArea>
 
       {currentRound && (
         <GameInput
           constraints={currentRound.constraints}
-          onValidate={(word) => submitWord(word)}
+          onValidate={handleValidate}
+          disabled={hasSubmitted}
         />
       )}
     </div>

@@ -51,11 +51,7 @@ export function GameInput({
     // Let's validate on type to show "Optimistic" state (Yellow border) if valid.
 
     if (newValue.length > 0 && dictionary.isReady) {
-      const result = validateWord(
-        newValue,
-        constraints,
-        dictionary.has,
-      );
+      const result = validateWord(newValue, constraints, dictionary.has);
       setIsValid(result.isValid);
     }
   };
@@ -69,11 +65,7 @@ export function GameInput({
       return;
     }
 
-    const result = validateWord(
-      value,
-      constraints,
-      dictionary.has,
-    );
+    const result = validateWord(value, constraints, dictionary.has);
 
     if (result.isValid) {
       // Success
@@ -106,7 +98,8 @@ export function GameInput({
   // Border color logic
   const getBorderClass = () => {
     if (isShaking) return "border-[#FF00FF] focus-visible:ring-[#FF00FF]"; // Hot Pink
-    if (isValid) return "border-[#FFFF00] focus-visible:ring-[#FFFF00]"; // Laser Lemon
+    if (isValid && process.env.NODE_ENV === "development")
+      return "border-[#FFFF00] focus-visible:ring-[#FFFF00]"; // Laser Lemon
     return "border-border";
   };
 
@@ -126,7 +119,11 @@ export function GameInput({
               onKeyDown={handleKeyDown}
               disabled={disabled || dictionary.isLoading}
               placeholder={
-                dictionary.isLoading ? "Chargement..." : "Votre mot..."
+                dictionary.isLoading
+                  ? "Chargement..."
+                  : disabled
+                    ? "En attente des autres..."
+                    : "Votre mot..."
               }
               className={getBorderClass()}
               autoComplete="off"
@@ -146,7 +143,9 @@ export function GameInput({
             variant="outline"
             className={cn(
               "transition-colors aspect-square size-12",
-              isValid ? "bg-[#FFFF00] text-black hover:bg-[#E6E600]" : "",
+              isValid && process.env.NODE_ENV === "development"
+                ? "bg-[#FFFF00] text-black hover:bg-[#E6E600]"
+                : "",
             )}
             title="DEBUG: Relancer les contraintes"
           >

@@ -201,6 +201,36 @@ export async function startGame(gameId: string) {
 export async function debugRegenerateRound(roundId: string) {
   const supabase = await createClient();
 
+  // 0. Verify permissions (Host only)
+  // Retrieve the game associated with the round to check the host
+  const { data: round } = await supabase
+    .from("rounds")
+    .select("game_id, games!inner(host_id)")
+    .eq("id", roundId)
+    .single();
+
+  if (!round) throw new Error("Round not found");
+
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+
+  if (round.games.host_id !== user?.id) {
+    throw new Error("Seul l'hôte peut réinitialiser la manche.");
+  }
+
+  // 1. Delete all submissions for this round (Reset)
+  const { error: deleteError } = await supabase
+    .from("submissions")
+    .delete()
+    .eq("round_id", roundId);
+
+  if (deleteError) {
+    console.error("Error deleting submissions:", deleteError);
+    throw new Error("Impossible de réinitialiser les soumissions");
+  }
+
+  // 2. Regenerate constraints
   // RPC was removed, logic moved to TS
   const constraints = generateRoundConstraints(THEMES.map((t) => t.label));
 

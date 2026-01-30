@@ -12,9 +12,13 @@ import { toast } from "sonner";
 
 interface GameDebugControlsProps {
   currentRound: GameRound;
+  isHost: boolean;
 }
 
-export function GameDebugControls({ currentRound }: GameDebugControlsProps) {
+export function GameDebugControls({
+  currentRound,
+  isHost,
+}: GameDebugControlsProps) {
   const [validCount, setValidCount] = useState<number | null>(null);
   const [totalWords, setTotalWords] = useState<number | null>(null);
   const [isCounting, setIsCounting] = useState(false);
@@ -96,10 +100,13 @@ export function GameDebugControls({ currentRound }: GameDebugControlsProps) {
     if (!currentRound) return;
     try {
       await debugRegenerateRound(currentRound.id);
-      toast.success("Contraintes régénérées !");
+      toast.success("Manche réinitialisée !", {
+        description:
+          "Les contraintes ont été régénérées et les soumissions effacées.",
+      });
     } catch (error) {
-      console.error("Debug reroll failed:", error);
-      toast.error("Erreur lors de la régénération");
+      console.error("Debug reset failed:", error);
+      toast.error("Erreur lors de la réinitialisation");
     }
   };
 
@@ -108,44 +115,49 @@ export function GameDebugControls({ currentRound }: GameDebugControlsProps) {
     return null;
   }
 
-  return (
-    <>
-      <Button
-        type="button"
-        onClick={handleDebugReroll}
-        variant="outline"
-        className="absolute top-4 left-4 aspect-square p-0! size-12 z-50"
-        title="DEBUG: Relancer les contraintes"
-      >
-        <Dice className="size-7" />
-      </Button>
-      <div className="absolute top-20 left-4 z-50 flex flex-col items-start gap-2">
+  if (isHost) {
+    return (
+      <>
         <Button
           type="button"
-          onClick={handleCheat}
+          onClick={handleDebugReroll}
           variant="outline"
-          className="aspect-square p-0 size-12"
-          title="DEBUG: Trouver des mots valides"
+          className="absolute top-4 left-4 aspect-square p-0! size-12 z-50"
+          title="DEBUG: Réinitialiser la manche (contraintes + soumissions)"
         >
-          <InfoBox className="size-7" />
+          <Dice className="size-7" />
         </Button>
-        {validCount !== null && (
-          <Badge variant="secondary" className="text-sm whitespace-nowrap flex items-center">
-            {isCounting ? (
-              "..."
-            ) : (
-              <>
-                {validCount}
-                {totalWords && (
-                  <span className="opacity-70">
-                    ({((validCount / totalWords) * 100).toFixed(2)}%)
-                  </span>
-                )}
-              </>
-            )}
-          </Badge>
-        )}
-      </div>
-    </>
-  );
+        <div className="absolute top-20 left-4 z-50 flex flex-col items-start gap-2">
+          <Button
+            type="button"
+            onClick={handleCheat}
+            variant="outline"
+            className="aspect-square p-0 size-12"
+            title="DEBUG: Trouver des mots valides"
+          >
+            <InfoBox className="size-7" />
+          </Button>
+          {validCount !== null && (
+            <Badge
+              variant="secondary"
+              className="text-sm whitespace-nowrap flex items-center"
+            >
+              {isCounting ? (
+                "..."
+              ) : (
+                <>
+                  {validCount}
+                  {totalWords && (
+                    <span className="opacity-70">
+                      ({((validCount / totalWords) * 100).toFixed(2)}%)
+                    </span>
+                  )}
+                </>
+              )}
+            </Badge>
+          )}
+        </div>
+      </>
+    );
+  }
 }

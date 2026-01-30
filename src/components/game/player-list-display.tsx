@@ -12,6 +12,8 @@ export interface DisplayPlayer {
   isReady?: boolean;
   isHost?: boolean;
   isBot?: boolean;
+  score?: number;
+  rank?: number;
 }
 
 interface PlayerListDisplayProps {
@@ -36,9 +38,10 @@ export function PlayerListDisplay({
         className,
       )}
     >
-      <AnimatePresence>
+      <AnimatePresence mode="popLayout">
         {players.map((p) => (
           <motion.div
+            layout
             key={p.id}
             initial={{ scale: 0, opacity: 0, rotate: -10 }}
             animate={{ scale: 1, opacity: 1, rotate: 0 }}
@@ -50,22 +53,39 @@ export function PlayerListDisplay({
             }}
             className="flex flex-col items-center gap-2 group w-full md:w-40"
           >
-            <AvatarDisplay
-              animal={p.avatarConfig.animal}
-              color={p.avatarConfig.color}
-              size="md"
-              isHost={p.isHost}
-              isPlayer={!p.isHost && !p.isBot}
-              isBot={p.isBot}
-              isReady={hideReadyStatus ? undefined : p.isReady}
-            />
-            <div
-              className={cn(
-                "text-center truncate w-full px-2 font-display text-sm md:text-base",
-                p.id === currentUserId ? "text-theme" : "text-muted-foreground",
+            <div className="relative">
+              <AvatarDisplay
+                animal={p.avatarConfig.animal}
+                color={p.avatarConfig.color}
+                size="md"
+                isHost={p.isHost}
+                isPlayer={!p.isHost && !p.isBot}
+                isBot={p.isBot}
+                isReady={hideReadyStatus ? undefined : p.isReady}
+              />
+              {p.rank !== undefined && p.rank > 0 && (
+                <div className="absolute -bottom-2 -right-3 bg-yellow-400 text-yellow-950 font-bold rounded-full size-6 flex items-center justify-center border-2 border-white shadow-lg animate-in zoom-in spin-in-12 text-sm">
+                  #{p.rank}
+                </div>
               )}
-            >
-              {p.pseudo}
+            </div>
+
+            <div className="flex flex-col items-center w-full">
+              <div
+                className={cn(
+                  "text-center truncate w-full px-2 font-display text-sm md:text-base",
+                  p.id === currentUserId
+                    ? "text-theme"
+                    : "text-muted-foreground",
+                )}
+              >
+                {p.pseudo}
+              </div>
+              {p.score !== undefined && (
+                <div className="text-primary text-md md:text-xl">
+                  {p.score} pts
+                </div>
+              )}
             </div>
           </motion.div>
         ))}

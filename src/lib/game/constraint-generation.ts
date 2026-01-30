@@ -1,4 +1,4 @@
-import { RoundConstraints, ConstraintCard, ConstraintType } from "@/types/game";
+import { ConstraintCard, ConstraintType, RoundConstraints } from "@/types/game";
 
 const CARD_TYPES: ConstraintType[] = [
   "free",
@@ -22,9 +22,11 @@ function getRandomElement<T>(array: T[]): T {
   return array[Math.floor(Math.random() * array.length)];
 }
 
-export function generateRoundConstraints(themes: string[] = ["Général"]): RoundConstraints {
+export function generateRoundConstraints(
+  themes: string[] = ["Général"],
+): RoundConstraints {
   const imposed_letter = getRandomChar();
-  
+
   let forbidden_letter = getRandomChar();
   while (forbidden_letter === imposed_letter) {
     forbidden_letter = getRandomChar();
