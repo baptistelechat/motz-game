@@ -4,6 +4,7 @@ import { debugRegenerateRound } from "@/app/actions/game-actions";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { getDictionary } from "@/lib/game/dictionary";
+import { findFallbackSolutions } from "@/lib/game/fallback-words";
 import { validateWord } from "@/lib/game/validation";
 import { GameRound } from "@/store/use-game-store";
 import { Dice, InfoBox } from "@nsmr/pixelart-react";
@@ -71,23 +72,22 @@ export function GameDebugControls({
     if (!currentRound) return;
 
     try {
-      const words = await getDictionary();
+      const solutions = await findFallbackSolutions(
+        currentRound.constraints,
+        5,
+      );
 
-      const validWords = words.filter((word) => {
-        const result = validateWord(word, currentRound.constraints, () => true);
-        return result.isValid;
-      });
-
-      if (validWords.length === 0) {
+      if (
+        solutions.length === 0 ||
+        solutions.includes("AUCUNE_SOLUTION") ||
+        solutions.includes("ERREUR_DICTIONNAIRE")
+      ) {
         toast.error("Aucun mot trouvé pour ces contraintes !");
         return;
       }
 
-      const shuffled = validWords.sort(() => 0.5 - Math.random());
-      const selected = shuffled.slice(0, 5);
-
       toast.success("Mots suggérés :", {
-        description: selected.join(", "),
+        description: solutions.join(", "),
         duration: 5000,
       });
     } catch (error) {

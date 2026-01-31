@@ -1,12 +1,13 @@
 "use server";
 
 import { generateRoundConstraints } from "@/lib/game/constraint-generation";
+import { findFallbackSolutions } from "@/lib/game/fallback-words";
 import { calculateWordScore } from "@/lib/game/scoring";
 import { THEMES } from "@/lib/game/themes";
 import { validateWordServer } from "@/lib/game/validation-server";
 import { submitWordSchema } from "@/lib/schemas/submission-schema";
 import { createClient } from "@/lib/supabase/server";
-import { Json } from "@/types/database.types";
+import { Database, Json } from "@/types/database.types";
 import { RoundConstraints } from "@/types/game";
 import { customAlphabet } from "nanoid";
 import { redirect } from "next/navigation";
@@ -329,8 +330,191 @@ export async function submitWord(
 
   return {
     success: validation.isValid,
-    message: validation.isValid ? undefined : (validation.error || "Mot invalide"),
+    message: validation.isValid
+      ? undefined
+      : validation.error || "Mot invalide",
     submission: submissionData,
     validationError: validation.isValid ? undefined : validation.error,
   };
+}
+
+export async function finishRound(roundId: string) {
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+
+  if (!user) throw new Error("Unauthorized");
+
+  // Verify host
+  const { data: round } = await supabase
+    .from("rounds")
+    .select("game_id, constraints, games!inner(host_id)")
+    .eq("id", roundId)
+    .single();
+
+  if (!round || round.games.host_id !== user.id) {
+    throw new Error("Only host can finish round");
+  }
+
+  const constraints = round.constraints as unknown as RoundConstraints;
+  // constraints is an object, not an array. Check the 'theme' property.
+  const hasTheme = !!constraints.theme;
+  // Explicitly cast the status string to match the enum type if needed
+  const nextStatus = hasTheme ? "VALIDATING" : "COMPLETED";
+
+  const { error } = await supabase
+    .from("rounds")
+    .update({
+      status: nextStatus as Database["public"]["Enums"]["round_status"],
+    })
+    .eq("id", roundId);
+
+  if (error) throw error;
+}
+
+export async function voteInvalid(submissionId: string) {
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) throw new Error("Unauthorized");
+
+  const { data: sub } = await supabase
+    .from("submissions")
+    .select("votes")
+    .eq("id", submissionId)
+    .single();
+
+  if (!sub) throw new Error("Submission not found");
+
+  const votes = sub.votes || [];
+  if (votes.includes(user.id)) return; // Already voted
+
+  await supabase
+    .from("submissions")
+    .update({ votes: [...votes, user.id] })
+    .eq("id", submissionId);
+}
+
+export async function finalizeValidation(roundId: string) {
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) throw new Error("Unauthorized");
+
+  // Verify host
+  const { data: round } = await supabase
+    .from("rounds")
+    .select("game_id, constraints, games!inner(host_id)")
+    .eq("id", roundId)
+    .single();
+
+  if (!round || round.games.host_id !== user.id) {
+    throw new Error("Only host can finalize validation");
+  }
+
+  // Calculate threshold
+  const { count } = await supabase
+    .from("game_players")
+    .select("*", { count: "exact", head: true })
+    .eq("game_id", round.game_id);
+
+  const playerCount = count || 1;
+  const threshold = Math.ceil(playerCount / 2);
+
+  // Fetch submissions
+  const { data: submissions } = await supabase
+    .from("submissions")
+    .select("*")
+    .eq("round_id", roundId);
+
+  if (submissions) {
+    for (const sub of submissions) {
+      if ((sub.votes?.length || 0) >= threshold) {
+        await supabase
+          .from("submissions")
+          .update({
+            is_valid: false,
+            score: 0,
+            rejection_reason: "social_consensus",
+          })
+          .eq("id", sub.id);
+      }
+    }
+  }
+
+  // Check if we need fallback solutions (if all submissions are invalid)
+  // We need to re-fetch or check logic.
+  // Simplified: If 0 valid submissions after rejection, we might want to store solutions.
+  // But where? We can't easily store them in round unless we add a column.
+  // The story says "Le système affiche 3 mots".
+  // Let's store them in the constraints JSON for now (hacky but works without new column)
+  // OR just assume the UI calculates them? UI can't calculate from dictionary securely/easily.
+  // We will update round constraints to include solutions in metadata.
+
+  // Re-fetch submissions to check validity
+  const { data: updatedSubmissions } = await supabase
+    .from("submissions")
+    .select("is_valid")
+    .eq("round_id", roundId);
+
+  const validCount = updatedSubmissions?.filter((s) => s.is_valid).length || 0;
+
+  if (validCount === 0) {
+    const constraints = round.constraints as unknown as RoundConstraints;
+    const solutions = await findFallbackSolutions(constraints);
+
+    // Add solutions to constraints object.
+    const newConstraints = {
+      ...constraints,
+      solutions,
+    };
+
+    await supabase
+      .from("rounds")
+      .update({ constraints: newConstraints as unknown as Json })
+      .eq("id", roundId);
+  }
+
+  const { error } = await supabase
+    .from("rounds")
+    .update({ status: "COMPLETED" })
+    .eq("id", roundId);
+
+  if (error) throw error;
+}
+
+export async function startNextRound(currentRoundId: string) {
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+
+  if (!user) throw new Error("Unauthorized");
+
+  // Verify host and get gameId
+  const { data: round } = await supabase
+    .from("rounds")
+    .select("game_id, round_number, games!inner(host_id)")
+    .eq("id", currentRoundId)
+    .single();
+
+  if (!round || round.games.host_id !== user.id) {
+    throw new Error("Only host can start next round");
+  }
+
+  // Generate new constraints
+  const nextRoundNumber = round.round_number + 1;
+  const constraints = generateRoundConstraints(THEMES.map((t) => t.label));
+
+  const { error } = await supabase.from("rounds").insert({
+    game_id: round.game_id,
+    round_number: nextRoundNumber,
+    constraints: constraints as unknown as Json,
+    status: "PLAYING",
+  });
+
+  if (error) throw error;
 }

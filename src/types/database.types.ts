@@ -175,6 +175,7 @@ export type Database = {
           round_id: string;
           score: number;
           word: string;
+          votes: string[];
         };
         Insert: {
           created_at?: string;
@@ -187,6 +188,7 @@ export type Database = {
           round_id: string;
           score?: number;
           word: string;
+          votes?: string[];
         };
         Update: {
           created_at?: string;
@@ -199,6 +201,7 @@ export type Database = {
           round_id?: string;
           score?: number;
           word?: string;
+          votes?: string[];
         };
         Relationships: [
           {
@@ -250,7 +253,7 @@ export type Database = {
     };
     Enums: {
       game_status: "LOBBY" | "PLAYING" | "FINISHED";
-      round_status: "PLAYING" | "COMPLETED";
+      round_status: "PLAYING" | "COMPLETED" | "VALIDATING";
     };
     CompositeTypes: {
       [_ in never]: never;

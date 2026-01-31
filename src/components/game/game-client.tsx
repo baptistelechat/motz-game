@@ -13,6 +13,9 @@ import { GameDebugControls } from "./game-debug-controls";
 import { GameInput } from "./game-input";
 import { GameTitle } from "./game-title";
 import { PlayerListDisplay } from "./player-list-display";
+import { RoundSummary } from "./round-summary";
+import { SocialValidationView } from "./social-validation";
+import { finishRound } from "@/app/actions/game-actions";
 
 interface GameClientProps {
   gameId: string;
@@ -48,6 +51,22 @@ export function GameClient({ gameId, currentUserId }: GameClientProps) {
     submitWord,
     roundSubmissions,
   } = useGameStore();
+
+  const isHost = hostId === currentUserId;
+
+  // Auto-finish round if all players submitted
+  useEffect(() => {
+    if (!isHost || !currentRound || currentRound.status !== "PLAYING") return;
+
+    // Check if all players have a valid submission
+    const allSubmitted = players.length > 0 && players.every((p) =>
+      roundSubmissions.some((s) => s.player_id === p.id && s.is_valid)
+    );
+
+    if (allSubmitted) {
+      finishRound(currentRound.id).catch(console.error);
+    }
+  }, [isHost, currentRound, players, roundSubmissions]);
 
   const displayPlayers = useMemo(() => {
     // 1. Map basic info and attach submission data
@@ -100,6 +119,30 @@ export function GameClient({ gameId, currentUserId }: GameClientProps) {
     return <LoadingScreen message="CHARGEMENT DE LA PARTIE..." />;
   }
 
+  if (currentRound?.status === "COMPLETED") {
+    return (
+      <RoundSummary
+        round={currentRound}
+        players={players}
+        submissions={roundSubmissions}
+        currentUserId={currentUserId}
+        hostId={hostId}
+      />
+    );
+  }
+
+  if (currentRound?.status === "VALIDATING") {
+    return (
+      <SocialValidationView
+        round={currentRound}
+        players={players}
+        submissions={roundSubmissions}
+        currentUserId={currentUserId}
+        hostId={hostId}
+      />
+    );
+  }
+
   return (
     <div className="flex flex-col items-center h-full w-full gap-4 overflow-hidden p-2 md:p-4 relative">
       {currentRound && (
@@ -110,7 +153,7 @@ export function GameClient({ gameId, currentUserId }: GameClientProps) {
       )}
 
       <div className="flex-none text-center space-y-6 w-full max-w-md">
-        <GameTitle game>MANCHE {currentRound?.round_number || 1}</GameTitle>
+        <GameTitle game/>
 
         {currentRound ? (
           <Card

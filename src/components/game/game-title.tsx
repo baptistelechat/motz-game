@@ -1,16 +1,22 @@
+"use client"
+
 import { cn } from "@/lib/utils";
+import { useGameStore } from "@/store/use-game-store";
 
 interface GameTitleProps extends React.HTMLAttributes<HTMLHeadingElement> {
   game?: boolean;
-  children: React.ReactNode;
 }
 
 export function GameTitle({
-  children,
   className,
   game = false,
   ...props
 }: GameTitleProps) {
+
+    const {
+      currentRound,
+    } = useGameStore();
+  
   return (
     <h1
       className={cn(
@@ -20,8 +26,8 @@ export function GameTitle({
         className,
       )}
       {...props}
-    >
-      {children}
+      >
+        {game ? `MANCHE ${currentRound?.round_number || 1}` : "SALLE D'ATTENTE"}
     </h1>
   );
 }

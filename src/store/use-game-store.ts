@@ -33,6 +33,7 @@ export interface RoundSubmission {
   created_at: string;
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   points_details?: any;
+  votes?: string[];
 }
 
 interface GameState {

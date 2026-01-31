@@ -199,7 +199,7 @@ export function LobbyClient({
           isHost ? "mt-0 md:mt-24" : "mt-0"
         }`}
       >
-        <GameTitle>SALLE D&apos;ATTENTE</GameTitle>
+        <GameTitle/>
         <p className="text-xl font-display text-primary drop-shadow-[2px_2px_0_(--border)]">
           {players.length} JOUEUR{players.length > 1 ? "S" : ""}
         </p>
