@@ -328,7 +328,8 @@ export async function submitWord(
   }
 
   return {
-    success: true,
+    success: validation.isValid,
+    message: validation.isValid ? undefined : (validation.error || "Mot invalide"),
     submission: submissionData,
     validationError: validation.isValid ? undefined : validation.error,
   };

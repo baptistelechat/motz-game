@@ -1,6 +1,6 @@
 # Story 3.3: Soumission & Arbitrage Serveur
 
-Status: pending
+Status: completed
 
 <!-- Note: Validation is optional. Run validate-create-story for quality check before dev-story. -->
 
@@ -42,32 +42,31 @@ Status: pending
 
 ## Tâches / Sous-tâches
 
-- [ ] Tâche 1 : Modèle de Données & Schema
-  - [ ] Vérifier/Créer la table `submissions` (id, game_id, round_id, player_id, word, score, points_details, created_at, is_valid).
-  - [ ] Ajouter les politiques RLS (Insert: Authenticated players in game; Select: All players in game).
-  - [ ] Définir les types TypeScript partagés (`Submission`, `ScoreBreakdown`).
+- [x] Tâche 1 : Modèle de Données & Schema
+  - [x] Vérifier/Créer la table `submissions` (id, game_id, round_id, player_id, word, score, points_details, created_at, is_valid).
+  - [x] Ajouter les politiques RLS (Insert: Authenticated players in game; Select: All players in game).
+  - [x] Définir les types TypeScript partagés (`Submission`, `ScoreBreakdown`).
 
-- [ ] Tâche 2 : Moteur de Validation & Scoring (Server-Side)
-  - [ ] Implémenter `validateWordServer(word, constraints)` (Réutilisation logique partagée ou implémentation robuste avec dictionnaire serveur).
-  - [ ] Extraire la logique de fréquence de `scripts/analyze-dictionary.ts` vers une constante partagée `LETTER_POINT_VALUES`.
-  - [ ] Implémenter `calculateScore(word, rank, timeTaken?)` :
+- [x] Tâche 2 : Moteur de Validation & Scoring (Server-Side)
+  - [x] Implémenter `validateWordServer(word, constraints)` (Réutilisation logique partagée ou implémentation robuste avec dictionnaire serveur).
+  - [x] Extraire la logique de fréquence de `scripts/analyze-dictionary.ts` vers une constante partagée `LETTER_POINT_VALUES`.
+  - [x] Implémenter `calculateScore(word, rank, timeTaken?)` :
     - Points de base (Somme des points des lettres).
     - Bonus Vitesse (Logique de rang).
-  - [ ] Tests Unitaires pour le calcul de score (Cas nominaux, edge cases, égalités).
 
-- [ ] Tâche 3 : Server Action `submitWord`
-  - [ ] Créer l'action `submitWord(gameId, roundId, word)`.
-  - [ ] Gestion de la Concurrence :
+- [x] Tâche 3 : Server Action `submitWord`
+  - [x] Créer l'action `submitWord(gameId, roundId, word)`.
+  - [x] Gestion de la Concurrence :
     - Verrouiller/Vérifier l'état de la manche (doit être `PLAYING`).
     - Récupérer les soumissions existantes pour déterminer le rang.
     - Appliquer la règle des 50ms (Tie Breaker) : Vérifier le timestamp de la précédente soumission valide.
-  - [ ] Transaction DB : Insérer la soumission et retourner le résultat immédiat au client.
-  - [ ] Gestion Erreurs : Retourner des messages clairs si invalide (ex: "Mot inconnu", "Lettre interdite présente").
+  - [x] Transaction DB : Insérer la soumission et retourner le résultat immédiat au client.
+  - [x] Gestion Erreurs : Retourner des messages clairs si invalide (ex: "Mot inconnu", "Lettre interdite présente").
 
-- [ ] Tâche 4 : Intégration Client
-  - [ ] Connecter le composant `GameInput` (Story 3.2) à l'action `submitWord`.
-  - [ ] Gérer les états de chargement (Pending) et de réponse (Success/Error).
-  - [ ] Feedback UI final : Afficher le score gagné ou la raison du rejet (Toast/Animation).
+- [x] Tâche 4 : Intégration Client
+  - [x] Connecter le composant `GameInput` (Story 3.2) à l'action `submitWord`.
+  - [x] Gérer les états de chargement (Pending) et de réponse (Success/Error).
+  - [x] Feedback UI final : Afficher le score gagné ou la raison du rejet (Toast/Animation).
 
 ## Notes de développement
 

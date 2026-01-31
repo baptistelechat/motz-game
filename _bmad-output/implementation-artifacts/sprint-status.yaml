@@ -58,7 +58,7 @@ development_status:
   epic-3: in-progress
   3-1-CHARGEMENT DU SYSTEME-manche-distribution-cartes: done
   3-2-input-joueur-validation-locale-bloom-filter: done
-  3-3-soumission-arbitrage-serveur: ready-for-dev
+  3-3-soumission-arbitrage-serveur: done
   3-4-resolution-manche-feedback: backlog
   epic-3-retrospective: optional
 
