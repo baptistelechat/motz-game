@@ -119,7 +119,7 @@ export function ProfileForm({ onSaved }: ProfileFormProps) {
     >
       <div className="flex-1 overflow-y-auto p-6 space-y-6">
         <div className="space-y-3">
-          <Label htmlFor="pseudo">Pseudo</Label>
+          <Label htmlFor="motz_profile_pseudo">Pseudo</Label>
           <div className="space-y-2">
             <div className="flex gap-2">
               <Input
