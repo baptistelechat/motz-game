@@ -13,8 +13,8 @@ import {
 } from "@/lib/utils/generate-player";
 import { Dice } from "@nsmr/pixelart-react";
 import { useEffect, useRef, useState } from "react";
-import { AvatarSelector } from "./avatar-selector";
 import { toast } from "sonner";
+import { AvatarSelector } from "./avatar-selector";
 
 interface ProfileFormProps {
   onSaved?: () => void;
@@ -123,7 +123,11 @@ export function ProfileForm({ onSaved }: ProfileFormProps) {
           <div className="space-y-2">
             <div className="flex gap-2">
               <Input
-                id="pseudo"
+                id="motz_profile_pseudo"
+                type="search"
+                inputMode="text"
+                name="motz_profile_pseudo"
+                autoCapitalize="characters"
                 value={pseudo}
                 onChange={(e) => setPseudo(e.target.value)}
                 placeholder="Ton pseudo"

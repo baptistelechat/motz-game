@@ -1,15 +1,16 @@
 "use client";
 
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
 import { useDictionary } from "@/hooks/use-dictionary";
+import { getConstraintLabel } from "@/lib/game/formatting";
 import { validateWord } from "@/lib/game/validation";
 import { cn } from "@/lib/utils";
 import { RoundConstraints } from "@/types/game";
-import { ArrowRight, Loader } from "@nsmr/pixelart-react";
+import { ArrowRight, Loader, Close } from "@nsmr/pixelart-react";
 import { motion } from "framer-motion";
 import { useEffect, useRef, useState } from "react";
 import { toast } from "sonner";
+import { Button } from "../ui/button";
+import { Input } from "../ui/input";
 
 interface GameInputProps {
   constraints: RoundConstraints;
@@ -23,37 +24,33 @@ export function GameInput({
   disabled,
 }: GameInputProps) {
   const [value, setValue] = useState("");
-  const [isValid, setIsValid] = useState(false);
   const [isShaking, setIsShaking] = useState(false);
   const dictionary = useDictionary();
   const inputRef = useRef<HTMLInputElement>(null);
 
-  // Focus mode: Keep input focused if possible, or provide easy way to refocus
-  // For mobile, we rely on sticky positioning.
+  // Visual Viewport logic to detect keyboard/compact state
+  const [isCompact, setIsCompact] = useState(false);
+
   useEffect(() => {
-    // Auto-focus on mount
-    const timer = setTimeout(() => {
-      inputRef.current?.focus();
-    }, 100);
-    return () => clearTimeout(timer);
+    const handleResize = () => {
+      if (!window.visualViewport) return;
+      // If height is less than 500px, we assume keyboard is open or screen is very small
+      setIsCompact(window.visualViewport.height < 500);
+    };
+
+    // Initial check
+    handleResize();
+
+    // Listen to visual viewport resize (better than window resize for virtual keyboard)
+    window.visualViewport?.addEventListener("resize", handleResize);
+    return () => {
+      window.visualViewport?.removeEventListener("resize", handleResize);
+    };
   }, []);
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const newValue = e.target.value.toUpperCase();
     setValue(newValue);
-    setIsValid(false);
-
-    // Optional: Real-time validation feedback?
-    // Story says: "Validation locale effectuée (à la frappe ou soumission)"
-    // If we validate on type, we might annoy user with "Too short" while typing.
-    // Usually, we validate format on type (imposed letters etc) but Dictionary on submit?
-    // Or full validation on type but only show "Valid" state, hide "Error" until submit or delay?
-    // Let's validate on type to show "Optimistic" state (Yellow border) if valid.
-
-    if (newValue.length > 0 && dictionary.isReady) {
-      const result = validateWord(newValue, constraints, dictionary.has);
-      setIsValid(result.isValid);
-    }
   };
 
   const handleSubmit = (e?: React.FormEvent) => {
@@ -73,7 +70,6 @@ export function GameInput({
       console.log("Audio: Success");
       onValidate(value);
       setValue("");
-      setIsValid(false);
       // Keep focus
       inputRef.current?.focus();
     } else {
@@ -86,6 +82,8 @@ export function GameInput({
       });
       setIsShaking(true);
       setTimeout(() => setIsShaking(false), 400); // Reset shake
+      // Refocus input for quick retry
+      inputRef.current?.focus();
     }
   };
 
@@ -98,14 +96,33 @@ export function GameInput({
   // Border color logic
   const getBorderClass = () => {
     if (isShaking) return "border-[#FF00FF] focus-visible:ring-[#FF00FF]"; // Hot Pink
-    if (isValid && process.env.NODE_ENV === "development")
-      return "border-[#FFFF00] focus-visible:ring-[#FFFF00]"; // Laser Lemon
     return "border-border";
   };
 
   return (
-    <div className="fixed bottom-0 left-0 right-0 p-4 bg-background/95 backdrop-blur supports-backdrop-filter:bg-background/60 border-t z-50">
-      <div className="max-w-md mx-auto relative">
+    <div className="w-full p-4 pb-2 bg-background/95 backdrop-blur supports-backdrop-filter:bg-background/60 border-t z-50 transition-all duration-300">
+      <div className="max-w-md mx-auto relative space-y-2">
+        {/* Compact Constraint Banner - Visible only when viewport is small (keyboard open) */}
+        {isCompact && (
+          <div className="flex flex-col items-center justify-center gap-2 px-1 pb-1 text-xs font-display text-muted-foreground animate-in slide-in-from-bottom-2 fade-in">
+            <div className="flex gap-4 justify-between">
+              <span className="text-allow">
+                IMPOSEE : {constraints.imposed_letter}
+              </span>
+              <span className="text-disallow">
+                INTERDITE : {constraints.forbidden_letter}
+              </span>
+            </div>
+            <span className="">
+              {getConstraintLabel(
+                constraints.constraint_card,
+                constraints.theme,
+                constraints.imposed_letter,
+              )}
+            </span>
+          </div>
+        )}
+
         <motion.div
           animate={isShaking ? { x: [0, -10, 10, -10, 10, 0] } : {}}
           transition={{ duration: 0.4 }}
@@ -114,6 +131,10 @@ export function GameInput({
           <div className="relative flex-1">
             <Input
               ref={inputRef}
+              type="search"
+              inputMode="text"
+              name="motz_game_word_input"
+              id="motz_game_word_input"
               value={value}
               onChange={handleChange}
               onKeyDown={handleKeyDown}
@@ -126,14 +147,27 @@ export function GameInput({
                     : "Votre mot..."
               }
               className={getBorderClass()}
-              autoComplete="off"
-              autoCorrect="off"
               autoCapitalize="characters"
             />
-            {dictionary.isLoading && (
+            {dictionary.isLoading ? (
               <div className="absolute right-3 top-1/2 -translate-y-1/2">
                 <Loader className="size-4 animate-spin text-muted-foreground" />
               </div>
+            ) : (
+              value &&
+              !disabled && (
+                <button
+                  type="button"
+                  onClick={() => {
+                    setValue("");
+                    inputRef.current?.focus();
+                  }}
+                  className="absolute right-3 top-1/2 -translate-y-1/2 p-1 text-muted-foreground hover:text-foreground transition-colors"
+                  title="Effacer"
+                >
+                  <Close className="size-4" />
+                </button>
+              )
             )}
           </div>
 
@@ -141,13 +175,8 @@ export function GameInput({
             onClick={() => handleSubmit()}
             disabled={disabled || !value || dictionary.isLoading}
             variant="outline"
-            className={cn(
-              "transition-colors aspect-square size-12",
-              isValid && process.env.NODE_ENV === "development"
-                ? "bg-[#FFFF00] text-black hover:bg-[#E6E600]"
-                : "",
-            )}
-            title="DEBUG: Relancer les contraintes"
+            className={cn("transition-colors aspect-square size-12")}
+            title="Valider"
           >
             <ArrowRight className="size-7" />
           </Button>

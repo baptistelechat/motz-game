@@ -101,7 +101,7 @@ export function GameClient({ gameId, currentUserId }: GameClientProps) {
   }
 
   return (
-    <div className="flex flex-col items-center h-full w-full gap-4 overflow-hidden p-2 md:p-4 pb-24 relative">
+    <div className="flex flex-col items-center h-full w-full gap-4 overflow-hidden p-2 md:p-4 relative">
       {currentRound && (
         <GameDebugControls
           currentRound={currentRound}
@@ -155,7 +155,7 @@ export function GameClient({ gameId, currentUserId }: GameClientProps) {
         )}
       </div>
 
-      <ScrollArea>
+      <ScrollArea className="flex-1 min-h-0 w-full">
         <PlayerListDisplay
           players={displayPlayers}
           currentUserId={currentUserId}
