@@ -1,9 +1,9 @@
 "use client";
 
-import { AvatarDisplay } from "@/components/profile/avatar-display";
 import { AvatarConfig } from "@/interface/AvatarConfig";
 import { cn } from "@/lib/utils";
 import { AnimatePresence, motion } from "framer-motion";
+import { AvatarDisplay } from "../profile/avatar-display";
 
 export interface DisplayPlayer {
   id: string;
@@ -62,12 +62,8 @@ export function PlayerListDisplay({
                 isPlayer={!p.isHost && !p.isBot}
                 isBot={p.isBot}
                 isReady={hideReadyStatus ? undefined : p.isReady}
+                rank={p.rank}
               />
-              {p.rank !== undefined && p.rank > 0 && (
-                <div className="absolute -bottom-2 -right-3 bg-yellow-400 text-yellow-950 font-bold rounded-full size-6 flex items-center justify-center border-2 border-white shadow-lg animate-in zoom-in spin-in-12 text-sm">
-                  #{p.rank}
-                </div>
-              )}
             </div>
 
             <div className="flex flex-col items-center w-full">

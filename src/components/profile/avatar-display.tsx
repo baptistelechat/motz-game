@@ -42,6 +42,7 @@ interface AvatarDisplayProps
   isPlayer?: boolean;
   isBot?: boolean;
   isReady?: boolean;
+  rank?: number;
 }
 
 export function AvatarDisplay({
@@ -53,6 +54,7 @@ export function AvatarDisplay({
   isPlayer,
   isBot,
   isReady,
+  rank,
   ...props
 }: AvatarDisplayProps) {
   return (
@@ -78,7 +80,10 @@ export function AvatarDisplay({
       {isPlayer && <PlayerStatusBadge role="PLAYER" />}
       {isBot && <PlayerStatusBadge role="BOT" />}
       {isReady && <PlayerStatusBadge role="READY" />}
-      {isReady !== undefined && !isReady && <PlayerStatusBadge role="WAITING" />}
+      {isReady !== undefined && !isReady && (
+        <PlayerStatusBadge role="WAITING" />
+      )}
+      {rank !== undefined && rank > 0 && <PlayerStatusBadge rank={rank} />}
     </div>
   );
 }
