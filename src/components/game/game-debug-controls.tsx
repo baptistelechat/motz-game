@@ -1,6 +1,6 @@
 "use client";
 
-import { debugRegenerateRound } from "@/app/actions/game-actions";
+import { debugForceThemeConstraint, debugRegenerateRound } from "@/app/actions/game-actions";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { getDictionary } from "@/lib/game/dictionary";
@@ -110,6 +110,19 @@ export function GameDebugControls({
     }
   };
 
+  const handleForceTheme = async () => {
+    if (!currentRound) return;
+    try {
+      await debugForceThemeConstraint(currentRound.id);
+      toast.success("Thème forcé !", {
+        description: "La manche a été régénérée avec une contrainte de thème.",
+      });
+    } catch (error) {
+      console.error("Force theme failed:", error);
+      toast.error("Erreur lors du forçage du thème");
+    }
+  };
+
   // Only render in development environment
   if (process.env.NODE_ENV !== "development") {
     return null;
@@ -136,6 +149,15 @@ export function GameDebugControls({
             title="DEBUG: Trouver des mots valides"
           >
             <InfoBox className="size-7" />
+          </Button>
+          <Button
+            type="button"
+            onClick={handleForceTheme}
+            variant="outline"
+            className="aspect-square p-0 size-12"
+            title="DEBUG: Forcer contrainte Thème"
+          >
+            <span className="font-bold text-lg">T</span>
           </Button>
           {validCount !== null && (
             <Badge

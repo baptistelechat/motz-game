@@ -54,6 +54,7 @@ interface GameState {
   setCurrentRound: (round: GameRound | null) => void;
   setRoundSubmissions: (submissions: RoundSubmission[]) => void;
   addRoundSubmission: (submission: RoundSubmission) => void;
+  updateRoundSubmission: (submission: Partial<RoundSubmission> & { id: string }) => void;
   removeRoundSubmission: (id: string) => void;
   setIsLoading: (isLoading: boolean) => void;
   submitWord: (word: string) => Promise<boolean>;
@@ -82,6 +83,12 @@ export const useGameStore = create<GameState>((set, get) => ({
         roundSubmissions: [...state.roundSubmissions, submission],
       };
     }),
+  updateRoundSubmission: (submission) =>
+    set((state) => ({
+      roundSubmissions: state.roundSubmissions.map((s) =>
+        s.id === submission.id ? { ...s, ...submission } : s,
+      ),
+    })),
   removeRoundSubmission: (id) =>
     set((state) => ({
       roundSubmissions: state.roundSubmissions.filter((s) => s.id !== id),

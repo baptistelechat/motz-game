@@ -16,7 +16,6 @@ import { GameInput } from "./game-input";
 import { GameTitle } from "./game-title";
 import { PlayerListDisplay } from "./player-list-display";
 import { RoundSummary } from "./round-summary";
-import { SocialValidationView } from "./social-validation";
 
 interface GameClientProps {
   gameId: string;
@@ -125,7 +124,7 @@ export function GameClient({ gameId, currentUserId }: GameClientProps) {
     return <LoadingScreen message="CHARGEMENT DE LA PARTIE..." />;
   }
 
-  if (currentRound?.status === "COMPLETED") {
+  if (currentRound?.status === "COMPLETED" || currentRound?.status === "VALIDATING") {
     return (
       <RoundSummary
         round={currentRound}
@@ -133,18 +132,7 @@ export function GameClient({ gameId, currentUserId }: GameClientProps) {
         submissions={roundSubmissions}
         currentUserId={currentUserId}
         hostId={hostId}
-      />
-    );
-  }
-
-  if (currentRound?.status === "VALIDATING") {
-    return (
-      <SocialValidationView
-        round={currentRound}
-        players={players}
-        submissions={roundSubmissions}
-        currentUserId={currentUserId}
-        hostId={hostId}
+        isValidationMode={currentRound?.status === "VALIDATING"}
       />
     );
   }

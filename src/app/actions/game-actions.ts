@@ -243,6 +243,67 @@ export async function debugRegenerateRound(roundId: string) {
   if (error) throw error;
 }
 
+export async function debugForceThemeConstraint(roundId: string) {
+  const supabase = await createClient();
+
+  // 0. Verify permissions (Host only)
+  const { data: round } = await supabase
+    .from("rounds")
+    .select("game_id, games!inner(host_id)")
+    .eq("id", roundId)
+    .single();
+
+  if (!round) throw new Error("Round not found");
+
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+
+  if (round.games.host_id !== user?.id) {
+    throw new Error("Seul l'hôte peut forcer le thème.");
+  }
+
+  // 1. Delete all submissions for this round (Reset)
+  const { error: deleteError } = await supabase
+    .from("submissions")
+    .delete()
+    .eq("round_id", roundId);
+
+  if (deleteError) {
+    console.error("Error deleting submissions:", deleteError);
+    throw new Error("Impossible de réinitialiser les soumissions");
+  }
+
+  // 2. Generate Theme Constraints
+  // Helper to get random char (duplicate logic but simple enough)
+  const getRandomChar = () =>
+    String.fromCharCode(65 + Math.floor(Math.random() * 26));
+  const imposed_letter = getRandomChar();
+  let forbidden_letter = getRandomChar();
+  while (forbidden_letter === imposed_letter) {
+    forbidden_letter = getRandomChar();
+  }
+
+  const themeLabel =
+    THEMES[Math.floor(Math.random() * THEMES.length)]?.label || "Général";
+
+  const constraints: RoundConstraints = {
+    imposed_letter,
+    forbidden_letter,
+    constraint_card: {
+      type: "theme",
+    },
+    theme: themeLabel,
+  };
+
+  const { error } = await supabase
+    .from("rounds")
+    .update({ constraints: constraints as unknown as Json })
+    .eq("id", roundId);
+
+  if (error) throw error;
+}
+
 export type SubmitWordResult = {
   success: boolean;
   message?: string;
@@ -373,28 +434,18 @@ export async function finishRound(roundId: string) {
   if (error) throw error;
 }
 
-export async function voteInvalid(submissionId: string) {
+export async function toggleVote(submissionId: string) {
   const supabase = await createClient();
   const {
     data: { user },
   } = await supabase.auth.getUser();
   if (!user) throw new Error("Unauthorized");
 
-  const { data: sub } = await supabase
-    .from("submissions")
-    .select("votes")
-    .eq("id", submissionId)
-    .single();
+  const { error } = await supabase.rpc("toggle_vote", {
+    p_submission_id: submissionId,
+  });
 
-  if (!sub) throw new Error("Submission not found");
-
-  const votes = sub.votes || [];
-  if (votes.includes(user.id)) return; // Already voted
-
-  await supabase
-    .from("submissions")
-    .update({ votes: [...votes, user.id] })
-    .eq("id", submissionId);
+  if (error) throw error;
 }
 
 export async function finalizeValidation(roundId: string) {
@@ -415,20 +466,27 @@ export async function finalizeValidation(roundId: string) {
     throw new Error("Only host can finalize validation");
   }
 
-  // Calculate threshold
-  const { count } = await supabase
-    .from("game_players")
-    .select("*", { count: "exact", head: true })
-    .eq("game_id", round.game_id);
-
-  const playerCount = count || 1;
-  const threshold = Math.ceil(playerCount / 2);
-
-  // Fetch submissions
+  // Fetch submissions first to determine active players
   const { data: submissions } = await supabase
     .from("submissions")
     .select("*")
     .eq("round_id", roundId);
+
+  // Calculate threshold based on ACTIVE players (submitters + voters)
+  // This avoids "ghost" players inflating the count
+  const activePlayers = new Set<string>();
+
+  submissions?.forEach((sub) => {
+    // Add submitter
+    activePlayers.add(sub.player_id);
+    // Add voters
+    if (sub.votes && Array.isArray(sub.votes)) {
+      sub.votes.forEach((voterId: string) => activePlayers.add(voterId));
+    }
+  });
+
+  const activeCount = Math.max(activePlayers.size, 1);
+  const threshold = Math.ceil(activeCount / 2);
 
   if (submissions) {
     for (const sub of submissions) {
@@ -444,6 +502,56 @@ export async function finalizeValidation(roundId: string) {
       }
     }
   }
+
+  // --- RECALCUL DES BONUS DE VITESSE ---
+  // On récupère toutes les soumissions valides triées par ordre de soumission (created_at)
+  const { data: validSubmissions } = await supabase
+    .from("submissions")
+    .select("*")
+    .eq("round_id", roundId)
+    .eq("is_valid", true)
+    .order("created_at", { ascending: true });
+
+  if (validSubmissions && validSubmissions.length > 0) {
+    for (let i = 0; i < validSubmissions.length; i++) {
+      const sub = validSubmissions[i];
+      const newRank = i + 1;
+
+      // Calcul du nouveau bonus de vitesse
+      let newSpeedBonus = 0;
+      if (newRank === 1) newSpeedBonus = 10;
+      else if (newRank === 2) newSpeedBonus = 8;
+      else if (newRank === 3) newSpeedBonus = 5;
+      else if (newRank === 4) newSpeedBonus = 3;
+      else if (newRank === 5) newSpeedBonus = 1;
+
+      // Récupération du score de base (mot) depuis points_details ou recalcul si nécessaire
+      // On suppose que points_details.word_score est correct.
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const details = sub.points_details as any;
+      const wordScore = details?.word_score || 0;
+
+      const newTotalScore = wordScore + newSpeedBonus;
+
+      // Mise à jour des points_details avec le nouveau rang et bonus
+      const newDetails = {
+        ...details,
+        rank: newRank,
+        speed_bonus: newSpeedBonus,
+        total_score: newTotalScore,
+      };
+
+      // Update DB
+      await supabase
+        .from("submissions")
+        .update({
+          score: newTotalScore,
+          points_details: newDetails,
+        })
+        .eq("id", sub.id);
+    }
+  }
+  // -------------------------------------
 
   // Check if we need fallback solutions (if all submissions are invalid)
   // We need to re-fetch or check logic.

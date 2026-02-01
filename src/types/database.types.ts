@@ -250,6 +250,12 @@ export type Database = {
         };
         Returns: Json;
       };
+      toggle_vote: {
+        Args: {
+          p_submission_id: string;
+        };
+        Returns: void;
+      };
     };
     Enums: {
       game_status: "LOBBY" | "PLAYING" | "FINISHED";

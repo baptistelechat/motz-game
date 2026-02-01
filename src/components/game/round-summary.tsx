@@ -1,6 +1,10 @@
 "use client";
 
-import { startNextRound } from "@/app/actions/game-actions";
+import {
+  finalizeValidation,
+  startNextRound,
+  toggleVote,
+} from "@/app/actions/game-actions";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -8,8 +12,14 @@ import { PixelIcon } from "@/components/ui/pixel-icon";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { calculatePlayerRankings } from "@/lib/game/ranking";
 import { cn } from "@/lib/utils";
-import { GamePlayer, GameRound, RoundSubmission } from "@/store/use-game-store";
-import { useMemo, useState } from "react";
+import { generateRandomAvatar } from "@/lib/utils/generate-player";
+import {
+  GamePlayer,
+  GameRound,
+  RoundSubmission,
+  useGameStore,
+} from "@/store/use-game-store";
+import { useEffect, useMemo, useState } from "react";
 import { toast } from "sonner";
 import { AvatarDisplay } from "../profile/avatar-display";
 import { GameTitle } from "./game-title";
@@ -20,6 +30,7 @@ interface RoundSummaryProps {
   submissions: RoundSubmission[];
   currentUserId: string;
   hostId: string | null;
+  isValidationMode?: boolean;
 }
 
 export function RoundSummary({
@@ -28,9 +39,19 @@ export function RoundSummary({
   submissions,
   currentUserId,
   hostId,
+  isValidationMode = false,
 }: RoundSummaryProps) {
-  const [isStartingNext, setIsStartingNext] = useState(false);
+  const {
+    updateRoundSubmission,
+    // setCurrentRound, // Removed as we don't use it anymore for optimistic updates here
+  } = useGameStore();
+  const [isLoading, setIsLoading] = useState(false);
   const isHost = currentUserId === hostId;
+
+  // Reset loading state when round status changes (e.g. switching from validation to summary)
+  useEffect(() => {
+    setIsLoading(false);
+  }, [round.status, isValidationMode]);
 
   const results = useMemo(() => {
     return calculatePlayerRankings(players, submissions, round.created_at);
@@ -44,23 +65,81 @@ export function RoundSummary({
     return (constraints?.solutions as string[]) || [];
   }, [round.constraints]);
 
+  // Generate stable random avatars for validation mode to maintain anonymity
+  const anonymousAvatars = useMemo(() => {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const map: Record<string, any> = {};
+    players.forEach((p) => {
+      map[p.id] = generateRandomAvatar();
+    });
+    return map;
+  }, [players]);
+
   const handleNextRound = async () => {
     if (!isHost) return;
-    setIsStartingNext(true);
+    setIsLoading(true);
     try {
       await startNextRound(round.id);
     } catch (error) {
       console.error("Error starting next round:", error);
       toast.error("Erreur lors du lancement de la manche suivante");
-      setIsStartingNext(false);
+      setIsLoading(false);
+    }
+  };
+
+  const handleVote = async (submissionId: string) => {
+    // Optimistic update
+    const submission = submissions.find((s) => s.id === submissionId);
+    if (submission) {
+      const votes = submission.votes || [];
+      const hasVoted = votes.includes(currentUserId);
+      const newVotes = hasVoted
+        ? votes.filter((id) => id !== currentUserId)
+        : [...votes, currentUserId];
+
+      updateRoundSubmission({
+        id: submissionId,
+        votes: newVotes,
+      });
+    }
+
+    try {
+      await toggleVote(submissionId);
+    } catch (error) {
+      console.error("Error voting:", error);
+      toast.error("Erreur lors du vote");
+      // Revert optimistic update (could be complex, fetching latest state is easier)
+    }
+  };
+
+  const handleFinalizeValidation = async () => {
+    if (!isHost) return;
+    setIsLoading(true);
+
+    // Removed optimistic update to prevent fetching stale submissions via useRealtimeGame effect
+    // We wait for the server to update the round status and submissions,
+    // which will trigger Realtime updates to switch the UI and fetch correct data.
+
+    try {
+      await finalizeValidation(round.id);
+    } catch (error) {
+      console.error("Error finalizing:", error);
+      toast.error("Erreur lors de la validation");
+      setIsLoading(false);
     }
   };
 
   return (
     <div className="flex flex-col items-center h-full w-full max-w-2xl mx-auto p-4 gap-6 animate-in fade-in duration-500">
-      <GameTitle game />
+      <GameTitle game={!isValidationMode} validation={isValidationMode} />
+      {isValidationMode && (
+        <p className="text-muted-foreground font-display text-center text-xl">
+          Signalez les mots qui ne respectent pas le thème !
+        </p>
+      )}
 
-      {solutions.length > 0 ? (
+      {/*  No solutions found */}
+      {!isValidationMode && solutions.length > 0 ? (
         <Card className="w-full border-4 border-black bg-destructive/10 shadow-hard rounded-none">
           <CardHeader className="text-center pb-2">
             <CardTitle className="flex items-center justify-center gap-2 text-destructive font-display text-xl">
@@ -92,87 +171,159 @@ export function RoundSummary({
       <Card className="w-full flex-1 overflow-hidden flex flex-col border-4 border-black rounded-none shadow-hard">
         <CardHeader className="pb-2 border-b-4 border-black">
           <CardTitle className="font-display text-lg">
-            CLASSEMENT DE LA MANCHE
+            {isValidationMode ? "VOTEZ" : "CLASSEMENT"}
           </CardTitle>
         </CardHeader>
         <CardContent className="p-0 flex-1 min-h-0 bg-background">
           <ScrollArea className="h-full">
             <div className="divide-y-4 divide-black">
-              {results.map((result) => (
-                <div
-                  key={result.player.id}
-                  className={cn(
-                    "grid grid-cols-[auto_minmax(0,1fr)_auto] items-center gap-3 p-4",
-                    result.player.id === currentUserId && "bg-theme/5",
-                    !result.isValid && "bg-destructive/5 opacity-75",
-                  )}
-                >
-                  {/* Avatar avec Badge de rang inclus */}
-                  <div className="relative">
-                    <AvatarDisplay
-                      player={result.player}
-                      isHost={result.player.id === hostId}
-                      rank={result.rank}
-                      size="md"
-                    />
-                  </div>
+              {results.map((result) => {
+                const votes = result.submission?.votes || [];
+                const hasVoted = votes.includes(currentUserId);
+                const isMySubmission = result.player.id === currentUserId;
 
-                  {/* Info Joueur & Mot */}
-                  <div className="flex flex-col min-w-0 overflow-hidden">
-                    <div
-                      className={cn(
-                        "font-display truncate text-lg leading-tight w-full",
-                        result.player.id === currentUserId && "text-theme",
-                      )}
-                      title={result.player.pseudo}
-                    >
-                      {result.player.pseudo}
-                    </div>
-                    <p
-                      className={cn(
-                        "text-sm truncate w-full flex gap-1",
-                        result.isValid
-                          ? "text-muted-foreground"
-                          : "text-destructive line-through decoration-2",
-                      )}
-                    >
-                      {result.word}
-                      {result.duration !== undefined && (
-                        <span>({result.duration.toFixed(3)}s)</span>
-                      )}
-                    </p>
-                    {!result.isValid && (
-                      <span className="text-[10px] text-destructive font-bold uppercase block truncate">
-                        REJETE
-                      </span>
+                // In validation mode, only show entries with words
+                if (isValidationMode && !result.word) return null;
+
+                return (
+                  <div
+                    key={result.player.id}
+                    className={cn(
+                      "grid items-center gap-3 p-4",
+                      isValidationMode
+                        ? "grid-cols-[auto_minmax(0,1fr)_auto]"
+                        : "grid-cols-[3rem_auto_minmax(0,1fr)_auto]",
+                      result.player.id === currentUserId && "bg-theme/5",
+                      !isValidationMode &&
+                        !result.isValid &&
+                        "bg-destructive/5 opacity-75",
                     )}
-                  </div>
-
-                  {/* Score */}
-                  <div className="text-right flex flex-col items-end shrink-0 gap-0.5">
-                    <span className="font-display text-lg whitespace-nowrap">
-                      +{result.score}
-                    </span>
-                    {result.isValid && result.submission && (
-                      <div className="flex flex-col items-end leading-none gap-0.5 text-sm">
-                        <span className="text-muted-foreground whitespace-nowrap">
-                          Mot +
-                          {result.score -
-                            (result.submission.points_details?.speed_bonus ||
-                              0)}
-                        </span>
-                        {(result.submission.points_details?.speed_bonus || 0) >
-                          0 && (
-                          <span className="text-primary whitespace-nowrap">
-                            Vit. +
-                            {result.submission.points_details?.speed_bonus}
+                  >
+                    {/* Rank (Left side) - Only in Score Mode */}
+                    {!isValidationMode && (
+                      <div className="flex justify-center items-center">
+                        {result.isValid ? (
+                          <span
+                            className={cn(
+                              "font-display text-lg w-8 text-center",
+                              result.rank === 1 && "text-yellow-500",
+                              result.rank === 2 && "text-slate-400",
+                              result.rank === 3 && "text-amber-700",
+                              result.rank > 3 && "text-muted-foreground",
+                            )}
+                          >
+                            #{result.rank}
                           </span>
+                        ) : (
+                          <PixelIcon name="alert-circle" className="size-8" />
                         )}
                       </div>
                     )}
+
+                    {/* Avatar */}
+                    <div className="relative">
+                      {!isValidationMode ? (
+                        <AvatarDisplay
+                          player={result.player}
+                          isHost={result.player.id === hostId}
+                          // rank={result.rank}
+                          size="md"
+                          className="overflow-visible"
+                        />
+                      ) : (
+                        <AvatarDisplay
+                          player={{
+                            ...result.player,
+                            avatar_config: anonymousAvatars[result.player.id],
+                          }}
+                          // Masquer les status en mode anonyme
+                          isHost={false}
+                          rank={undefined}
+                          size="md"
+                          className="overflow-visible"
+                        />
+                      )}
+                    </div>
+
+                    {/* Info Joueur & Mot */}
+                    <div className="flex flex-col min-w-0 overflow-hidden">
+                      <div
+                        className={cn(
+                          "font-display truncate text-lg leading-tight w-full",
+                          result.player.id === currentUserId && "text-theme",
+                        )}
+                        title={
+                          !isValidationMode ? result.player.pseudo : undefined
+                        }
+                      >
+                        {!isValidationMode
+                          ? result.player.pseudo
+                          : `Joueur ${result.rank}`}
+                      </div>
+                      <p
+                        className={cn(
+                          "text-sm truncate w-full flex gap-1 text-muted-foreground",
+                          !isValidationMode &&
+                            !result.isValid &&
+                            "text-destructive line-through decoration-2",
+                          isValidationMode && "text-xl",
+                        )}
+                      >
+                        {result.word}
+                        {result.duration !== undefined && (
+                          <span>({result.duration.toFixed(3)}s)</span>
+                        )}
+                      </p>
+                    </div>
+
+                    {/* Action / Score */}
+                    <div className="text-right flex flex-col items-end shrink-0 gap-0.5">
+                      {isValidationMode ? (
+                        <>
+                          {!isMySubmission && result.submission && (
+                            <Button
+                              variant={hasVoted ? "destructive" : "outline"}
+                              size="sm"
+                              onClick={() =>
+                                result.submission &&
+                                handleVote(result.submission.id)
+                              }
+                            >
+                              <PixelIcon name="thumb-down" className="size-6" />
+                            </Button>
+                          )}
+                        </>
+                      ) : (
+                        <>
+                          <span className="font-display text-lg whitespace-nowrap">
+                            +{result.score}
+                          </span>
+                          {result.isValid && result.submission && (
+                            <div className="flex flex-col items-end leading-none gap-0.5 text-sm">
+                              <span className="text-muted-foreground whitespace-nowrap">
+                                Mot +
+                                {result.score -
+                                  (result.submission.points_details
+                                    ?.speed_bonus || 0)}
+                              </span>
+                              {(result.submission.points_details?.speed_bonus ||
+                                0) > 0 && (
+                                <span className="text-primary whitespace-nowrap">
+                                  Vitesse +
+                                  {
+                                    result.submission.points_details
+                                      ?.speed_bonus
+                                  }
+                                </span>
+                              )}
+                            </div>
+                          )}
+                        </>
+                      )}
+                    </div>
                   </div>
-                </div>
-              ))}
+                );
+              })}
             </div>
           </ScrollArea>
         </CardContent>
@@ -181,22 +332,25 @@ export function RoundSummary({
       {/* Host Controls */}
       {isHost ? (
         <Button
-          onClick={handleNextRound}
-          disabled={isStartingNext}
-          className="w-full h-14 text-xl font-display"
+          onClick={
+            isValidationMode ? handleFinalizeValidation : handleNextRound
+          }
+          disabled={isLoading}
+          className={cn("w-full h-14 text-xl font-display")}
         >
-          {isStartingNext ? (
-            <>
-              <PixelIcon name="clock" className="w-6 h-6 animate-spin" />
-              LANCEMENT...
-            </>
+          {isLoading ? (
+            <>{isValidationMode ? "VALIDATION..." : "LANCEMENT..."}</>
           ) : (
-            <>MANCHE SUIVANTE</>
+            <>
+              {isValidationMode ? "TERMINER LA VALIDATION" : "MANCHE SUIVANTE"}
+            </>
           )}
         </Button>
       ) : (
         <div className="text-center text-muted-foreground font-display animate-pulse text-xs">
-          En attente de l&apos;hôte...
+          {isValidationMode
+            ? "En attente de la fin du vote..."
+            : "En attente de l'hôte..."}
         </div>
       )}
     </div>

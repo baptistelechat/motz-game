@@ -26,7 +26,10 @@ export function validateWord(
   // 1. Dictionary Check
   // Note: We strip accents for dictionary check usually, but let's assume dictionaryCheck handles normalization or expects normalized input.
   // The hook we wrote normalizes.
-  if (!dictionaryCheck(normalizedWord)) {
+  if (
+    constraints.constraint_card.type !== "theme" &&
+    !dictionaryCheck(normalizedWord)
+  ) {
     return { isValid: false, error: "Mot inconnu" };
   }
 
