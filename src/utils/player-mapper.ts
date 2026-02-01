@@ -8,7 +8,7 @@ export function mapGamePlayerToDisplayPlayer(
   return {
     id: player.id,
     pseudo: player.pseudo,
-    avatarConfig: player.avatar_config,
+    avatar_config: player.avatar_config,
     isReady: player.is_ready,
     isHost: hostId === player.id,
     isBot: player.pseudo.startsWith("Bot-"),

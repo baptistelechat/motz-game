@@ -85,9 +85,11 @@ export function SocialValidationView({
                 return (
                   <div key={sub.id} className="flex items-center p-4 gap-4">
                     <AvatarDisplay
-                      animal={player?.avatar_config.animal || "CAT"}
-                      color={player?.avatar_config.color || "#000000"}
-                      className="w-10 h-10 border-2 border-black"
+                      player={
+                        player || {
+                          avatar_config: { animal: "Chat", color: "#FFFF00" },
+                        }
+                      }
                     />
                     <div className="flex-1 min-w-0">
                       <div className="flex items-center gap-2">

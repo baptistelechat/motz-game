@@ -8,7 +8,7 @@ import { AvatarDisplay } from "../profile/avatar-display";
 export interface DisplayPlayer {
   id: string;
   pseudo: string;
-  avatarConfig: AvatarConfig;
+  avatar_config: AvatarConfig;
   isReady?: boolean;
   isHost?: boolean;
   isBot?: boolean;
@@ -55,13 +55,11 @@ export function PlayerListDisplay({
           >
             <div className="relative">
               <AvatarDisplay
-                animal={p.avatarConfig.animal}
-                color={p.avatarConfig.color}
+                player={p}
                 size="md"
-                isHost={p.isHost}
-                isPlayer={!p.isHost && !p.isBot}
-                isBot={p.isBot}
                 isReady={hideReadyStatus ? undefined : p.isReady}
+                isHost={p.isHost}
+                isBot={p.isBot}
                 rank={p.rank}
               />
             </div>

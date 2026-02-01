@@ -129,10 +129,8 @@ export function RoundSummary({
                     #{index + 1}
                   </div>
                   <AvatarDisplay
-                    animal={result.player.avatar_config.animal}
-                    color={result.player.avatar_config.color}
+                    player={result.player}
                     isHost={result.player.id === hostId}
-                    isPlayer={result.player.id !== hostId}
                     size="md"
                   />
                   <div className="flex-1 min-w-0">

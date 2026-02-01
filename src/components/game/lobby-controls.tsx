@@ -95,13 +95,11 @@ export function LobbyControls({
         )}
       </div>
 
-      {isHost && (
-        <p className="text-lg text-muted-foreground text-center animate-in fade-in">
-          {allPlayersReady
-            ? "Tous les joueurs sont prêts"
-            : "Tous les joueurs doivent être prêts"}
-        </p>
-      )}
+      <p className="text-lg text-muted-foreground text-center animate-in fade-in">
+        {allPlayersReady
+          ? "Tous les joueurs sont prêts"
+          : "Tous les joueurs doivent être prêts"}
+      </p>
     </div>
   );
 }

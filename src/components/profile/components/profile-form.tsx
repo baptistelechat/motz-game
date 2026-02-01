@@ -28,7 +28,6 @@ export function ProfileForm({ onSaved }: ProfileFormProps) {
     animal: ANIMALS[0],
     color: AVATAR_COLORS[0],
   });
-  const [error, setError] = useState<string | null>(null);
   const [isSaving, setIsSaving] = useState(false);
   const hasInitialized = useRef(false);
 
@@ -59,7 +58,6 @@ export function ProfileForm({ onSaved }: ProfileFormProps) {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    setError(null);
     setIsSaving(true);
 
     try {
@@ -89,7 +87,6 @@ export function ProfileForm({ onSaved }: ProfileFormProps) {
       } else if (error.message) {
         errorMessage = error.message;
       }
-      setError(errorMessage);
       toast.error(errorMessage);
     } finally {
       setIsSaving(false);
@@ -120,31 +117,28 @@ export function ProfileForm({ onSaved }: ProfileFormProps) {
       <div className="flex-1 overflow-y-auto p-6 space-y-6">
         <div className="space-y-3">
           <Label htmlFor="motz_profile_pseudo">Pseudo</Label>
-          <div className="space-y-2">
-            <div className="flex gap-2">
-              <Input
-                id="motz_profile_pseudo"
-                type="search"
-                inputMode="text"
-                name="motz_profile_pseudo"
-                autoCapitalize="characters"
-                value={pseudo}
-                onChange={(e) => setPseudo(e.target.value)}
-                placeholder="Ton pseudo"
-                disabled={isSaving}
-                className="flex-1"
-              />
-              <Button
-                type="button"
-                onClick={handleRandomize}
-                variant="outline"
-                disabled={isSaving}
-                className="aspect-square p-0 size-12"
-              >
-                <Dice className="size-7" />
-              </Button>
-            </div>
-            {error && <p className="text-destructive font-bold">{error}</p>}
+          <div className="flex gap-2">
+            <Input
+              id="motz_profile_pseudo"
+              type="search"
+              inputMode="text"
+              name="motz_profile_pseudo"
+              autoCapitalize="characters"
+              value={pseudo}
+              onChange={(e) => setPseudo(e.target.value)}
+              placeholder="Ton pseudo"
+              disabled={isSaving}
+              className="flex-1"
+            />
+            <Button
+              type="button"
+              onClick={handleRandomize}
+              variant="outline"
+              disabled={isSaving}
+              className="aspect-square p-0 size-12"
+            >
+              <Dice className="size-7" />
+            </Button>
           </div>
         </div>
 

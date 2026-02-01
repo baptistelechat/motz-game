@@ -1,4 +1,5 @@
 import { PlayerStatusBadge } from "@/components/game/player-status-badge";
+import { AvatarConfig } from "@/interface/AvatarConfig";
 import { cn } from "@/lib/utils";
 import { cva, type VariantProps } from "class-variance-authority";
 import Image from "next/image";
@@ -32,43 +33,48 @@ const iconSizeVariants = cva("relative", {
   },
 });
 
+export interface AvatarEntity {
+  avatar_config: AvatarConfig;
+}
+
 interface AvatarDisplayProps
   extends
     React.HTMLAttributes<HTMLDivElement>,
     VariantProps<typeof avatarDisplayVariants> {
-  animal: string;
-  color: string;
+  player: AvatarEntity;
   isHost?: boolean;
-  isPlayer?: boolean;
   isBot?: boolean;
   isReady?: boolean;
   rank?: number;
 }
 
 export function AvatarDisplay({
-  animal,
-  color,
   className,
   size = "md",
+  player,
   isHost,
-  isPlayer,
   isBot,
   isReady,
   rank,
   ...props
 }: AvatarDisplayProps) {
+  // Extraction des données de l'objet player
+  const config = player.avatar_config;
+  const effectiveAnimal = config?.animal || "CAT"; // Fallback safe
+  const effectiveColor = config?.color || "#000000";
+
   return (
     <div className="relative inline-block">
       <div
         className={cn(avatarDisplayVariants({ size }), className)}
-        style={{ borderColor: color }}
-        title={animal}
+        style={{ borderColor: effectiveColor }}
+        title={effectiveAnimal}
         {...props}
       >
         <div className={iconSizeVariants({ size })}>
           <Image
-            src={`/assets/avatar/${animal.toLowerCase()}.png`}
-            alt={animal}
+            src={`/assets/avatar/${effectiveAnimal.toLowerCase()}.png`}
+            alt={effectiveAnimal}
             fill
             className="object-contain"
             style={{ imageRendering: "pixelated" }}
@@ -77,7 +83,6 @@ export function AvatarDisplay({
         </div>
       </div>
       {isHost && <PlayerStatusBadge role="HOST" />}
-      {isPlayer && <PlayerStatusBadge role="PLAYER" />}
       {isBot && <PlayerStatusBadge role="BOT" />}
       {isReady && <PlayerStatusBadge role="READY" />}
       {isReady !== undefined && !isReady && (

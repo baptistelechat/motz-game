@@ -16,12 +16,22 @@ import { Check } from "@nsmr/pixelart-react";
 import { AvatarDisplay } from "../avatar-display";
 import { AvatarConfig } from "@/interface/AvatarConfig";
 
+import { memo, useMemo } from "react";
+
 interface AvatarSelectorProps {
   value: AvatarConfig;
   onChange: (value: AvatarConfig) => void;
 }
 
-export function AvatarSelector({ value, onChange }: AvatarSelectorProps) {
+export const AvatarSelector = memo(function AvatarSelector({
+  value,
+  onChange,
+}: AvatarSelectorProps) {
+  const sortedAnimals = useMemo(
+    () => [...ANIMALS].sort((a, b) => a.localeCompare(b)),
+    [],
+  );
+
   return (
     <div className="space-y-6">
       <div className="space-y-3">
@@ -58,8 +68,7 @@ export function AvatarSelector({ value, onChange }: AvatarSelectorProps) {
           <SelectTrigger>
             <div className="flex items-center gap-4">
               <AvatarDisplay
-                animal={value.animal}
-                color={value.color}
+                player={{ avatar_config: value }}
                 size="sm"
                 className="border-2 border-white"
               />
@@ -67,12 +76,11 @@ export function AvatarSelector({ value, onChange }: AvatarSelectorProps) {
             </div>
           </SelectTrigger>
           <SelectContent>
-            {ANIMALS.sort((a, b) => a.localeCompare(b)).map((animal) => (
+            {sortedAnimals.map((animal) => (
               <SelectItem key={animal} value={animal}>
                 <div className="flex items-center gap-4 w-full">
                   <AvatarDisplay
-                    animal={animal}
-                    color={value.color}
+                    player={{ avatar_config: { ...value, animal } }}
                     size="sm"
                     className="border-2 border-white"
                   />
@@ -85,4 +93,4 @@ export function AvatarSelector({ value, onChange }: AvatarSelectorProps) {
       </div>
     </div>
   );
-}
+});

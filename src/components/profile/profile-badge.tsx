@@ -50,8 +50,7 @@ export function ProfileBadge({ className }: ProfileBadgeProps) {
           {profile.pseudo}
         </span>
         <AvatarDisplay
-          animal={profile.avatar_config.animal}
-          color={profile.avatar_config.color}
+          player={profile}
           size="sm"
         />
         {showCustomizeHint && (
