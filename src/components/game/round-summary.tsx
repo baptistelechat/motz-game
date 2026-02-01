@@ -98,7 +98,7 @@ export function RoundSummary({
                 <Badge
                   key={i}
                   variant="outline"
-                  className="bg-background text-primary border-2 border-black font-mono text-lg px-4 py-2 rounded-none"
+                  className="bg-background text-primary border-2 border-black text-lg px-4 py-2 rounded-none"
                 >
                   {sol}
                 </Badge>
@@ -116,37 +116,39 @@ export function RoundSummary({
         <CardContent className="p-0 flex-1 min-h-0 bg-background">
           <ScrollArea className="h-full">
             <div className="divide-y-4 divide-black">
-              {results.map((result, index) => (
+              {results.map((result) => (
                 <div
                   key={result.player.id}
                   className={cn(
-                    "flex items-center p-4 gap-4",
+                    "grid grid-cols-[auto_minmax(0,1fr)_auto] items-center gap-3 p-4",
                     result.player.id === currentUserId && "bg-theme/5",
                     !result.isValid && "bg-destructive/5 opacity-75",
                   )}
                 >
-                  <div className="font-display text-xl w-8 text-muted-foreground">
-                    #{index + 1}
+                  {/* Avatar avec Badge de rang inclus */}
+                  <div className="relative">
+                    <AvatarDisplay
+                      player={result.player}
+                      isHost={result.player.id === hostId}
+                      rank={result.rank}
+                      size="md"
+                    />
                   </div>
-                  <AvatarDisplay
-                    player={result.player}
-                    isHost={result.player.id === hostId}
-                    size="md"
-                  />
-                  <div className="flex-1 min-w-0">
-                    <div className="flex items-center gap-2">
-                      <span
-                        className={cn(
-                          "font-display truncate",
-                          result.player.id === currentUserId && "text-theme",
-                        )}
-                      >
-                        {result.player.pseudo}
-                      </span>
+
+                  {/* Info Joueur & Mot */}
+                  <div className="flex flex-col min-w-0 overflow-hidden">
+                    <div
+                      className={cn(
+                        "font-display truncate text-lg leading-tight w-full",
+                        result.player.id === currentUserId && "text-theme",
+                      )}
+                      title={result.player.pseudo}
+                    >
+                      {result.player.pseudo}
                     </div>
                     <p
                       className={cn(
-                        "text-sm truncate font-mono",
+                        "text-sm truncate w-full",
                         result.isValid
                           ? "text-muted-foreground"
                           : "text-destructive line-through decoration-2",
@@ -155,22 +157,34 @@ export function RoundSummary({
                       {result.word}
                     </p>
                     {!result.isValid && (
-                      <span className="text-[10px] text-destructive font-bold uppercase block">
-                        REJETÉ PAR LE GROUPE
+                      <span className="text-[10px] text-destructive font-bold uppercase block truncate">
+                        REJETE
                       </span>
                     )}
                   </div>
-                  <div className="text-right">
-                    <span className="font-display text-lg block">
+
+                  {/* Score */}
+                  <div className="text-right flex flex-col items-end shrink-0 gap-0.5">
+                    <span className="font-display text-lg whitespace-nowrap">
                       +{result.score}
                     </span>
-                    {result.submission?.points_details?.speed_bonus > 0 &&
-                      result.isValid && (
-                        <span className="text-xs text-green-500 font-mono">
-                          Speed: +
-                          {result.submission?.points_details?.speed_bonus}
+                    {result.isValid && result.submission && (
+                      <div className="flex flex-col items-end leading-none gap-0.5 text-sm">
+                        <span className="text-muted-foreground whitespace-nowrap">
+                          Mot +
+                          {result.score -
+                            (result.submission.points_details?.speed_bonus ||
+                              0)}
                         </span>
-                      )}
+                        {(result.submission.points_details?.speed_bonus || 0) >
+                          0 && (
+                          <span className="text-primary whitespace-nowrap">
+                            Vit. +
+                            {result.submission.points_details?.speed_bonus}
+                          </span>
+                        )}
+                      </div>
+                    )}
                   </div>
                 </div>
               ))}
@@ -181,7 +195,6 @@ export function RoundSummary({
 
       {/* Host Controls */}
       {isHost ? (
-        <Card className="w-full border-4 border-black rounded-none shadow-hard p-4 bg-muted">
           <Button
             onClick={handleNextRound}
             disabled={isStartingNext}
@@ -199,9 +212,8 @@ export function RoundSummary({
               </>
             )}
           </Button>
-        </Card>
       ) : (
-        <div className="text-center text-muted-foreground font-display animate-pulse">
+        <div className="text-center text-muted-foreground font-display animate-pulse text-xs">
           En attente de l&apos;hôte...
         </div>
       )}
