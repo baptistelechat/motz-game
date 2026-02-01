@@ -59,9 +59,17 @@ export function GameClient({ gameId, currentUserId }: GameClientProps) {
     if (!isHost || !currentRound || currentRound.status !== "PLAYING") return;
 
     // Check if all players have a valid submission
-    const allSubmitted = players.length > 0 && players.every((p) =>
-      roundSubmissions.some((s) => s.player_id === p.id && s.is_valid)
-    );
+    const allSubmitted =
+      players.length > 0 &&
+      players.every((p) =>
+        roundSubmissions.some(
+          (s) =>
+            s.player_id === p.id &&
+            s.is_valid &&
+            // Ensure submission belongs to CURRENT round to avoid stale data race conditions
+            s.round_id === currentRound.id,
+        ),
+      );
 
     if (allSubmitted) {
       finishRound(currentRound.id).catch(console.error);

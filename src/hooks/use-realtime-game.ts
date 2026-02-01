@@ -90,8 +90,11 @@ export function useRealtimeGame(gameId: string) {
   ]);
 
   useEffect(() => {
+    // Clear submissions immediately when round changes to prevent stale data
+    // causing premature round completion in game-client logic
+    setRoundSubmissions([]);
+
     if (!currentRound?.id) {
-      setRoundSubmissions([]);
       return;
     }
 
