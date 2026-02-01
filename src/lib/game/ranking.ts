@@ -7,6 +7,7 @@ export interface RankedPlayer {
   word: string;
   rank: number;
   isValid: boolean;
+  duration?: number; // Duration in seconds
 }
 
 /**
@@ -21,18 +22,26 @@ export interface RankedPlayer {
 export function calculatePlayerRankings(
   players: GamePlayer[],
   submissions: RoundSubmission[],
+  roundStartTime?: string,
 ): RankedPlayer[] {
   // 1. Map players to their submissions and basic stats
   const mapped = players.map((player) => {
     const submission = submissions.find((s) => s.player_id === player.id);
+
+    let duration: number | undefined;
+    if (submission && roundStartTime && submission.created_at) {
+      const start = new Date(roundStartTime).getTime();
+      const end = new Date(submission.created_at).getTime();
+      duration = Math.max(0, (end - start) / 1000);
+    }
+
     return {
       player,
       submission,
       score: submission?.score || 0,
       word: submission?.word || "-",
-      // Default validity is true unless explicitly false (to handle pending validation states if needed)
-      // But usually, if submission exists, is_valid is boolean. If no submission, effectively invalid for ranking.
       isValid: submission ? submission.is_valid !== false : false,
+      duration,
     };
   });
 
@@ -42,10 +51,6 @@ export function calculatePlayerRankings(
     // If a has no submission, a.isValid is false.
     if (a.isValid && !b.isValid) return -1;
     if (!a.isValid && b.isValid) return 1;
-
-    // If both are valid (or both invalid/no-submission)
-    // Note: If both are invalid, we might want to keep original order or just sort by name?
-    // But assuming we are ranking valid players mostly.
 
     // Higher score first
     if (b.score !== a.score) return b.score - a.score;

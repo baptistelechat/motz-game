@@ -33,8 +33,8 @@ export function RoundSummary({
   const isHost = currentUserId === hostId;
 
   const results = useMemo(() => {
-    return calculatePlayerRankings(players, submissions);
-  }, [players, submissions]);
+    return calculatePlayerRankings(players, submissions, round.created_at);
+  }, [players, submissions, round.created_at]);
 
   // Extract solutions from constraints metadata
   const solutions = useMemo(() => {
@@ -90,8 +90,10 @@ export function RoundSummary({
 
       {/* Results Table */}
       <Card className="w-full flex-1 overflow-hidden flex flex-col border-4 border-black rounded-none shadow-hard">
-        <CardHeader className="pb-2 bg-muted/50 border-b-4 border-black">
-          <CardTitle className="font-display text-lg">CLASSEMENT</CardTitle>
+        <CardHeader className="pb-2 border-b-4 border-black">
+          <CardTitle className="font-display text-lg">
+            CLASSEMENT DE LA MANCHE
+          </CardTitle>
         </CardHeader>
         <CardContent className="p-0 flex-1 min-h-0 bg-background">
           <ScrollArea className="h-full">
@@ -128,13 +130,16 @@ export function RoundSummary({
                     </div>
                     <p
                       className={cn(
-                        "text-sm truncate w-full",
+                        "text-sm truncate w-full flex gap-1",
                         result.isValid
                           ? "text-muted-foreground"
                           : "text-destructive line-through decoration-2",
                       )}
                     >
                       {result.word}
+                      {result.duration !== undefined && (
+                        <span>({result.duration.toFixed(3)}s)</span>
+                      )}
                     </p>
                     {!result.isValid && (
                       <span className="text-[10px] text-destructive font-bold uppercase block truncate">
@@ -178,7 +183,7 @@ export function RoundSummary({
         <Button
           onClick={handleNextRound}
           disabled={isStartingNext}
-          className="w-full h-14 text-xl font-display border-4 border-black rounded-none shadow-hard hover:translate-y-1 hover:shadow-none transition-all flex items-center justify-center gap-2"
+          className="w-full h-14 text-xl font-display"
         >
           {isStartingNext ? (
             <>
@@ -186,9 +191,7 @@ export function RoundSummary({
               LANCEMENT...
             </>
           ) : (
-            <>
-              MANCHE SUIVANTE
-            </>
+            <>MANCHE SUIVANTE</>
           )}
         </Button>
       ) : (

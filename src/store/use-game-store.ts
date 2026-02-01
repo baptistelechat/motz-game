@@ -22,6 +22,7 @@ export interface GameRound {
   constraints: RoundConstraints;
   theme?: string;
   status: RoundStatus;
+  created_at: string;
 }
 
 export interface RoundSubmission {

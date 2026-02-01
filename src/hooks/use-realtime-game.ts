@@ -72,6 +72,7 @@ export function useRealtimeGame(gameId: string) {
           // eslint-disable-next-line @typescript-eslint/no-explicit-any
           constraints: round.constraints as any,
           status: round.status,
+          created_at: round.created_at,
         });
       }
     } catch (error) {
@@ -199,6 +200,7 @@ export function useRealtimeGame(gameId: string) {
               // eslint-disable-next-line @typescript-eslint/no-explicit-any
               constraints: round.constraints as any,
               status: round.status,
+              created_at: round.created_at,
             });
           }
         },
