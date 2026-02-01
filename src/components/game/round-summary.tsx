@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { PixelIcon } from "@/components/ui/pixel-icon";
 import { ScrollArea } from "@/components/ui/scroll-area";
+import { calculatePlayerRankings } from "@/lib/game/ranking";
 import { cn } from "@/lib/utils";
 import { GamePlayer, GameRound, RoundSubmission } from "@/store/use-game-store";
 import { useMemo, useState } from "react";
@@ -32,28 +33,7 @@ export function RoundSummary({
   const isHost = currentUserId === hostId;
 
   const results = useMemo(() => {
-    // 1. Map players to their submissions
-    const mapped = players.map((player) => {
-      const submission = submissions.find((s) => s.player_id === player.id);
-      return {
-        player,
-        submission,
-        score: submission?.score || 0,
-        word: submission?.word || "-",
-        rank: submission?.points_details?.rank || 999,
-        isValid: submission?.is_valid !== false, // Treat undefined as true? Or check strict false
-      };
-    });
-
-    // 2. Sort by Validity then Rank (or Score if Rank is missing)
-    return mapped.sort((a, b) => {
-      // Valid first
-      if (a.isValid && !b.isValid) return -1;
-      if (!a.isValid && b.isValid) return 1;
-
-      if (a.rank !== b.rank) return a.rank - b.rank;
-      return b.score - a.score;
-    });
+    return calculatePlayerRankings(players, submissions);
   }, [players, submissions]);
 
   // Extract solutions from constraints metadata
@@ -195,23 +175,22 @@ export function RoundSummary({
 
       {/* Host Controls */}
       {isHost ? (
-          <Button
-            onClick={handleNextRound}
-            disabled={isStartingNext}
-            className="w-full h-14 text-xl font-display border-4 border-black rounded-none shadow-hard hover:translate-y-1 hover:shadow-none transition-all flex items-center justify-center gap-2"
-          >
-            {isStartingNext ? (
-              <>
-                <PixelIcon name="clock" className="w-6 h-6 animate-spin" />
-                LANCEMENT...
-              </>
-            ) : (
-              <>
-                MANCHE SUIVANTE
-                <PixelIcon name="arrow-right" className="w-6 h-6" />
-              </>
-            )}
-          </Button>
+        <Button
+          onClick={handleNextRound}
+          disabled={isStartingNext}
+          className="w-full h-14 text-xl font-display border-4 border-black rounded-none shadow-hard hover:translate-y-1 hover:shadow-none transition-all flex items-center justify-center gap-2"
+        >
+          {isStartingNext ? (
+            <>
+              <PixelIcon name="clock" className="w-6 h-6 animate-spin" />
+              LANCEMENT...
+            </>
+          ) : (
+            <>
+              MANCHE SUIVANTE
+            </>
+          )}
+        </Button>
       ) : (
         <div className="text-center text-muted-foreground font-display animate-pulse text-xs">
           En attente de l&apos;hôte...

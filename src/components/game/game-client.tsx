@@ -1,10 +1,12 @@
 "use client";
 
+import { finishRound } from "@/app/actions/game-actions";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { LoadingScreen } from "@/components/ui/loading-screen";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { useRealtimeGame } from "@/hooks/use-realtime-game";
 import { getConstraintLabel } from "@/lib/game/formatting";
+import { calculatePlayerRankings } from "@/lib/game/ranking";
 import { cn } from "@/lib/utils";
 import { useGameStore } from "@/store/use-game-store";
 import { mapGamePlayerToDisplayPlayer } from "@/utils/player-mapper";
@@ -15,7 +17,6 @@ import { GameTitle } from "./game-title";
 import { PlayerListDisplay } from "./player-list-display";
 import { RoundSummary } from "./round-summary";
 import { SocialValidationView } from "./social-validation";
-import { finishRound } from "@/app/actions/game-actions";
 
 interface GameClientProps {
   gameId: string;
@@ -72,33 +73,30 @@ export function GameClient({ gameId, currentUserId }: GameClientProps) {
       );
 
     if (allSubmitted) {
-      finishRound(currentRound.id).catch(console.error);
+      // Add a small delay (1.5s) to avoid abrupt transition
+      const timer = setTimeout(() => {
+        finishRound(currentRound.id).catch(console.error);
+      }, 1500);
+
+      return () => clearTimeout(timer);
     }
   }, [isHost, currentRound, players, roundSubmissions]);
 
   const displayPlayers = useMemo(() => {
-    // 1. Map basic info and attach submission data
-    const mapped = players.map((p) => {
-      const display = mapGamePlayerToDisplayPlayer(p, hostId);
+    // Use unified ranking logic
+    const rankedPlayers = calculatePlayerRankings(players, roundSubmissions);
 
-      const sub = roundSubmissions.find((s) => s.player_id === p.id);
-      if (sub) {
-        display.score = sub.score;
-        display.rank = sub.points_details?.rank;
-      }
-      return display;
-    });
-
-    // 2. Filter: Only show players who have submitted (have a rank)
-    const filtered = mapped.filter((p) => p.rank !== undefined);
-
-    // 3. Sort: Ranked players first (by rank)
-    return filtered.sort((a, b) => {
-      const rankA = a.rank ?? Number.MAX_SAFE_INTEGER;
-      const rankB = b.rank ?? Number.MAX_SAFE_INTEGER;
-
-      return rankA - rankB;
-    });
+    // Map to DisplayPlayer format
+    return rankedPlayers
+      .filter((rp) => rp.submission)
+      .map((rp) => {
+        const display = mapGamePlayerToDisplayPlayer(rp.player, hostId);
+        return {
+          ...display,
+          score: rp.score,
+          rank: rp.rank,
+        };
+      });
   }, [players, hostId, roundSubmissions]);
 
   const [optimisticSubmitted, setOptimisticSubmitted] = useState(false);
@@ -161,7 +159,7 @@ export function GameClient({ gameId, currentUserId }: GameClientProps) {
       )}
 
       <div className="flex-none text-center space-y-6 w-full max-w-md">
-        <GameTitle game/>
+        <GameTitle game />
 
         {currentRound ? (
           <Card
