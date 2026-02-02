@@ -23,6 +23,7 @@ export interface GameRound {
   theme?: string;
   status: RoundStatus;
   created_at: string;
+  ends_at?: string;
 }
 
 export interface RoundSubmission {
@@ -54,7 +55,9 @@ interface GameState {
   setCurrentRound: (round: GameRound | null) => void;
   setRoundSubmissions: (submissions: RoundSubmission[]) => void;
   addRoundSubmission: (submission: RoundSubmission) => void;
-  updateRoundSubmission: (submission: Partial<RoundSubmission> & { id: string }) => void;
+  updateRoundSubmission: (
+    submission: Partial<RoundSubmission> & { id: string },
+  ) => void;
   removeRoundSubmission: (id: string) => void;
   setIsLoading: (isLoading: boolean) => void;
   submitWord: (word: string) => Promise<boolean>;

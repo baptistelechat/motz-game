@@ -5,23 +5,27 @@ import { getConstraintLabel } from "@/lib/game/formatting";
 import { validateWord } from "@/lib/game/validation";
 import { cn } from "@/lib/utils";
 import { RoundConstraints } from "@/types/game";
-import { ArrowRight, Loader, Close } from "@nsmr/pixelart-react";
+import { ArrowRight, Close, Loader } from "@nsmr/pixelart-react";
 import { motion } from "framer-motion";
 import { useEffect, useRef, useState } from "react";
 import { toast } from "sonner";
 import { Button } from "../ui/button";
 import { Input } from "../ui/input";
+import { ROUND_DURATION_SECONDS } from "@/lib/game/constants";
+import { Progress } from "@/components/ui/progress";
 
 interface GameInputProps {
   constraints: RoundConstraints;
   onValidate: (word: string) => void;
   disabled?: boolean;
+  endsAt?: string;
 }
 
 export function GameInput({
   constraints,
   onValidate,
   disabled,
+  endsAt,
 }: GameInputProps) {
   const [value, setValue] = useState("");
   const [isShaking, setIsShaking] = useState(false);
@@ -30,6 +34,26 @@ export function GameInput({
 
   // Visual Viewport logic to detect keyboard/compact state
   const [isCompact, setIsCompact] = useState(false);
+  const [progress, setProgress] = useState(100);
+  const [isUrgent, setIsUrgent] = useState(false);
+
+  useEffect(() => {
+    if (!isCompact || !endsAt) return;
+
+    const updateProgress = () => {
+      const end = new Date(endsAt).getTime();
+      const now = Date.now();
+      const diffSeconds = Math.max(0, (end - now) / 1000);
+      const p = Math.min(100, (diffSeconds / ROUND_DURATION_SECONDS) * 100);
+
+      setProgress(p);
+      setIsUrgent(diffSeconds <= 10);
+    };
+
+    updateProgress();
+    const interval = setInterval(updateProgress, 1000);
+    return () => clearInterval(interval);
+  }, [isCompact, endsAt]);
 
   useEffect(() => {
     const handleResize = () => {
@@ -120,6 +144,17 @@ export function GameInput({
                 constraints.imposed_letter,
               )}
             </span>
+
+            {/* Compact Progress Bar */}
+            <div className="w-full mt-1">
+              <Progress
+                value={progress}
+                className={cn(
+                  "h-1.5 border border-black rounded-none bg-background",
+                  isUrgent && "[&>div]:bg-[#FF00FF]",
+                )}
+              />
+            </div>
           </div>
         )}
 

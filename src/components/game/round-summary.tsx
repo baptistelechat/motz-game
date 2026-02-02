@@ -9,8 +9,11 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { PixelIcon } from "@/components/ui/pixel-icon";
+import { Progress } from "@/components/ui/progress";
 import { ScrollArea } from "@/components/ui/scroll-area";
+import { VALIDATION_DURATION_MS } from "@/lib/game/constants";
 import { calculatePlayerRankings } from "@/lib/game/ranking";
+import { createClient } from "@/lib/supabase/client";
 import { cn } from "@/lib/utils";
 import { generateRandomAvatar } from "@/lib/utils/generate-player";
 import {
@@ -19,6 +22,7 @@ import {
   RoundSubmission,
   useGameStore,
 } from "@/store/use-game-store";
+import { Pause, Play } from "@nsmr/pixelart-react";
 import { useEffect, useMemo, useState } from "react";
 import { toast } from "sonner";
 import { AvatarDisplay } from "../profile/avatar-display";
@@ -45,8 +49,140 @@ export function RoundSummary({
     updateRoundSubmission,
     // setCurrentRound, // Removed as we don't use it anymore for optimistic updates here
   } = useGameStore();
+  const [supabase] = useState(() => createClient());
   const [isLoading, setIsLoading] = useState(false);
+  const [autoAdvanceProgress, setAutoAdvanceProgress] = useState(0);
+  const [isPaused, setIsPaused] = useState(false); // State to pause auto-advance
   const isHost = currentUserId === hostId;
+
+  const handleNextRound = async () => {
+    if (!isHost) return;
+    setIsLoading(true);
+    try {
+      await startNextRound(round.id);
+    } catch (error) {
+      console.error("Error starting next round:", error);
+      toast.error("Erreur lors du lancement de la manche suivante");
+      setIsLoading(false);
+    }
+  };
+
+  const handleFinalizeValidation = async () => {
+    if (!isHost) return;
+    setIsLoading(true);
+
+    // Removed optimistic update to prevent fetching stale submissions via useRealtimeGame effect
+    // We wait for the server to update the round status and submissions,
+    // which will trigger Realtime updates to switch the UI and fetch correct data.
+
+    try {
+      await finalizeValidation(round.id);
+    } catch (error) {
+      console.error("Error finalizing:", error);
+      toast.error("Erreur lors de la validation");
+      setIsLoading(false);
+    }
+  };
+
+  // Auto-advance timer logic
+  useEffect(() => {
+    // Only host handles the timer logic reset
+    if (!isHost) return;
+
+    // Reset progress when round changes or mode changes
+    setAutoAdvanceProgress(0);
+    // Unpause when round changes to ensure flow
+    setIsPaused(false);
+  }, [round.id, isValidationMode, isHost]);
+
+  // Realtime Sync Logic
+  useEffect(() => {
+    const channel = supabase.channel(`round_sync:${round.id}`);
+
+    if (!isHost) {
+      // Clients listen for updates
+      channel
+        .on(
+          "broadcast",
+          { event: "sync_timer" },
+          ({ payload }: { payload: { progress: number; paused: boolean } }) => {
+            const { progress, paused } = payload;
+            setAutoAdvanceProgress(progress);
+            setIsPaused(paused);
+          },
+        )
+        .subscribe();
+    } else {
+      // Host subscribes just to keep connection open (optional but good practice)
+      channel.subscribe();
+    }
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [round.id, isHost, supabase]);
+
+  // Broadcast function for Host
+  const broadcastSync = async (progress: number, paused: boolean) => {
+    await supabase.channel(`round_sync:${round.id}`).send({
+      type: "broadcast",
+      event: "sync_timer",
+      payload: { progress, paused },
+    });
+  };
+
+  useEffect(() => {
+    // Only host handles the timer
+    if (!isHost) return;
+
+    // Broadcast immediately when pause state changes
+    broadcastSync(autoAdvanceProgress, isPaused);
+
+    // Only auto-advance if not loading and not paused
+    if (isLoading || isPaused) return;
+
+    // Timer duration
+    const AUTO_ADVANCE_DELAY = VALIDATION_DURATION_MS;
+    const UPDATE_INTERVAL = 1000; // Update every second for "saccadé" effect
+    const steps = AUTO_ADVANCE_DELAY / UPDATE_INTERVAL;
+    const increment = 100 / steps;
+
+    const interval = setInterval(() => {
+      setAutoAdvanceProgress((prev) => {
+        if (prev >= 100) {
+          clearInterval(interval);
+          broadcastSync(100, isPaused); // Final sync
+          return 100;
+        }
+
+        const next = Math.min(prev + increment, 100);
+
+        // Broadcast on every step since steps are now 1 second apart
+        broadcastSync(next, isPaused);
+
+        return next;
+      });
+    }, UPDATE_INTERVAL);
+
+    return () => {
+      clearInterval(interval);
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isHost, isLoading, isPaused, round.id]); // Added round.id to deps to ensure fresh closure if needed, though isHost/paused are main triggers
+
+  // Trigger action when progress reaches 100%
+  useEffect(() => {
+    if (!isHost || isLoading || isPaused) return;
+
+    if (autoAdvanceProgress >= 100) {
+      if (isValidationMode) {
+        handleFinalizeValidation();
+      } else {
+        handleNextRound();
+      }
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [autoAdvanceProgress, isHost, isLoading, isPaused, isValidationMode]);
 
   // Reset loading state when round status changes (e.g. switching from validation to summary)
   useEffect(() => {
@@ -75,18 +211,6 @@ export function RoundSummary({
     return map;
   }, [players]);
 
-  const handleNextRound = async () => {
-    if (!isHost) return;
-    setIsLoading(true);
-    try {
-      await startNextRound(round.id);
-    } catch (error) {
-      console.error("Error starting next round:", error);
-      toast.error("Erreur lors du lancement de la manche suivante");
-      setIsLoading(false);
-    }
-  };
-
   const handleVote = async (submissionId: string) => {
     // Optimistic update
     const submission = submissions.find((s) => s.id === submissionId);
@@ -109,23 +233,6 @@ export function RoundSummary({
       console.error("Error voting:", error);
       toast.error("Erreur lors du vote");
       // Revert optimistic update (could be complex, fetching latest state is easier)
-    }
-  };
-
-  const handleFinalizeValidation = async () => {
-    if (!isHost) return;
-    setIsLoading(true);
-
-    // Removed optimistic update to prevent fetching stale submissions via useRealtimeGame effect
-    // We wait for the server to update the round status and submissions,
-    // which will trigger Realtime updates to switch the UI and fetch correct data.
-
-    try {
-      await finalizeValidation(round.id);
-    } catch (error) {
-      console.error("Error finalizing:", error);
-      toast.error("Erreur lors de la validation");
-      setIsLoading(false);
     }
   };
 
@@ -182,8 +289,8 @@ export function RoundSummary({
                 const hasVoted = votes.includes(currentUserId);
                 const isMySubmission = result.player.id === currentUserId;
 
-                // In validation mode, only show entries with words
-                if (isValidationMode && !result.word) return null;
+                // In validation mode, only show entries with actual submissions
+                if (isValidationMode && !result.submission) return null;
 
                 return (
                   <div
@@ -330,29 +437,54 @@ export function RoundSummary({
       </Card>
 
       {/* Host Controls */}
-      {isHost ? (
-        <Button
-          onClick={
-            isValidationMode ? handleFinalizeValidation : handleNextRound
-          }
-          disabled={isLoading}
-          className={cn("w-full h-14 text-xl font-display")}
-        >
-          {isLoading ? (
-            <>{isValidationMode ? "VALIDATION..." : "LANCEMENT..."}</>
-          ) : (
-            <>
-              {isValidationMode ? "TERMINER LA VALIDATION" : "MANCHE SUIVANTE"}
-            </>
-          )}
-        </Button>
-      ) : (
-        <div className="text-center text-muted-foreground font-display animate-pulse text-xs">
-          {isValidationMode
-            ? "En attente de la fin du vote..."
-            : "En attente de l'hôte..."}
-        </div>
-      )}
+      <div className="w-full flex flex-col gap-2">
+        {isHost ? (
+          <div className="flex gap-2">
+            <Button
+              onClick={
+                isValidationMode ? handleFinalizeValidation : handleNextRound
+              }
+              disabled={isLoading}
+              className={cn("flex-1 h-12 text-xl font-display")}
+            >
+              {isLoading ? (
+                <>{isValidationMode ? "VALIDATION..." : "LANCEMENT..."}</>
+              ) : (
+                <>
+                  {isValidationMode
+                    ? "TERMINER LA VALIDATION"
+                    : "MANCHE SUIVANTE"}
+                </>
+              )}
+            </Button>
+            <Button
+              onClick={() => setIsPaused(!isPaused)}
+              variant={isPaused ? "destructive" : "outline"}
+              title={isPaused ? "Reprendre" : "Pause"}
+              className="aspect-square size-12"
+              disabled={isLoading}
+            >
+              {isPaused ? (
+                <Play className="size-6" />
+              ) : (
+                <Pause className="size-6" />
+              )}
+            </Button>
+          </div>
+        ) : (
+          <div className="text-center text-muted-foreground font-display animate-pulse text-xs">
+            {isValidationMode
+              ? "En attente de la fin du vote..."
+              : "En attente de l'hôte..."}
+          </div>
+        )}
+
+        {/* Timer Progress Bar */}
+        <Progress
+          value={autoAdvanceProgress}
+          className="h-2 w-full border-black border rounded-none"
+        />
+      </div>
     </div>
   );
 }

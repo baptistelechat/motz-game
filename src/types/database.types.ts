@@ -115,6 +115,7 @@ export type Database = {
           id: string;
           round_number: number;
           status: Database["public"]["Enums"]["round_status"];
+          ends_at?: string;
         };
         Insert: {
           constraints: Json;
@@ -123,6 +124,7 @@ export type Database = {
           id?: string;
           round_number: number;
           status?: Database["public"]["Enums"]["round_status"];
+          ends_at?: string;
         };
         Update: {
           constraints?: Json;
@@ -131,6 +133,7 @@ export type Database = {
           id?: string;
           round_number?: number;
           status?: Database["public"]["Enums"]["round_status"];
+          ends_at?: string;
         };
         Relationships: [
           {

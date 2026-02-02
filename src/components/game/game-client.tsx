@@ -13,6 +13,7 @@ import { mapGamePlayerToDisplayPlayer } from "@/utils/player-mapper";
 import { useEffect, useMemo, useState } from "react";
 import { GameDebugControls } from "./game-debug-controls";
 import { GameInput } from "./game-input";
+import { GameTimer } from "./game-timer";
 import { GameTitle } from "./game-title";
 import { PlayerListDisplay } from "./player-list-display";
 import { RoundSummary } from "./round-summary";
@@ -120,11 +121,20 @@ export function GameClient({ gameId, currentUserId }: GameClientProps) {
     }
   };
 
+  const handleTimeUp = () => {
+    if (isHost && currentRound && currentRound.status === "PLAYING") {
+      finishRound(currentRound.id).catch(console.error);
+    }
+  };
+
   if (isLoading) {
     return <LoadingScreen message="CHARGEMENT DE LA PARTIE..." />;
   }
 
-  if (currentRound?.status === "COMPLETED" || currentRound?.status === "VALIDATING") {
+  if (
+    currentRound?.status === "COMPLETED" ||
+    currentRound?.status === "VALIDATING"
+  ) {
     return (
       <RoundSummary
         round={currentRound}
@@ -148,6 +158,10 @@ export function GameClient({ gameId, currentUserId }: GameClientProps) {
 
       <div className="flex-none text-center space-y-6 w-full max-w-md">
         <GameTitle game />
+
+        {currentRound?.status === "PLAYING" && (
+          <GameTimer endsAt={currentRound.ends_at} onTimeUp={handleTimeUp} />
+        )}
 
         {currentRound ? (
           <Card
@@ -207,6 +221,7 @@ export function GameClient({ gameId, currentUserId }: GameClientProps) {
           constraints={currentRound.constraints}
           onValidate={handleValidate}
           disabled={hasSubmitted}
+          endsAt={currentRound.ends_at}
         />
       )}
     </div>

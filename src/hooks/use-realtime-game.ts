@@ -74,6 +74,7 @@ export function useRealtimeGame(gameId: string) {
           constraints: round.constraints as any,
           status: round.status,
           created_at: round.created_at,
+          ends_at: round.ends_at,
         });
       }
     } catch (error) {
@@ -217,6 +218,7 @@ export function useRealtimeGame(gameId: string) {
               constraints: round.constraints as any,
               status: round.status,
               created_at: round.created_at,
+              ends_at: round.ends_at,
             });
           }
         },

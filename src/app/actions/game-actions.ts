@@ -1,5 +1,6 @@
 "use server";
 
+import { ROUND_DURATION_MS } from "@/lib/game/constants";
 import { generateRoundConstraints } from "@/lib/game/constraint-generation";
 import { findFallbackSolutions } from "@/lib/game/fallback-words";
 import { calculateWordScore } from "@/lib/game/scoring";
@@ -185,12 +186,14 @@ export async function startGame(gameId: string) {
 
   const nextRoundNumber = (rounds?.[0]?.round_number || 0) + 1;
   const constraints = generateRoundConstraints(THEMES.map((t) => t.label));
+  const endsAt = new Date(Date.now() + ROUND_DURATION_MS).toISOString();
 
   const { error: insertError } = await supabase.from("rounds").insert({
     game_id: gameId,
     round_number: nextRoundNumber,
     constraints: constraints as unknown as Json,
     status: "PLAYING",
+    ends_at: endsAt,
   });
 
   if (insertError) {
@@ -241,6 +244,10 @@ export async function debugRegenerateRound(roundId: string) {
     .eq("id", roundId);
 
   if (error) throw error;
+}
+
+export async function getServerTime() {
+  return Date.now();
 }
 
 export async function debugForceThemeConstraint(roundId: string) {
@@ -421,8 +428,17 @@ export async function finishRound(roundId: string) {
   const constraints = round.constraints as unknown as RoundConstraints;
   // constraints is an object, not an array. Check the 'theme' property.
   const hasTheme = !!constraints.theme;
+
+  // Check if there are any submissions
+  const { count } = await supabase
+    .from("submissions")
+    .select("*", { count: "exact", head: true })
+    .eq("round_id", roundId);
+
+  const hasSubmissions = count !== null && count > 0;
+
   // Explicitly cast the status string to match the enum type if needed
-  const nextStatus = hasTheme ? "VALIDATING" : "COMPLETED";
+  const nextStatus = hasTheme && hasSubmissions ? "VALIDATING" : "COMPLETED";
 
   const { error } = await supabase
     .from("rounds")
@@ -616,12 +632,14 @@ export async function startNextRound(currentRoundId: string) {
   // Generate new constraints
   const nextRoundNumber = round.round_number + 1;
   const constraints = generateRoundConstraints(THEMES.map((t) => t.label));
+  const endsAt = new Date(Date.now() + ROUND_DURATION_MS).toISOString();
 
   const { error } = await supabase.from("rounds").insert({
     game_id: round.game_id,
     round_number: nextRoundNumber,
     constraints: constraints as unknown as Json,
     status: "PLAYING",
+    ends_at: endsAt,
   });
 
   if (error) throw error;
