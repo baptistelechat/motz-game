@@ -6,15 +6,18 @@ import { LobbyInfo } from "@/components/game/lobby-info";
 import { LobbyPlayerList } from "@/components/game/lobby-player-list";
 import { useAuth } from "@/components/providers/auth-provider";
 import { Button } from "@/components/ui/button";
+import { usePlayerNotifications } from "@/hooks/use-player-notifications";
 import { usePlayerProfile } from "@/hooks/use-player-profile";
-import { useRealtimeLobby } from "@/hooks/use-realtime-lobby";
+import { useRealtimeGame } from "@/hooks/use-realtime-game";
 import { generateRandomPlayer } from "@/lib/utils/generate-player";
+import { useGameStore } from "@/store/use-game-store";
 import { Loader } from "@nsmr/pixelart-react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
 import { toast } from "sonner";
 import { ErrorCard } from "../ui/error-card";
+import { GameTitle } from "./game-title";
 
 interface LobbyClientProps {
   code: string;
@@ -22,7 +25,11 @@ interface LobbyClientProps {
   hostId: string;
 }
 
-export function LobbyClient({ code, gameId, hostId }: LobbyClientProps) {
+export function LobbyClient({
+  code,
+  gameId,
+  hostId: initialHostId,
+}: LobbyClientProps) {
   const router = useRouter();
   const { user } = useAuth();
   const {
@@ -31,17 +38,23 @@ export function LobbyClient({ code, gameId, hostId }: LobbyClientProps) {
     updateProfile,
     isInitialized,
   } = usePlayerProfile();
+
+  // Use unified realtime hook (replaces useRealtimeLobby)
+  const { refresh } = useRealtimeGame(gameId);
+
+  // Access global store state
   const {
     players,
-    gameStatus,
+    status: gameStatus,
     isLoading: isLobbyLoading,
-    refreshPlayers,
-  } = useRealtimeLobby(gameId, user?.id);
+    hostId: storeHostId,
+  } = useGameStore();
 
-  useEffect(() => {
-    // Refresh players on mount to ensure we have the latest list
-    refreshPlayers();
-  }, [refreshPlayers]);
+  // Enable toast notifications
+  usePlayerNotifications(user?.id);
+
+  // Use store hostId if available (updated via realtime), fallback to initial
+  const currentHostId = storeHostId || initialHostId;
 
   const [isJoining, setIsJoining] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -71,7 +84,7 @@ export function LobbyClient({ code, gameId, hostId }: LobbyClientProps) {
     if (!user || !profile) return;
     if (hasJoinedRef.current || isJoining) return;
 
-    const isInLobby = players.some((p) => p.player_id === user.id);
+    const isInLobby = players.some((p) => p.id === user.id);
     if (isInLobby) {
       hasJoinedRef.current = true;
       return;
@@ -82,23 +95,29 @@ export function LobbyClient({ code, gameId, hostId }: LobbyClientProps) {
       try {
         await joinGame(code);
         hasJoinedRef.current = true;
-        // Trigger refresh immediately to minimize wait time
-        refreshPlayers();
-        // Toast removed: let the realtime subscription handle it or handle it implicitly by UI update
+        // Explicitly refresh to ensure state is updated even if Realtime is slow
+        await refresh();
       } catch (err) {
+        // Ignore redirect errors
+        const errorMessage = 
+          err instanceof Error ? err.message : 
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+          typeof err === 'object' && err && 'message' in err ? String((err as any).message) : 
+          String(err);
+
+        if (errorMessage.includes("NEXT_REDIRECT")) {
+          return;
+        }
+
         console.error("Failed to join game:", err);
-        const msg =
-          err instanceof Error
-            ? err.message
-            : "Impossible de rejoindre la partie.";
-        setError(msg);
-        toast.error(msg);
+        setError(errorMessage);
+        toast.error(errorMessage);
       } finally {
         setIsJoining(false);
       }
     };
     join();
-  }, [user, profile, code, refreshPlayers, players, isJoining]);
+  }, [user, profile, code, players, isJoining, refresh]);
 
   // 3. Navigation when game starts
   useEffect(() => {
@@ -107,7 +126,7 @@ export function LobbyClient({ code, gameId, hostId }: LobbyClientProps) {
     }
   }, [gameStatus, code, router]);
 
-  const isInLobby = players.some((p) => p.player_id === user?.id);
+  const isInLobby = players.some((p) => p.id === user?.id);
   const showLoader =
     isJoining ||
     (isLobbyLoading && players.length === 0) ||
@@ -141,7 +160,7 @@ export function LobbyClient({ code, gameId, hostId }: LobbyClientProps) {
                 variant="outline"
                 onClick={() => {
                   setIsTimeout(false);
-                  refreshPlayers();
+                  refresh();
                 }}
               >
                 RÉESSAYER
@@ -165,10 +184,7 @@ export function LobbyClient({ code, gameId, hostId }: LobbyClientProps) {
     );
   }
 
-  const isMyPlayerReady =
-    players.find((p) => p.player_id === user?.id)?.is_ready || false;
-
-  const isHost = user?.id === hostId;
+  const isHost = user?.id === currentHostId;
 
   return (
     <div
@@ -183,9 +199,7 @@ export function LobbyClient({ code, gameId, hostId }: LobbyClientProps) {
           isHost ? "mt-0 md:mt-24" : "mt-0"
         }`}
       >
-        <h1 className="font-display text-theme text-3xl md:text-4xl text-center drop-shadow-[4px_4px_0_#000000]">
-          SALLE D&apos;ATTENTE
-        </h1>
+        <GameTitle/>
         <p className="text-xl font-display text-primary drop-shadow-[2px_2px_0_(--border)]">
           {players.length} JOUEUR{players.length > 1 ? "S" : ""}
         </p>
@@ -203,21 +217,18 @@ export function LobbyClient({ code, gameId, hostId }: LobbyClientProps) {
       >
         <LobbyPlayerList
           players={players}
-          hostId={hostId}
+          hostId={currentHostId}
           className={isHost ? "md:max-h-full" : "md:max-h-[50vh]"}
         />
       </div>
 
-      {user && (
-        <div className="flex-none w-full">
-          <LobbyControls
-            gameId={gameId}
-            isHost={isHost}
-            players={players}
-            isMyPlayerReady={isMyPlayerReady}
-          />
-        </div>
-      )}
+      <div className="flex-none w-full max-w-md">
+        <LobbyControls
+          gameId={gameId}
+          isHost={isHost}
+          onGameStarted={refresh}
+        />
+      </div>
     </div>
   );
 }

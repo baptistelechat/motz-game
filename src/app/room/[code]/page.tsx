@@ -1,4 +1,5 @@
 import { CaptchaGuard } from "@/components/auth/captcha-guard";
+import { DictionaryLoader } from "@/components/game/dictionary-loader";
 import { LobbyClient } from "@/components/game/lobby-client";
 import { LobbyInfo } from "@/components/game/lobby-info";
 import { MainLayout } from "@/components/layout/main-layout";
@@ -31,6 +32,7 @@ export default async function RoomPage({ params }: RoomPageProps) {
 
   return (
     <MainLayout className="h-dvh overflow-hidden flex flex-col p-4 pt-14">
+      <DictionaryLoader />
       <div className="flex-1 w-full max-w-6xl mx-auto min-h-0 flex flex-col items-center justify-center gap-4 md:gap-8">
         <div
           className={`flex flex-col ${

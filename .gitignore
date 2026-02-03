@@ -52,3 +52,9 @@ public/worker-*.js
 public/worker-*.js.map
 public/fallback-*.js
 public/swe-worker-*.js
+
+# grepai
+.grepai/
+
+# dictionary sources
+src/assets/dictionary/temp/

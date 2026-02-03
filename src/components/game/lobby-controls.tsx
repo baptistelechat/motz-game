@@ -1,8 +1,9 @@
 "use client";
 
 import { startGame, toggleReady } from "@/app/actions/game-actions";
+import { useAuth } from "@/components/providers/auth-provider";
 import { Button } from "@/components/ui/button";
-import { LobbyPlayer } from "@/hooks/use-realtime-lobby";
+import { useGameStore } from "@/store/use-game-store";
 import { Loader, Play } from "@nsmr/pixelart-react";
 import { useTransition } from "react";
 import { toast } from "sonner";
@@ -10,17 +11,20 @@ import { toast } from "sonner";
 interface LobbyControlsProps {
   gameId: string;
   isHost: boolean;
-  players: LobbyPlayer[];
-  isMyPlayerReady: boolean;
+  onGameStarted?: () => void;
 }
 
 export function LobbyControls({
   gameId,
   isHost,
-  players,
-  isMyPlayerReady,
+  onGameStarted,
 }: LobbyControlsProps) {
   const [isPending, startTransition] = useTransition();
+  const { user } = useAuth();
+  const players = useGameStore((state) => state.players);
+
+  const isMyPlayerReady =
+    players.find((p) => p.id === user?.id)?.is_ready || false;
 
   const handleToggleReady = () => {
     startTransition(async () => {
@@ -37,6 +41,8 @@ export function LobbyControls({
     startTransition(async () => {
       try {
         await startGame(gameId);
+        // Force refresh to update status immediately and trigger navigation
+        onGameStarted?.();
       } catch (error) {
         toast.error("Impossible de lancer la partie");
         console.error(error);
@@ -55,6 +61,7 @@ export function LobbyControls({
           size="xl"
           onClick={handleToggleReady}
           disabled={isPending}
+          data-testid="toggle-ready-button"
           className="w-full flex-1"
         >
           {isPending ? (
@@ -63,11 +70,7 @@ export function LobbyControls({
             <div className="flex flex-col items-center leading-tight py-1">
               <div className="flex items-center gap-2">
                 <Loader className="size-7 md:size-6 animate-spin" />
-                <span
-                  className={
-                    isHost ? "hidden md:inline-block" : ""
-                  }
-                >
+                <span className={isHost ? "hidden md:inline-block" : ""}>
                   En attente...
                 </span>
               </div>
@@ -83,6 +86,7 @@ export function LobbyControls({
             size="xl"
             onClick={handleStartGame}
             disabled={!allPlayersReady || isPending}
+            data-testid="start-round-button"
             className="w-full flex-1 animate-in fade-in slide-in-from-bottom-2"
           >
             <Play className="size-5" />
@@ -91,13 +95,11 @@ export function LobbyControls({
         )}
       </div>
 
-      {isHost && (
-        <p className="text-lg text-muted-foreground text-center animate-in fade-in">
-          {allPlayersReady
-            ? "Tous les joueurs sont prêts"
-            : "Tous les joueurs doivent être prêts"}
-        </p>
-      )}
+      <p className="text-lg text-muted-foreground text-center animate-in fade-in">
+        {allPlayersReady
+          ? "Tous les joueurs sont prêts"
+          : "Tous les joueurs doivent être prêts"}
+      </p>
     </div>
   );
 }

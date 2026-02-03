@@ -21,22 +21,25 @@ workflow_status:
   # Phase 1: Analysis (Optional)
   brainstorm-project: skipped
   research: optional
-  product-brief: c:\Users\ASUS\Desktop\DEV\Projet_perso\motz-game\_bmad-output\planning-artifacts\product-brief-motz-game-2026-01-12.md
+  product-brief: c:\Users\DM\Desktop\DEV\perso\motz-game\_bmad-output\planning-artifacts\product-brief-motz-game-2026-01-12.md
 
   # Phase 2: Planning
-  prd: required
-  create-ux-design: conditional
+  prd: c:\Users\DM\Desktop\DEV\perso\motz-game\_bmad-output\planning-artifacts\prd.md
+  create-ux-design: c:\Users\DM\Desktop\DEV\perso\motz-game\_bmad-output\planning-artifacts\ux-design-specification.md
 
   # Phase 3: Solutioning
-  create-architecture: required
-  create-epics-and-stories: required
+  create-architecture: c:\Users\DM\Desktop\DEV\perso\motz-game\_bmad-output\planning-artifacts\architecture.md
+  create-epics-and-stories: c:\Users\DM\Desktop\DEV\perso\motz-game\_bmad-output\planning-artifacts\epics.md
   test-design: optional
-  implementation-readiness: required
+  implementation-readiness: c:\Users\DM\Desktop\DEV\perso\motz-game\_bmad-output\implementation-artifacts\sprint-status.yaml
 
   # Phase 4: Implementation
-  sprint-planning: required
+  sprint-planning: c:\Users\DM\Desktop\DEV\perso\motz-game\_bmad-output\implementation-artifacts\sprint-status.yaml
 
 # Current state metadata
 generated: 2026-01-12
-current_phase: 1
+current_phase: 4
 product_brief_completed: 2026-01-12
+prd_completed: 2026-01-12
+architecture_completed: 2026-01-12
+epics_completed: 2026-01-12

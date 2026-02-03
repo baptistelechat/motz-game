@@ -1,6 +1,7 @@
 "use client";
 
 import { createGame } from "@/app/actions/game-actions";
+import { DictionaryLoader } from "@/components/game/dictionary-loader";
 import { JoinGameDialog } from "@/components/game/join-game-dialog";
 import { AttributesDialog } from "@/components/info/attributes-dialog";
 import { MainLayout } from "@/components/layout/main-layout";
@@ -44,11 +45,14 @@ export default function Home() {
         toast.dismiss(toastId);
       } catch (error) {
         // Ignore redirect errors as they are part of normal flow
-        if (
-          error instanceof Error &&
-          (error.message === "NEXT_REDIRECT" ||
-            error.message.includes("NEXT_REDIRECT"))
-        ) {
+        // Check for NEXT_REDIRECT in message, handling both Error objects and plain objects
+        const errorMessage = 
+          error instanceof Error ? error.message : 
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+          typeof error === 'object' && error && 'message' in error ? String((error as any).message) : 
+          String(error);
+
+        if (errorMessage.includes("NEXT_REDIRECT")) {
           toast.dismiss(toastId); // Ensure dismiss on redirect
           return;
         }
@@ -146,6 +150,7 @@ export default function Home() {
   // If profile exists, show main menu
   return (
     <MainLayout>
+      <DictionaryLoader />
       <div className="flex-1 flex flex-col items-center justify-center p-4 gap-12 min-h-dvh relative">
         <div className="text-center space-y-6">
           <h1 className="font-display text-4xl md:text-7xl text-theme drop-shadow-[6px_6px_0_var(--border)] uppercase text-center">
