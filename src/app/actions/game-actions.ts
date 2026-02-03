@@ -167,15 +167,7 @@ export async function startGame(gameId: string) {
     throw new Error("Not all players are ready");
   }
 
-  // 1. Update status
-  const { error: updateError } = await supabase
-    .from("games")
-    .update({ status: "PLAYING", started_at: new Date().toISOString() })
-    .eq("id", gameId);
-
-  if (updateError) throw updateError;
-
-  // 2. Start first round
+  // 1. Start first round (Create round BEFORE updating status)
   // RPC was removed, logic moved to TS as per memory/migration
   const { data: rounds } = await supabase
     .from("rounds")
@@ -200,6 +192,14 @@ export async function startGame(gameId: string) {
     console.error("Error creating round:", insertError);
     throw new Error("Erreur lors du lancement de la manche.");
   }
+
+  // 2. Update status
+  const { error: updateError } = await supabase
+    .from("games")
+    .update({ status: "PLAYING", started_at: new Date().toISOString() })
+    .eq("id", gameId);
+
+  if (updateError) throw updateError;
 }
 
 export async function debugRegenerateRound(roundId: string) {
