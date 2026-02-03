@@ -1,10 +1,12 @@
 "use client";
 
-import { debugForceThemeConstraint, debugRegenerateRound } from "@/app/actions/game-actions";
+import {
+  debugForceThemeConstraint,
+  debugRegenerateRound,
+} from "@/app/actions/game-actions";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { getDictionary } from "@/lib/game/dictionary";
-import { findFallbackSolutions } from "@/lib/game/fallback-words";
 import { validateWord } from "@/lib/game/validation";
 import { GameRound } from "@/store/use-game-store";
 import { Dice, InfoBox } from "@nsmr/pixelart-react";
@@ -72,16 +74,17 @@ export function GameDebugControls({
     if (!currentRound) return;
 
     try {
-      const solutions = await findFallbackSolutions(
-        currentRound.constraints,
-        5,
-      );
+      const words = await getDictionary();
+      const solutions: string[] = [];
 
-      if (
-        solutions.length === 0 ||
-        solutions.includes("AUCUNE_SOLUTION") ||
-        solutions.includes("ERREUR_DICTIONNAIRE")
-      ) {
+      for (const word of words) {
+        if (validateWord(word, currentRound.constraints, () => true).isValid) {
+          solutions.push(word);
+          if (solutions.length >= 5) break;
+        }
+      }
+
+      if (solutions.length === 0) {
         toast.error("Aucun mot trouvé pour ces contraintes !");
         return;
       }

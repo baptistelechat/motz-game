@@ -2,7 +2,6 @@
 
 import { ROUND_DURATION_MS } from "@/lib/game/constants";
 import { generateRoundConstraints } from "@/lib/game/constraint-generation";
-import { findFallbackSolutions } from "@/lib/game/fallback-words";
 import { calculateWordScore } from "@/lib/game/scoring";
 import { THEMES } from "@/lib/game/themes";
 import { validateWordServer } from "@/lib/game/validation-server";
@@ -566,40 +565,6 @@ export async function finalizeValidation(roundId: string) {
         })
         .eq("id", sub.id);
     }
-  }
-  // -------------------------------------
-
-  // Check if we need fallback solutions (if all submissions are invalid)
-  // We need to re-fetch or check logic.
-  // Simplified: If 0 valid submissions after rejection, we might want to store solutions.
-  // But where? We can't easily store them in round unless we add a column.
-  // The story says "Le système affiche 3 mots".
-  // Let's store them in the constraints JSON for now (hacky but works without new column)
-  // OR just assume the UI calculates them? UI can't calculate from dictionary securely/easily.
-  // We will update round constraints to include solutions in metadata.
-
-  // Re-fetch submissions to check validity
-  const { data: updatedSubmissions } = await supabase
-    .from("submissions")
-    .select("is_valid")
-    .eq("round_id", roundId);
-
-  const validCount = updatedSubmissions?.filter((s) => s.is_valid).length || 0;
-
-  if (validCount === 0) {
-    const constraints = round.constraints as unknown as RoundConstraints;
-    const solutions = await findFallbackSolutions(constraints);
-
-    // Add solutions to constraints object.
-    const newConstraints = {
-      ...constraints,
-      solutions,
-    };
-
-    await supabase
-      .from("rounds")
-      .update({ constraints: newConstraints as unknown as Json })
-      .eq("id", roundId);
   }
 
   const { error } = await supabase
