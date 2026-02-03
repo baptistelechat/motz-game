@@ -55,12 +55,12 @@ development_status:
   epic-2-retrospective: done
 
   # Epic 3
-  epic-3: in-progress
+  epic-3: done
   3-1-CHARGEMENT DU SYSTEME-manche-distribution-cartes: done
   3-2-input-joueur-validation-locale-bloom-filter: done
   3-3-soumission-arbitrage-serveur: done
-  3-4-resolution-manche-feedback: review
-  epic-3-retrospective: optional
+  3-4-resolution-manche-feedback: done
+  epic-3-retrospective: done
 
   # Epic 4
   epic-4: backlog
