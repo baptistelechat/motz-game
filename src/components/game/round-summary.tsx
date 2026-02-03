@@ -5,7 +5,6 @@ import {
   startNextRound,
   toggleVote,
 } from "@/app/actions/game-actions";
-import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { PixelIcon } from "@/components/ui/pixel-icon";
@@ -193,14 +192,6 @@ export function RoundSummary({
     return calculatePlayerRankings(players, submissions, round.created_at);
   }, [players, submissions, round.created_at]);
 
-  // Extract solutions from constraints metadata
-  const solutions = useMemo(() => {
-    // constraints is an object with a potential 'solutions' property
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const constraints = round.constraints as any;
-    return (constraints?.solutions as string[]) || [];
-  }, [round.constraints]);
-
   // Generate stable random avatars for validation mode to maintain anonymity
   const anonymousAvatars = useMemo(() => {
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -245,35 +236,6 @@ export function RoundSummary({
         </p>
       )}
 
-      {/*  No solutions found */}
-      {!isValidationMode && solutions.length > 0 ? (
-        <Card className="w-full border-4 border-black bg-destructive/10 shadow-hard rounded-none">
-          <CardHeader className="text-center pb-2">
-            <CardTitle className="flex items-center justify-center gap-2 text-destructive font-display text-xl">
-              <PixelIcon name="alert-circle" className="w-8 h-8" />
-              PERSONNE N&apos;A TROUVÉ !
-              <PixelIcon name="alert-circle" className="w-8 h-8" />
-            </CardTitle>
-          </CardHeader>
-          <CardContent className="flex flex-col items-center gap-4">
-            <p className="text-muted-foreground text-center font-display">
-              Il fallait jouer :
-            </p>
-            <div className="flex flex-wrap gap-2 justify-center">
-              {solutions.map((sol, i) => (
-                <Badge
-                  key={i}
-                  variant="outline"
-                  className="bg-background text-primary border-2 border-black text-lg px-4 py-2 rounded-none"
-                >
-                  {sol}
-                </Badge>
-              ))}
-            </div>
-          </CardContent>
-        </Card>
-      ) : null}
-
       {/* Results Table */}
       <Card className="w-full flex-1 overflow-hidden flex flex-col border-4 border-black rounded-none shadow-hard">
         <CardHeader className="pb-2 border-b-4 border-black">
@@ -284,7 +246,7 @@ export function RoundSummary({
         <CardContent className="p-0 flex-1 min-h-0 bg-background">
           <ScrollArea className="h-full">
             <div className="divide-y-4 divide-black">
-              {results.map((result) => {
+              {results.map((result, index) => {
                 const votes = result.submission?.votes || [];
                 const hasVoted = votes.includes(currentUserId);
                 const isMySubmission = result.player.id === currentUserId;
@@ -297,6 +259,7 @@ export function RoundSummary({
                     key={result.player.id}
                     className={cn(
                       "grid items-center gap-3 p-4",
+                      index === results.length - 1 && "border-b-4 border-black",
                       isValidationMode
                         ? "grid-cols-[auto_minmax(0,1fr)_auto]"
                         : "grid-cols-[3rem_auto_minmax(0,1fr)_auto]",
