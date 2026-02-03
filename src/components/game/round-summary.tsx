@@ -21,7 +21,7 @@ import {
   RoundSubmission,
   useGameStore,
 } from "@/store/use-game-store";
-import { Pause, Play } from "@nsmr/pixelart-react";
+import { Flag, Pause, Play } from "@nsmr/pixelart-react";
 import { useEffect, useMemo, useState } from "react";
 import { toast } from "sonner";
 import { AvatarDisplay } from "../profile/avatar-display";
@@ -284,6 +284,8 @@ export function RoundSummary({
                           >
                             #{result.rank}
                           </span>
+                        ) : result.word === "-" ? (
+                          <PixelIcon name="clock" className="size-8" />
                         ) : (
                           <PixelIcon name="alert-circle" className="size-8" />
                         )}
@@ -358,8 +360,9 @@ export function RoundSummary({
                                 result.submission &&
                                 handleVote(result.submission.id)
                               }
+                              className="aspect-square h-12"
                             >
-                              <PixelIcon name="thumb-down" className="size-6" />
+                              <Flag className="size-6" />
                             </Button>
                           )}
                         </>
