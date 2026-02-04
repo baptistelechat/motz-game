@@ -10,6 +10,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { PixelIcon } from "@/components/ui/pixel-icon";
 import { Progress } from "@/components/ui/progress";
 import { ScrollArea } from "@/components/ui/scroll-area";
+import { useLeaderboard } from "@/hooks/use-leaderboard";
 import { VALIDATION_DURATION_MS } from "@/lib/game/constants";
 import { calculatePlayerRankings } from "@/lib/game/ranking";
 import { createClient } from "@/lib/supabase/client";
@@ -34,6 +35,7 @@ interface RoundSummaryProps {
   currentUserId: string;
   hostId: string | null;
   isValidationMode?: boolean;
+  isLeaderboard?: boolean;
 }
 
 export function RoundSummary({
@@ -43,15 +45,23 @@ export function RoundSummary({
   currentUserId,
   hostId,
   isValidationMode = false,
+  isLeaderboard = false,
 }: RoundSummaryProps) {
   const {
     updateRoundSubmission,
+    gameId,
     // setCurrentRound, // Removed as we don't use it anymore for optimistic updates here
   } = useGameStore();
   const [supabase] = useState(() => createClient());
   const [isLoading, setIsLoading] = useState(false);
   const [autoAdvanceProgress, setAutoAdvanceProgress] = useState(0);
   const [isPaused, setIsPaused] = useState(false); // State to pause auto-advance
+  const [view, setView] = useState<"round" | "leaderboard">(
+    isLeaderboard ? "leaderboard" : "round",
+  );
+
+  const { leaderboard } = useLeaderboard(gameId!, round.id);
+
   const isHost = currentUserId === hostId;
 
   const handleNextRound = async () => {
@@ -236,171 +246,304 @@ export function RoundSummary({
         </p>
       )}
 
+      {/* Tabs */}
+      {!isValidationMode && (
+        <div className="w-full grid grid-cols-2 border-4 border-black border-b-0 bg-muted -mb-6 shadow-hard">
+          <button
+            onClick={() => setView("round")}
+            className={cn(
+              "py-3 font-display text-lg transition-all relative",
+              view === "round"
+                ? "bg-background text-foreground"
+                : "bg-muted text-muted-foreground hover:bg-muted/80 hover:text-foreground",
+            )}
+          >
+            MANCHE
+          </button>
+          <button
+            onClick={() => setView("leaderboard")}
+            className={cn(
+              "py-3 font-display text-lg transition-all relative border-l-4 border-black",
+              view === "leaderboard"
+                ? "bg-background text-foreground"
+                : "bg-muted text-muted-foreground hover:bg-muted/80 hover:text-foreground",
+            )}
+          >
+            GLOBAL
+          </button>
+        </div>
+      )}
+
       {/* Results Table */}
-      <Card className="w-full flex-1 overflow-hidden flex flex-col border-4 border-black rounded-none shadow-hard">
-        <CardHeader className="pb-2 border-b-4 border-black">
-          <CardTitle className="font-display text-lg">
-            {isValidationMode ? "VOTEZ" : "CLASSEMENT"}
-          </CardTitle>
-        </CardHeader>
-        <CardContent className="p-0 flex-1 min-h-0 bg-background">
-          <ScrollArea className="h-full">
-            <div className="divide-y-4 divide-black">
-              {results.map((result, index) => {
-                const votes = result.submission?.votes || [];
-                const hasVoted = votes.includes(currentUserId);
-                const isMySubmission = result.player.id === currentUserId;
+      {view === "round" ? (
+        <Card
+          className={cn(
+            "w-full flex-1 overflow-hidden flex flex-col border-4 border-black rounded-none shadow-hard",
+            !isValidationMode && "border-t-0",
+          )}
+        >
+          <CardHeader className="pb-2 border-b-4 border-black">
+            <CardTitle className="font-display text-lg">
+              {isValidationMode ? "VOTEZ" : "CLASSEMENT MANCHE"}
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="p-0 flex-1 min-h-0 bg-background">
+            <ScrollArea className="h-full">
+              <div className="divide-y-4 divide-black">
+                {results.map((result, index) => {
+                  const votes = result.submission?.votes || [];
+                  const hasVoted = votes.includes(currentUserId);
+                  const isMySubmission = result.player.id === currentUserId;
 
-                // In validation mode, only show entries with actual submissions
-                if (isValidationMode && !result.submission) return null;
+                  // In validation mode, only show entries with actual submissions
+                  if (isValidationMode && !result.submission) return null;
 
-                return (
-                  <div
-                    key={result.player.id}
-                    className={cn(
-                      "grid items-center gap-3 p-4",
-                      index === results.length - 1 && "border-b-4 border-black",
-                      isValidationMode
-                        ? "grid-cols-[auto_minmax(0,1fr)_auto]"
-                        : "grid-cols-[3rem_auto_minmax(0,1fr)_auto]",
-                      result.player.id === currentUserId && "bg-theme/5",
-                      !isValidationMode &&
-                        !result.isValid &&
-                        "bg-destructive/5 opacity-75",
-                    )}
-                  >
-                    {/* Rank (Left side) - Only in Score Mode */}
-                    {!isValidationMode && (
-                      <div className="flex justify-center items-center">
-                        {result.isValid ? (
-                          <span
-                            className={cn(
-                              "font-display text-lg w-8 text-center",
-                              result.rank === 1 && "text-yellow-500",
-                              result.rank === 2 && "text-slate-400",
-                              result.rank === 3 && "text-amber-700",
-                              result.rank > 3 && "text-muted-foreground",
-                            )}
-                          >
-                            #{result.rank}
-                          </span>
-                        ) : result.word === "-" ? (
-                          <PixelIcon name="clock" className="size-8" />
-                        ) : (
-                          <PixelIcon name="alert-circle" className="size-8" />
-                        )}
-                      </div>
-                    )}
-
-                    {/* Avatar */}
-                    <div className="relative">
-                      {!isValidationMode ? (
-                        <AvatarDisplay
-                          player={result.player}
-                          isHost={result.player.id === hostId}
-                          // rank={result.rank}
-                          size="md"
-                          className="overflow-visible"
-                        />
-                      ) : (
-                        <AvatarDisplay
-                          player={{
-                            ...result.player,
-                            avatar_config: anonymousAvatars[result.player.id],
-                          }}
-                          // Masquer les status en mode anonyme
-                          isHost={false}
-                          rank={undefined}
-                          size="md"
-                          className="overflow-visible"
-                        />
+                  return (
+                    <div
+                      key={result.player.id}
+                      className={cn(
+                        "grid items-center gap-3 p-4",
+                        index === results.length - 1 &&
+                          "border-b-4 border-black",
+                        isValidationMode
+                          ? "grid-cols-[auto_minmax(0,1fr)_auto]"
+                          : "grid-cols-[3rem_auto_minmax(0,1fr)_auto]",
+                        result.player.id === currentUserId && "bg-theme/5",
+                        !isValidationMode &&
+                          !result.isValid &&
+                          "bg-destructive/5 opacity-75",
                       )}
-                    </div>
-
-                    {/* Info Joueur & Mot */}
-                    <div className="flex flex-col min-w-0 overflow-hidden">
-                      <div
-                        className={cn(
-                          "font-display truncate text-lg leading-tight w-full",
-                          result.player.id === currentUserId && "text-theme",
-                        )}
-                        title={
-                          !isValidationMode ? result.player.pseudo : undefined
-                        }
-                      >
-                        {!isValidationMode
-                          ? result.player.pseudo
-                          : `Joueur ${result.rank}`}
-                      </div>
-                      <p
-                        className={cn(
-                          "text-sm truncate w-full flex gap-1 text-muted-foreground",
-                          !isValidationMode &&
-                            !result.isValid &&
-                            "text-destructive line-through decoration-2",
-                          isValidationMode && "text-xl",
-                        )}
-                      >
-                        {result.word}
-                        {result.duration !== undefined && (
-                          <span>({result.duration.toFixed(3)}s)</span>
-                        )}
-                      </p>
-                    </div>
-
-                    {/* Action / Score */}
-                    <div className="text-right flex flex-col items-end shrink-0 gap-0.5">
-                      {isValidationMode ? (
-                        <>
-                          {!isMySubmission && result.submission && (
-                            <Button
-                              variant={hasVoted ? "destructive" : "outline"}
-                              size="sm"
-                              onClick={() =>
-                                result.submission &&
-                                handleVote(result.submission.id)
-                              }
-                              className="aspect-square h-12"
-                            >
-                              <Flag className="size-6" />
-                            </Button>
-                          )}
-                        </>
-                      ) : (
-                        <>
-                          <span className="font-display text-lg whitespace-nowrap">
-                            +{result.score}
-                          </span>
-                          {result.isValid && result.submission && (
-                            <div className="flex flex-col items-end leading-none gap-0.5 text-sm">
-                              <span className="text-muted-foreground whitespace-nowrap">
-                                Mot +
-                                {result.score -
-                                  (result.submission.points_details
-                                    ?.speed_bonus || 0)}
-                              </span>
-                              {(result.submission.points_details?.speed_bonus ||
-                                0) > 0 && (
-                                <span className="text-primary whitespace-nowrap">
-                                  Vitesse +
-                                  {
-                                    result.submission.points_details
-                                      ?.speed_bonus
-                                  }
-                                </span>
+                    >
+                      {/* Rank (Left side) - Only in Score Mode */}
+                      {!isValidationMode && (
+                        <div className="flex justify-center items-center">
+                          {result.isValid ? (
+                            <span
+                              className={cn(
+                                "font-display text-lg w-8 text-center",
+                                result.rank === 1 && "text-yellow-500",
+                                result.rank === 2 && "text-slate-400",
+                                result.rank === 3 && "text-amber-700",
+                                result.rank > 3 && "text-muted-foreground",
                               )}
-                            </div>
+                            >
+                              #{result.rank}
+                            </span>
+                          ) : result.word === "-" ? (
+                            <PixelIcon name="clock" className="size-8" />
+                          ) : (
+                            <PixelIcon name="alert-circle" className="size-8" />
                           )}
-                        </>
+                        </div>
                       )}
+
+                      {/* Avatar */}
+                      <div className="relative">
+                        {!isValidationMode ? (
+                          <AvatarDisplay
+                            player={result.player}
+                            isHost={result.player.id === hostId}
+                            // rank={result.rank}
+                            size="md"
+                            className="overflow-visible"
+                          />
+                        ) : (
+                          <AvatarDisplay
+                            player={{
+                              ...result.player,
+                              avatar_config: anonymousAvatars[result.player.id],
+                            }}
+                            // Masquer les status en mode anonyme
+                            isHost={false}
+                            rank={undefined}
+                            size="md"
+                            className="overflow-visible"
+                          />
+                        )}
+                      </div>
+
+                      {/* Info Joueur & Mot */}
+                      <div className="flex flex-col min-w-0 overflow-hidden">
+                        <div
+                          className={cn(
+                            "font-display truncate text-lg leading-tight w-full",
+                            result.player.id === currentUserId && "text-theme",
+                          )}
+                          title={
+                            !isValidationMode ? result.player.pseudo : undefined
+                          }
+                        >
+                          {!isValidationMode
+                            ? result.player.pseudo
+                            : `Joueur ${result.rank}`}
+                        </div>
+                        <p
+                          className={cn(
+                            "text-sm truncate w-full flex gap-1 text-muted-foreground",
+                            !isValidationMode &&
+                              !result.isValid &&
+                              "text-destructive line-through decoration-2",
+                            isValidationMode && "text-xl",
+                          )}
+                        >
+                          {result.word}
+                          {result.duration !== undefined && (
+                            <span>({result.duration.toFixed(3)}s)</span>
+                          )}
+                        </p>
+                      </div>
+
+                      {/* Action / Score */}
+                      <div className="text-right flex flex-col items-end shrink-0 gap-0.5">
+                        {isValidationMode ? (
+                          <>
+                            {!isMySubmission && result.submission && (
+                              <Button
+                                variant={hasVoted ? "destructive" : "outline"}
+                                size="sm"
+                                onClick={() =>
+                                  result.submission &&
+                                  handleVote(result.submission.id)
+                                }
+                                className="aspect-square h-12"
+                              >
+                                <Flag className="size-6" />
+                              </Button>
+                            )}
+                          </>
+                        ) : (
+                          <>
+                            <span className="font-display text-lg whitespace-nowrap">
+                              +{result.score}
+                            </span>
+                            {result.isValid && result.submission && (
+                              <div className="flex flex-col items-end leading-none gap-0.5 text-sm">
+                                <span className="text-muted-foreground whitespace-nowrap">
+                                  Mot +
+                                  {result.score -
+                                    (result.submission.points_details
+                                      ?.speed_bonus || 0)}
+                                </span>
+                                {(result.submission.points_details
+                                  ?.speed_bonus || 0) > 0 && (
+                                  <span className="text-primary whitespace-nowrap">
+                                    Vitesse +
+                                    {
+                                      result.submission.points_details
+                                        ?.speed_bonus
+                                    }
+                                  </span>
+                                )}
+                              </div>
+                            )}
+                          </>
+                        )}
+                      </div>
                     </div>
-                  </div>
-                );
-              })}
-            </div>
-          </ScrollArea>
-        </CardContent>
-      </Card>
+                  );
+                })}
+              </div>
+            </ScrollArea>
+          </CardContent>
+        </Card>
+      ) : (
+        <Card
+          className={cn(
+            "w-full flex-1 overflow-hidden flex flex-col border-4 border-black rounded-none shadow-hard",
+            "border-t-0",
+          )}
+        >
+          <CardHeader className="pb-2 border-b-4 border-black">
+            <CardTitle className="font-display text-lg flex items-center justify-between">
+              <span>CLASSEMENT GENERAL</span>
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="p-0 flex-1 min-h-0 bg-background">
+            <ScrollArea className="h-full">
+              <div className="divide-y-4 divide-black">
+                {leaderboard.map((entry, index) => {
+                  const player = players.find((p) => p.id === entry.playerId);
+                  if (!player) return null;
+                  const isMe = player.id === currentUserId;
+
+                  return (
+                    <div
+                      key={entry.playerId}
+                      className={cn(
+                        "grid items-center gap-3 p-4",
+                        index === leaderboard.length - 1 &&
+                          "border-b-4 border-black",
+                        "grid-cols-[3rem_auto_minmax(0,1fr)_auto]",
+                        isMe && "bg-theme/5",
+                      )}
+                    >
+                      {/* Rank */}
+                      <div className="flex justify-center items-center">
+                        <span
+                          className={cn(
+                            "font-display text-lg w-8 text-center",
+                            entry.rank === 1 && "text-yellow-500",
+                            entry.rank === 2 && "text-slate-400",
+                            entry.rank === 3 && "text-amber-700",
+                            entry.rank > 3 && "text-muted-foreground",
+                          )}
+                        >
+                          #{entry.rank}
+                        </span>
+                      </div>
+
+                      {/* Avatar */}
+                      <div className="relative">
+                        <AvatarDisplay
+                          player={player}
+                          isHost={player.id === hostId}
+                          size="md"
+                          className="overflow-visible"
+                        />
+                      </div>
+
+                      {/* Player Info */}
+                      <div className="flex flex-col min-w-0 overflow-hidden">
+                        <div
+                          className={cn(
+                            "font-display truncate text-lg leading-tight w-full",
+                            isMe && "text-theme",
+                          )}
+                        >
+                          {player.pseudo}
+                        </div>
+                        <div
+                          className={cn(
+                            "text-sm flex items-center gap-1",
+                            entry.lastRoundScore > 0
+                              ? "text-primary"
+                              : "text-destructive",
+                          )}
+                        >
+                          {entry.lastRoundScore > 0
+                            ? entry.lastRoundScore
+                            : "0"}{" "}
+                          pts
+                        </div>
+                      </div>
+
+                      {/* Total Score */}
+                      <div className="text-right flex flex-col items-end shrink-0">
+                        <span className="font-display text-2xl whitespace-nowrap leading-none">
+                          {entry.totalScore}
+                        </span>
+                        <span className="text-xs text-muted-foreground uppercase">
+                          PTS
+                        </span>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            </ScrollArea>
+          </CardContent>
+        </Card>
+      )}
 
       {/* Host Controls */}
       <div className="w-full flex flex-col gap-2">
@@ -417,9 +560,14 @@ export function RoundSummary({
                 <>{isValidationMode ? "VALIDATION..." : "LANCEMENT..."}</>
               ) : (
                 <>
-                  {isValidationMode
-                    ? "TERMINER LA VALIDATION"
-                    : "MANCHE SUIVANTE"}
+                  {isValidationMode ? (
+                    "TERMINER LA VALIDATION"
+                  ) : (
+                    <>
+                      <span className="md:hidden">SUIVANT</span>
+                      <span className="hidden md:inline">MANCHE SUIVANTE</span>
+                    </>
+                  )}
                 </>
               )}
             </Button>

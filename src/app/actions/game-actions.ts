@@ -189,7 +189,9 @@ export async function startGame(gameId: string) {
 
   if (insertError) {
     console.error("Error creating round:", insertError);
-    throw new Error("Erreur lors du lancement de la manche.");
+    throw new Error(
+      `Erreur lors du lancement de la manche: ${insertError.message} (${insertError.code})`,
+    );
   }
 
   // 2. Update status
