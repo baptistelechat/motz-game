@@ -1,6 +1,6 @@
 "use client";
 
-import { finishRound } from "@/app/actions/game-actions";
+import { finishRound, resetGame } from "@/app/actions/game-actions";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { LoadingScreen } from "@/components/ui/loading-screen";
 import { ScrollArea } from "@/components/ui/scroll-area";
@@ -14,11 +14,11 @@ import { useRouter } from "next/navigation";
 import { useEffect, useMemo, useState } from "react";
 import { GameDebugControls } from "./game-debug-controls";
 import { GameInput } from "./game-input";
-import { GameOverScreen } from "./game-over-screen";
 import { GameTimer } from "./game-timer";
 import { GameTitle } from "./game-title";
 import { PlayerListDisplay } from "./player-list-display";
 import { RoundSummary } from "./round-summary";
+import { toast } from "sonner";
 
 interface GameClientProps {
   gameId: string;
@@ -111,6 +111,7 @@ export function GameClient({ gameId, currentUserId, code }: GameClientProps) {
   }, [players, hostId, roundSubmissions]);
 
   const [optimisticSubmitted, setOptimisticSubmitted] = useState(false);
+  const [isResetting, setIsResetting] = useState(false);
 
   // Reset optimistic state when round changes
   useEffect(() => {
@@ -132,6 +133,22 @@ export function GameClient({ gameId, currentUserId, code }: GameClientProps) {
     }
   };
 
+  const handleReplay = async () => {
+    setIsResetting(true);
+    try {
+      await resetGame(gameId);
+      // Status change to LOBBY will trigger navigation in GameClient
+    } catch (error) {
+      console.error(error);
+      toast.error("Erreur lors de la relance de la partie");
+      setIsResetting(false);
+    }
+  };
+
+  const handleQuit = () => {
+    router.push("/");
+  };
+
   const handleTimeUp = () => {
     if (isHost && currentRound && currentRound.status === "PLAYING") {
       finishRound(currentRound.id).catch(console.error);
@@ -140,13 +157,17 @@ export function GameClient({ gameId, currentUserId, code }: GameClientProps) {
 
   if (status === "FINISHED") {
     return (
-      <GameOverScreen
-        gameId={gameId}
-        players={players}
-        isHost={isHost}
-        currentUserId={currentUserId}
-        hostId={hostId}
-      />
+      <div className="flex flex-col items-center justify-start min-h-screen w-full pt-4 pb-4 px-4 gap-4">
+        <RoundSummary
+          players={players}
+          currentUserId={currentUserId}
+          hostId={hostId}
+          isGameOver={true}
+          onReplay={handleReplay}
+          onQuit={handleQuit}
+          isActionLoading={isResetting}
+        />
+      </div>
     );
   }
 
