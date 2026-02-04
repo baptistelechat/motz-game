@@ -65,7 +65,7 @@ development_status:
   # Epic 4
   epic-4: in-progress
   4-1-moteur-calcul-score-avance: done
-  4-2-tableau-scores-global-leaderboard: backlog
+  4-2-tableau-scores-global-leaderboard: ready-for-dev
   4-3-indicateur-qualite-reseau-ping: backlog
   4-4-fin-partie-podium: backlog
   epic-4-retrospective: optional
