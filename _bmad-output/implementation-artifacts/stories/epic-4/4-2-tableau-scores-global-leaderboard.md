@@ -24,7 +24,6 @@ So that savoir qui mène la partie.
 - **Composant UI**: Reutiliser le composant `RoundSummary` et creer une variant `Leaderboard` pour afficher le classement général en cmoplément de `Validation` et `Ranking` déjà existant.
 - **State Management**: Utiliser le store Zustand existant qui contient déjà l'état du jeu et des joueurs.
 - **Realtime**: S'assurer que les mises à jour `game_players` (où le score est stocké/mis à jour) sont bien écoutées et reflétées.
-- **Animation**: Utiliser `framer-motion` pour les transitions de liste (layout animations).
 
 ## Dependencies
 
