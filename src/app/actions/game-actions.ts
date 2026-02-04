@@ -1,6 +1,6 @@
 "use server";
 
-import { ROUND_DURATION_MS } from "@/lib/game/constants";
+import { MAX_ROUNDS, ROUND_DURATION_MS } from "@/lib/game/constants";
 import { generateRoundConstraints } from "@/lib/game/constraint-generation";
 import { calculateWordScore } from "@/lib/game/scoring";
 import { THEMES } from "@/lib/game/themes";
@@ -84,10 +84,6 @@ export async function joinGame(code: string) {
     throw new Error("Partie introuvable.");
   }
 
-  if (game.status !== "LOBBY") {
-    throw new Error("La partie a déjà commencé ou est terminée.");
-  }
-
   // Check if already joined
   const { data: existing } = await supabase
     .from("game_players")
@@ -95,6 +91,10 @@ export async function joinGame(code: string) {
     .eq("game_id", game.id)
     .eq("player_id", user.id)
     .single();
+
+  if (!existing && game.status !== "LOBBY") {
+    throw new Error("La partie a déjà commencé ou est terminée.");
+  }
 
   if (!existing) {
     const { error: joinError } = await supabase.from("game_players").insert({
@@ -245,6 +245,51 @@ export async function debugRegenerateRound(roundId: string) {
     .eq("id", roundId);
 
   if (error) throw error;
+}
+
+export async function resetGame(gameId: string) {
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+
+  if (!user) throw new Error("Unauthorized");
+
+  // Verify host
+  const { data: game } = await supabase
+    .from("games")
+    .select("host_id, code")
+    .eq("id", gameId)
+    .single();
+
+  if (!game || game.host_id !== user.id) {
+    throw new Error("Only host can reset game");
+  }
+
+  // Delete all rounds for this game (will cascade to submissions usually, or we assume so)
+  const { error: deleteError } = await supabase
+    .from("rounds")
+    .delete()
+    .eq("game_id", gameId);
+
+  if (deleteError) {
+    console.error("Error deleting rounds:", deleteError);
+    throw new Error("Failed to reset game rounds");
+  }
+
+  // Reset player readiness
+  await supabase
+    .from("game_players")
+    .update({ is_ready: false })
+    .eq("game_id", gameId);
+
+  // Reset game status to LOBBY
+  const { error: updateError } = await supabase
+    .from("games")
+    .update({ status: "LOBBY", started_at: null })
+    .eq("id", gameId);
+
+  if (updateError) throw updateError;
 }
 
 export async function getServerTime() {
@@ -598,6 +643,17 @@ export async function startNextRound(currentRoundId: string) {
 
   // Generate new constraints
   const nextRoundNumber = round.round_number + 1;
+
+  if (nextRoundNumber > MAX_ROUNDS) {
+    const { error: updateGameError } = await supabase
+      .from("games")
+      .update({ status: "FINISHED" })
+      .eq("id", round.game_id);
+
+    if (updateGameError) throw updateGameError;
+    return;
+  }
+
   const constraints = generateRoundConstraints(THEMES.map((t) => t.label));
   const endsAt = new Date(Date.now() + ROUND_DURATION_MS).toISOString();
 

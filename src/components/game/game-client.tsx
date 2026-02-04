@@ -10,9 +10,11 @@ import { calculatePlayerRankings } from "@/lib/game/ranking";
 import { cn } from "@/lib/utils";
 import { useGameStore } from "@/store/use-game-store";
 import { mapGamePlayerToDisplayPlayer } from "@/utils/player-mapper";
+import { useRouter } from "next/navigation";
 import { useEffect, useMemo, useState } from "react";
 import { GameDebugControls } from "./game-debug-controls";
 import { GameInput } from "./game-input";
+import { GameOverScreen } from "./game-over-screen";
 import { GameTimer } from "./game-timer";
 import { GameTitle } from "./game-title";
 import { PlayerListDisplay } from "./player-list-display";
@@ -21,6 +23,7 @@ import { RoundSummary } from "./round-summary";
 interface GameClientProps {
   gameId: string;
   currentUserId: string;
+  code: string;
 }
 
 function SectionLabel({
@@ -42,7 +45,8 @@ function SectionLabel({
   );
 }
 
-export function GameClient({ gameId, currentUserId }: GameClientProps) {
+export function GameClient({ gameId, currentUserId, code }: GameClientProps) {
+  const router = useRouter();
   useRealtimeGame(gameId);
   const {
     players,
@@ -51,9 +55,16 @@ export function GameClient({ gameId, currentUserId }: GameClientProps) {
     hostId,
     submitWord,
     roundSubmissions,
+    status,
   } = useGameStore();
 
   const isHost = hostId === currentUserId;
+
+  useEffect(() => {
+    if (status === "LOBBY") {
+      router.push(`/room/${code}`);
+    }
+  }, [status, code, router]);
 
   // Auto-finish round if all players submitted
   useEffect(() => {
@@ -126,6 +137,18 @@ export function GameClient({ gameId, currentUserId }: GameClientProps) {
       finishRound(currentRound.id).catch(console.error);
     }
   };
+
+  if (status === "FINISHED") {
+    return (
+      <GameOverScreen
+        gameId={gameId}
+        players={players}
+        isHost={isHost}
+        currentUserId={currentUserId}
+        hostId={hostId}
+      />
+    );
+  }
 
   if (isLoading) {
     return <LoadingScreen message="CHARGEMENT DE LA PARTIE..." />;

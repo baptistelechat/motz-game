@@ -30,23 +30,31 @@ import { AvatarDisplay } from "../profile/avatar-display";
 import { GameTitle } from "./game-title";
 
 interface RoundSummaryProps {
-  round: GameRound;
+  round?: GameRound;
   players: GamePlayer[];
-  submissions: RoundSubmission[];
+  submissions?: RoundSubmission[];
   currentUserId: string;
   hostId: string | null;
   isValidationMode?: boolean;
   isLeaderboard?: boolean;
+  isGameOver?: boolean;
+  onReplay?: () => void;
+  onQuit?: () => void;
+  isActionLoading?: boolean;
 }
 
 export function RoundSummary({
   round,
   players,
-  submissions,
+  submissions = [],
   currentUserId,
   hostId,
   isValidationMode = false,
   isLeaderboard = false,
+  isGameOver = false,
+  onReplay,
+  onQuit,
+  isActionLoading = false,
 }: RoundSummaryProps) {
   const {
     updateRoundSubmission,
@@ -58,15 +66,15 @@ export function RoundSummary({
   const [autoAdvanceProgress, setAutoAdvanceProgress] = useState(0);
   const [isPaused, setIsPaused] = useState(false); // State to pause auto-advance
   const [view, setView] = useState<"round" | "leaderboard">(
-    isLeaderboard ? "leaderboard" : "round",
+    isLeaderboard || isGameOver ? "leaderboard" : "round",
   );
 
-  const { leaderboard } = useLeaderboard(gameId!, round.id);
+  const { leaderboard } = useLeaderboard(gameId!, round?.id);
 
   const isHost = currentUserId === hostId;
 
   const handleNextRound = async () => {
-    if (!isHost) return;
+    if (!isHost || !round) return;
     setIsLoading(true);
     try {
       await startNextRound(round.id);
@@ -78,7 +86,7 @@ export function RoundSummary({
   };
 
   const handleFinalizeValidation = async () => {
-    if (!isHost) return;
+    if (!isHost || !round) return;
     setIsLoading(true);
 
     // Removed optimistic update to prevent fetching stale submissions via useRealtimeGame effect
@@ -97,16 +105,18 @@ export function RoundSummary({
   // Auto-advance timer logic
   useEffect(() => {
     // Only host handles the timer logic reset
-    if (!isHost) return;
+    if (!isHost || !round) return;
 
     // Reset progress when round changes or mode changes
     setAutoAdvanceProgress(0);
     // Unpause when round changes to ensure flow
     setIsPaused(false);
-  }, [round.id, isValidationMode, isHost]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [round?.id, isValidationMode, isHost]);
 
   // Realtime Sync Logic
   useEffect(() => {
+    if (!round) return;
     const channel = supabase.channel(`round_sync:${round.id}`);
 
     if (!isHost) {
@@ -130,10 +140,12 @@ export function RoundSummary({
     return () => {
       supabase.removeChannel(channel);
     };
-  }, [round.id, isHost, supabase]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [round?.id, isHost, supabase]);
 
   // Broadcast function for Host
   const broadcastSync = async (progress: number, paused: boolean) => {
+    if (!round) return;
     await supabase.channel(`round_sync:${round.id}`).send({
       type: "broadcast",
       event: "sync_timer",
@@ -143,7 +155,7 @@ export function RoundSummary({
 
   useEffect(() => {
     // Only host handles the timer
-    if (!isHost) return;
+    if (!isHost || !round) return;
 
     // Broadcast immediately when pause state changes
     broadcastSync(autoAdvanceProgress, isPaused);
@@ -178,11 +190,11 @@ export function RoundSummary({
       clearInterval(interval);
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [isHost, isLoading, isPaused, round.id]); // Added round.id to deps to ensure fresh closure if needed, though isHost/paused are main triggers
+  }, [isHost, isLoading, isPaused, round?.id]); // Added round.id to deps to ensure fresh closure if needed, though isHost/paused are main triggers
 
   // Trigger action when progress reaches 100%
   useEffect(() => {
-    if (!isHost || isLoading || isPaused) return;
+    if (!isHost || isLoading || isPaused || !round) return;
 
     if (autoAdvanceProgress >= 100) {
       if (isValidationMode) {
@@ -192,16 +204,25 @@ export function RoundSummary({
       }
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [autoAdvanceProgress, isHost, isLoading, isPaused, isValidationMode]);
+  }, [
+    autoAdvanceProgress,
+    isHost,
+    isLoading,
+    isPaused,
+    isValidationMode,
+    round,
+  ]);
 
   // Reset loading state when round status changes (e.g. switching from validation to summary)
   useEffect(() => {
     setIsLoading(false);
-  }, [round.status, isValidationMode]);
+  }, [round?.status, isValidationMode]);
 
   const results = useMemo(() => {
+    if (!round) return [];
     return calculatePlayerRankings(players, submissions, round.created_at);
-  }, [players, submissions, round.created_at]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [players, submissions, round?.created_at]);
 
   // Generate stable random avatars for validation mode to maintain anonymity
   const anonymousAvatars = useMemo(() => {
@@ -240,7 +261,11 @@ export function RoundSummary({
 
   return (
     <div className="flex flex-col items-center h-full w-full max-w-2xl mx-auto p-4 gap-6 animate-in fade-in duration-500">
-      <GameTitle game={!isValidationMode} validation={isValidationMode} />
+      <GameTitle
+        game={!isValidationMode && !isGameOver}
+        validation={isValidationMode}
+        gameOver={isGameOver}
+      />
       {isValidationMode && (
         <p className="text-muted-foreground font-display text-center text-xl">
           Signalez les mots qui ne respectent pas le thème !
@@ -248,7 +273,7 @@ export function RoundSummary({
       )}
 
       {/* Tabs */}
-      {!isValidationMode && (
+      {!isValidationMode && !isGameOver && (
         <div className="w-full grid grid-cols-2 border-4 border-black border-b-0 bg-muted -mb-6 shadow-hard">
           <button
             onClick={() => setView("round")}
@@ -465,7 +490,7 @@ export function RoundSummary({
         <Card
           className={cn(
             "w-full flex-1 overflow-hidden flex flex-col border-4 border-black rounded-none shadow-hard",
-            "border-t-0",
+            !isGameOver && "border-t-0",
           )}
         >
           <CardHeader className="pb-2 border-b-4 border-black">
@@ -554,9 +579,33 @@ export function RoundSummary({
         </Card>
       )}
 
-      {/* Host Controls */}
+      {/* Footer Controls */}
       <div className="w-full flex flex-col gap-2">
-        {isHost ? (
+        {isGameOver ? (
+          <div className="flex gap-2 w-full">
+            {isHost ? (
+              <Button
+                onClick={onReplay}
+                disabled={isActionLoading}
+                className="flex-1 h-12 text-xl font-display"
+              >
+                {isActionLoading ? "RELANCE..." : "REJOUER"}
+              </Button>
+            ) : (
+              <div className="flex-1 flex items-center justify-center gap-2 font-display text-muted-foreground bg-muted/20 border-2 border-dashed border-muted p-2 rounded-none select-none h-12">
+                <span className="animate-pulse">⏳</span>
+                En attente...
+              </div>
+            )}
+            <Button
+              onClick={onQuit}
+              variant="destructive"
+              className="flex-1 h-12 text-xl font-display"
+            >
+              QUITTER
+            </Button>
+          </div>
+        ) : isHost ? (
           <div className="flex gap-2">
             <Button
               onClick={
@@ -603,10 +652,12 @@ export function RoundSummary({
         )}
 
         {/* Timer Progress Bar */}
-        <Progress
-          value={autoAdvanceProgress}
-          className="h-2 w-full border-black border rounded-none"
-        />
+        {!isGameOver && (
+          <Progress
+            value={autoAdvanceProgress}
+            className="h-2 w-full border-black border rounded-none"
+          />
+        )}
       </div>
     </div>
   );
