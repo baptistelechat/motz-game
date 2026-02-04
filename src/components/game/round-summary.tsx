@@ -23,6 +23,7 @@ import {
   useGameStore,
 } from "@/store/use-game-store";
 import { Flag, Pause, Play } from "@nsmr/pixelart-react";
+import { AnimatePresence, motion } from "framer-motion";
 import { useEffect, useMemo, useState } from "react";
 import { toast } from "sonner";
 import { AvatarDisplay } from "../profile/avatar-display";
@@ -290,158 +291,172 @@ export function RoundSummary({
           <CardContent className="p-0 flex-1 min-h-0 bg-background">
             <ScrollArea className="h-full">
               <div className="divide-y-4 divide-black">
-                {results.map((result, index) => {
-                  const votes = result.submission?.votes || [];
-                  const hasVoted = votes.includes(currentUserId);
-                  const isMySubmission = result.player.id === currentUserId;
+                <AnimatePresence mode="popLayout">
+                  {results.map((result, index) => {
+                    const votes = result.submission?.votes || [];
+                    const hasVoted = votes.includes(currentUserId);
+                    const isMySubmission = result.player.id === currentUserId;
 
-                  // In validation mode, only show entries with actual submissions
-                  if (isValidationMode && !result.submission) return null;
+                    // In validation mode, only show entries with actual submissions
+                    if (isValidationMode && !result.submission) return null;
 
-                  return (
-                    <div
-                      key={result.player.id}
-                      className={cn(
-                        "grid items-center gap-3 p-4",
-                        index === results.length - 1 &&
-                          "border-b-4 border-black",
-                        isValidationMode
-                          ? "grid-cols-[auto_minmax(0,1fr)_auto]"
-                          : "grid-cols-[3rem_auto_minmax(0,1fr)_auto]",
-                        result.player.id === currentUserId && "bg-theme/5",
-                        !isValidationMode &&
-                          !result.isValid &&
-                          "bg-destructive/5 opacity-75",
-                      )}
-                    >
-                      {/* Rank (Left side) - Only in Score Mode */}
-                      {!isValidationMode && (
-                        <div className="flex justify-center items-center">
-                          {result.isValid ? (
-                            <span
-                              className={cn(
-                                "font-display text-lg w-8 text-center",
-                                result.rank === 1 && "text-yellow-500",
-                                result.rank === 2 && "text-slate-400",
-                                result.rank === 3 && "text-amber-700",
-                                result.rank > 3 && "text-muted-foreground",
-                              )}
-                            >
-                              #{result.rank}
-                            </span>
-                          ) : result.word === "-" ? (
-                            <PixelIcon name="clock" className="size-8" />
-                          ) : (
-                            <PixelIcon name="alert-circle" className="size-8" />
-                          )}
-                        </div>
-                      )}
-
-                      {/* Avatar */}
-                      <div className="relative">
-                        {!isValidationMode ? (
-                          <AvatarDisplay
-                            player={result.player}
-                            isHost={result.player.id === hostId}
-                            // rank={result.rank}
-                            size="md"
-                            className="overflow-visible"
-                          />
-                        ) : (
-                          <AvatarDisplay
-                            player={{
-                              ...result.player,
-                              avatar_config: anonymousAvatars[result.player.id],
-                            }}
-                            // Masquer les status en mode anonyme
-                            isHost={false}
-                            rank={undefined}
-                            size="md"
-                            className="overflow-visible"
-                          />
+                    return (
+                      <motion.div
+                        layout
+                        initial={{ opacity: 0, y: 20 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        exit={{ opacity: 0, scale: 0.95 }}
+                        transition={{ duration: 0.3 }}
+                        key={result.player.id}
+                        className={cn(
+                          "grid items-center gap-3 p-4",
+                          index === results.length - 1 &&
+                            "border-b-4 border-black",
+                          isValidationMode
+                            ? "grid-cols-[auto_minmax(0,1fr)_auto]"
+                            : "grid-cols-[3rem_auto_minmax(0,1fr)_auto]",
+                          result.player.id === currentUserId && "bg-theme/5",
+                          !isValidationMode &&
+                            !result.isValid &&
+                            "bg-destructive/5 opacity-75",
                         )}
-                      </div>
-
-                      {/* Info Joueur & Mot */}
-                      <div className="flex flex-col min-w-0 overflow-hidden">
-                        <div
-                          className={cn(
-                            "font-display truncate text-lg leading-tight w-full",
-                            result.player.id === currentUserId && "text-theme",
-                          )}
-                          title={
-                            !isValidationMode ? result.player.pseudo : undefined
-                          }
-                        >
-                          {!isValidationMode
-                            ? result.player.pseudo
-                            : `Joueur ${result.rank}`}
-                        </div>
-                        <p
-                          className={cn(
-                            "text-sm truncate w-full flex gap-1 text-muted-foreground",
-                            !isValidationMode &&
-                              !result.isValid &&
-                              "text-destructive line-through decoration-2",
-                            isValidationMode && "text-xl",
-                          )}
-                        >
-                          {result.word}
-                          {result.duration !== undefined && (
-                            <span>({result.duration.toFixed(3)}s)</span>
-                          )}
-                        </p>
-                      </div>
-
-                      {/* Action / Score */}
-                      <div className="text-right flex flex-col items-end shrink-0 gap-0.5">
-                        {isValidationMode ? (
-                          <>
-                            {!isMySubmission && result.submission && (
-                              <Button
-                                variant={hasVoted ? "destructive" : "outline"}
-                                size="sm"
-                                onClick={() =>
-                                  result.submission &&
-                                  handleVote(result.submission.id)
-                                }
-                                className="aspect-square h-12"
-                              >
-                                <Flag className="size-6" />
-                              </Button>
-                            )}
-                          </>
-                        ) : (
-                          <>
-                            <span className="font-display text-lg whitespace-nowrap">
-                              +{result.score}
-                            </span>
-                            {result.isValid && result.submission && (
-                              <div className="flex flex-col items-end leading-none gap-0.5 text-sm">
-                                <span className="text-muted-foreground whitespace-nowrap">
-                                  Mot +
-                                  {result.score -
-                                    (result.submission.points_details
-                                      ?.speed_bonus || 0)}
-                                </span>
-                                {(result.submission.points_details
-                                  ?.speed_bonus || 0) > 0 && (
-                                  <span className="text-primary whitespace-nowrap">
-                                    Vitesse +
-                                    {
-                                      result.submission.points_details
-                                        ?.speed_bonus
-                                    }
-                                  </span>
+                      >
+                        {/* Rank (Left side) - Only in Score Mode */}
+                        {!isValidationMode && (
+                          <div className="flex justify-center items-center">
+                            {result.isValid ? (
+                              <span
+                                className={cn(
+                                  "font-display text-lg w-8 text-center",
+                                  result.rank === 1 && "text-yellow-500",
+                                  result.rank === 2 && "text-slate-400",
+                                  result.rank === 3 && "text-amber-700",
+                                  result.rank > 3 && "text-muted-foreground",
                                 )}
-                              </div>
+                              >
+                                #{result.rank}
+                              </span>
+                            ) : result.word === "-" ? (
+                              <PixelIcon name="clock" className="size-8" />
+                            ) : (
+                              <PixelIcon
+                                name="alert-circle"
+                                className="size-8"
+                              />
                             )}
-                          </>
+                          </div>
                         )}
-                      </div>
-                    </div>
-                  );
-                })}
+
+                        {/* Avatar */}
+                        <div className="relative">
+                          {!isValidationMode ? (
+                            <AvatarDisplay
+                              player={result.player}
+                              isHost={result.player.id === hostId}
+                              // rank={result.rank}
+                              size="md"
+                              className="overflow-visible"
+                            />
+                          ) : (
+                            <AvatarDisplay
+                              player={{
+                                ...result.player,
+                                avatar_config:
+                                  anonymousAvatars[result.player.id],
+                              }}
+                              // Masquer les status en mode anonyme
+                              isHost={false}
+                              rank={undefined}
+                              size="md"
+                              className="overflow-visible"
+                            />
+                          )}
+                        </div>
+
+                        {/* Info Joueur & Mot */}
+                        <div className="flex flex-col min-w-0 overflow-hidden">
+                          <div
+                            className={cn(
+                              "font-display truncate text-lg leading-tight w-full",
+                              result.player.id === currentUserId &&
+                                "text-theme",
+                            )}
+                            title={
+                              !isValidationMode
+                                ? result.player.pseudo
+                                : undefined
+                            }
+                          >
+                            {!isValidationMode
+                              ? result.player.pseudo
+                              : `Joueur ${result.rank}`}
+                          </div>
+                          <p
+                            className={cn(
+                              "text-sm truncate w-full flex gap-1 text-muted-foreground",
+                              !isValidationMode &&
+                                !result.isValid &&
+                                "text-destructive line-through decoration-2",
+                              isValidationMode && "text-xl",
+                            )}
+                          >
+                            {result.word}
+                            {result.duration !== undefined && (
+                              <span>({result.duration.toFixed(3)}s)</span>
+                            )}
+                          </p>
+                        </div>
+
+                        {/* Action / Score */}
+                        <div className="text-right flex flex-col items-end shrink-0 gap-0.5">
+                          {isValidationMode ? (
+                            <>
+                              {!isMySubmission && result.submission && (
+                                <Button
+                                  variant={hasVoted ? "destructive" : "outline"}
+                                  size="sm"
+                                  onClick={() =>
+                                    result.submission &&
+                                    handleVote(result.submission.id)
+                                  }
+                                  className="aspect-square h-12"
+                                >
+                                  <Flag className="size-6" />
+                                </Button>
+                              )}
+                            </>
+                          ) : (
+                            <>
+                              <span className="font-display text-lg whitespace-nowrap">
+                                +{result.score}
+                              </span>
+                              {result.isValid && result.submission && (
+                                <div className="flex flex-col items-end leading-none gap-0.5 text-sm">
+                                  <span className="text-muted-foreground whitespace-nowrap">
+                                    Mot +
+                                    {result.score -
+                                      (result.submission.points_details
+                                        ?.speed_bonus || 0)}
+                                  </span>
+                                  {(result.submission.points_details
+                                    ?.speed_bonus || 0) > 0 && (
+                                    <span className="text-primary whitespace-nowrap">
+                                      Vitesse +
+                                      {
+                                        result.submission.points_details
+                                          ?.speed_bonus
+                                      }
+                                    </span>
+                                  )}
+                                </div>
+                              )}
+                            </>
+                          )}
+                        </div>
+                      </motion.div>
+                    );
+                  })}
+                </AnimatePresence>
               </div>
             </ScrollArea>
           </CardContent>
@@ -461,84 +476,78 @@ export function RoundSummary({
           <CardContent className="p-0 flex-1 min-h-0 bg-background">
             <ScrollArea className="h-full">
               <div className="divide-y-4 divide-black">
-                {leaderboard.map((entry, index) => {
-                  const player = players.find((p) => p.id === entry.playerId);
-                  if (!player) return null;
-                  const isMe = player.id === currentUserId;
+                <AnimatePresence mode="popLayout">
+                  {leaderboard.map((entry, index) => {
+                    const player = players.find((p) => p.id === entry.playerId);
+                    if (!player) return null;
+                    const isMe = player.id === currentUserId;
 
-                  return (
-                    <div
-                      key={entry.playerId}
-                      className={cn(
-                        "grid items-center gap-3 p-4",
-                        index === leaderboard.length - 1 &&
-                          "border-b-4 border-black",
-                        "grid-cols-[3rem_auto_minmax(0,1fr)_auto]",
-                        isMe && "bg-theme/5",
-                      )}
-                    >
-                      {/* Rank */}
-                      <div className="flex justify-center items-center">
-                        <span
-                          className={cn(
-                            "font-display text-lg w-8 text-center",
-                            entry.rank === 1 && "text-yellow-500",
-                            entry.rank === 2 && "text-slate-400",
-                            entry.rank === 3 && "text-amber-700",
-                            entry.rank > 3 && "text-muted-foreground",
-                          )}
-                        >
-                          #{entry.rank}
-                        </span>
-                      </div>
-
-                      {/* Avatar */}
-                      <div className="relative">
-                        <AvatarDisplay
-                          player={player}
-                          isHost={player.id === hostId}
-                          size="md"
-                          className="overflow-visible"
-                        />
-                      </div>
-
-                      {/* Player Info */}
-                      <div className="flex flex-col min-w-0 overflow-hidden">
-                        <div
-                          className={cn(
-                            "font-display truncate text-lg leading-tight w-full",
-                            isMe && "text-theme",
-                          )}
-                        >
-                          {player.pseudo}
+                    return (
+                      <motion.div
+                        layout
+                        initial={{ opacity: 0, x: -20 }}
+                        animate={{ opacity: 1, x: 0 }}
+                        exit={{ opacity: 0, x: 20 }}
+                        transition={{ duration: 0.3, delay: index * 0.05 }}
+                        key={entry.playerId}
+                        className={cn(
+                          "grid items-center gap-3 p-4",
+                          index === leaderboard.length - 1 &&
+                            "border-b-4 border-black",
+                          "grid-cols-[3rem_auto_minmax(0,1fr)_auto]",
+                          isMe && "bg-theme/5",
+                        )}
+                      >
+                        {/* Rank */}
+                        <div className="flex justify-center items-center">
+                          <span
+                            className={cn(
+                              "font-display text-lg w-8 text-center",
+                              entry.rank === 1 && "text-yellow-500",
+                              entry.rank === 2 && "text-slate-400",
+                              entry.rank === 3 && "text-amber-700",
+                              entry.rank > 3 && "text-muted-foreground",
+                            )}
+                          >
+                            #{entry.rank}
+                          </span>
                         </div>
-                        <div
-                          className={cn(
-                            "text-sm flex items-center gap-1",
-                            entry.lastRoundScore > 0
-                              ? "text-primary"
-                              : "text-destructive",
-                          )}
-                        >
-                          {entry.lastRoundScore > 0
-                            ? entry.lastRoundScore
-                            : "0"}{" "}
-                          pts
-                        </div>
-                      </div>
 
-                      {/* Total Score */}
-                      <div className="text-right flex flex-col items-end shrink-0">
-                        <span className="font-display text-2xl whitespace-nowrap leading-none">
+                        {/* Avatar */}
+                        <div className="relative">
+                          <AvatarDisplay
+                            player={player}
+                            isHost={player.id === hostId}
+                            size="md"
+                            className="overflow-visible"
+                          />
+                        </div>
+
+                        {/* Player Info */}
+                        <div className="flex flex-col min-w-0 overflow-hidden">
+                          <div
+                            className={cn(
+                              "font-display truncate text-lg leading-tight w-full",
+                              isMe && "text-theme",
+                            )}
+                          >
+                            {player.pseudo}
+                          </div>
+                          <div className="text-sm flex items-center gap-1 text-muted-foreground">
+                            {entry.lastRoundScore > 0
+                              ? entry.lastRoundScore + " pts"
+                              : "-"}
+                          </div>
+                        </div>
+
+                        {/* Total Score */}
+                        <span className="font-display text-lg whitespace-nowrap leading-none">
                           {entry.totalScore}
                         </span>
-                        <span className="text-xs text-muted-foreground uppercase">
-                          PTS
-                        </span>
-                      </div>
-                    </div>
-                  );
-                })}
+                      </motion.div>
+                    );
+                  })}
+                </AnimatePresence>
               </div>
             </ScrollArea>
           </CardContent>
