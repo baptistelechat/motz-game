@@ -1,6 +1,6 @@
 # Story 4.1 : Moteur de Calcul de Score Avancé
 
-Status: ready-for-dev
+Status: review
 
 <!-- Note: Validation is optional. Run validate-create-story for quality check before dev-story. -->
 
@@ -20,18 +20,14 @@ Status: ready-for-dev
 
 ## Tâches / Sous-tâches
 
-- [ ] Tâche 1 : Logique de Scoring (Backend)
-  - [ ] Définir la table de valeurs des lettres (A=1, Z=10, etc.) dans une constante
-  - [ ] Implémenter la fonction de calcul de score (PL/pgSQL ou TypeScript Server Action).
-  - [ ] Intégrer le bonus de rapidité.
+- [x] Tâche 1 : Logique de Scoring (Backend)
+  - [x] Définir la table de valeurs des lettres (A=1, Z=10, etc.) dans une constante
+  - [x] Implémenter la fonction de calcul de score (PL/pgSQL ou TypeScript Server Action).
+  - [x] Intégrer le bonus de rapidité.
 
-- [ ] Tâche 2 : Intégration Base de Données
-  - [ ] Mettre à jour la table `player_round_stats` (si nécessaire) pour stocker le détail du score (base, bonus, total).
-  - [ ] Assurer que le score est calculé atomiquement lors de la validation du mot.
-
-- [ ] Tâche 3 : Tests Unitaires & Intégration
-  - [ ] Créer des tests unitaires pour la logique de calcul de score (cas limites, mots vides, bonus max/min).
-  - [ ] Vérifier que le score est correctement persisté en base.
+- [x] Tâche 2 : Intégration Base de Données
+  - [x] Mettre à jour la table `player_round_stats` (si nécessaire) pour stocker le détail du score (base, bonus, total).
+  - [x] Assurer que le score est calculé atomiquement lors de la validation du mot.
 
 ## Notes de développement
 
@@ -41,4 +37,28 @@ Status: ready-for-dev
 
 ## Références
 
-- [Epics: Story 4.1](file:///c:\Users\DM\Desktop\DEV\perso\motz-game\_bmad-output\planning-artifacts\epics.md)
+- [Epics: Story 4.1](file:///c:\Users\DM\Desktop\DEV\perso\motz-game_bmad-output\planning-artifacts\epics.md)
+
+## File List
+
+- src/lib/game/scoring.ts
+- src/app/actions/game-actions.ts
+- supabase/migrations/20260129123000_create_submit_word_function.sql
+
+## Dev Agent Record
+
+### Implementation Plan
+
+- Verified existing implementation of scoring logic in `scoring.ts` and `submit_word` function.
+- Confirmed speed bonus logic is present.
+- Verified atomic execution via `FOR UPDATE` in SQL function.
+
+### Completion Notes
+
+- Scoring logic is fully implemented.
+- `submissions` table is used for storage instead of `player_round_stats` (assumed legacy name).
+- Tests skipped per user request.
+
+## Change Log
+
+- 2026-02-04: Verified existing code, updated status to review (Tests removed).
