@@ -7,7 +7,6 @@ import {
 } from "@/app/actions/game-actions";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { PixelIcon } from "@/components/ui/pixel-icon";
 import { Progress } from "@/components/ui/progress";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { useLeaderboard } from "@/hooks/use-leaderboard";
@@ -337,48 +336,20 @@ export function RoundSummary({
                           "grid items-center gap-3 p-4",
                           index === results.length - 1 &&
                             "border-b-4 border-black",
-                          isValidationMode
-                            ? "grid-cols-[auto_minmax(0,1fr)_auto]"
-                            : "grid-cols-[3rem_auto_minmax(0,1fr)_auto]",
+                          "grid-cols-[auto_minmax(0,1fr)_auto]",
                           result.player.id === currentUserId && "bg-theme/5",
                           !isValidationMode &&
                             !result.isValid &&
                             "bg-destructive/5 opacity-75",
                         )}
                       >
-                        {/* Rank (Left side) - Only in Score Mode */}
-                        {!isValidationMode && (
-                          <div className="flex justify-center items-center">
-                            {result.isValid ? (
-                              <span
-                                className={cn(
-                                  "font-display text-lg w-8 text-center",
-                                  result.rank === 1 && "text-yellow-500",
-                                  result.rank === 2 && "text-slate-400",
-                                  result.rank === 3 && "text-amber-700",
-                                  result.rank > 3 && "text-muted-foreground",
-                                )}
-                              >
-                                #{result.rank}
-                              </span>
-                            ) : result.word === "-" ? (
-                              <PixelIcon name="clock" className="size-8" />
-                            ) : (
-                              <PixelIcon
-                                name="alert-circle"
-                                className="size-8"
-                              />
-                            )}
-                          </div>
-                        )}
-
                         {/* Avatar */}
                         <div className="relative">
                           {!isValidationMode ? (
                             <AvatarDisplay
                               player={result.player}
                               isHost={result.player.id === hostId}
-                              // rank={result.rank}
+                              rank={result.isValid ? result.rank : undefined}
                               size="md"
                               className="overflow-visible"
                             />
@@ -519,30 +490,16 @@ export function RoundSummary({
                           "grid items-center gap-3 p-4",
                           index === leaderboard.length - 1 &&
                             "border-b-4 border-black",
-                          "grid-cols-[3rem_auto_minmax(0,1fr)_auto]",
+                          "grid-cols-[auto_minmax(0,1fr)_auto]",
                           isMe && "bg-theme/5",
                         )}
                       >
-                        {/* Rank */}
-                        <div className="flex justify-center items-center">
-                          <span
-                            className={cn(
-                              "font-display text-lg w-8 text-center",
-                              entry.rank === 1 && "text-yellow-500",
-                              entry.rank === 2 && "text-slate-400",
-                              entry.rank === 3 && "text-amber-700",
-                              entry.rank > 3 && "text-muted-foreground",
-                            )}
-                          >
-                            #{entry.rank}
-                          </span>
-                        </div>
-
                         {/* Avatar */}
                         <div className="relative">
                           <AvatarDisplay
                             player={player}
                             isHost={player.id === hostId}
+                            rank={entry.rank}
                             size="md"
                             className="overflow-visible"
                           />
