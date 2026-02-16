@@ -19,6 +19,7 @@ export function useRealtimeGame(gameId: string) {
   const [supabase] = useState(() => createClient());
 
   const fetchPlayers = useCallback(async () => {
+    // console.log("Fetching players for game:", gameId);
     const { data: players } = await supabase
       .from("game_players")
       .select(`*, player:players(*)`)
@@ -26,6 +27,7 @@ export function useRealtimeGame(gameId: string) {
       .order("joined_at", { ascending: true });
 
     if (players) {
+      // console.log("Fetched players count:", players.length);
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       const formattedPlayers: GamePlayer[] = players.map((p: any) => ({
         id: p.player.id,
@@ -220,6 +222,8 @@ export function useRealtimeGame(gameId: string) {
               created_at: round.created_at,
               ends_at: round.ends_at,
             });
+          } else {
+            setCurrentRound(null);
           }
         },
       )

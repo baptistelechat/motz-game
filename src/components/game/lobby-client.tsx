@@ -61,6 +61,27 @@ export function LobbyClient({
   const [isTimeout, setIsTimeout] = useState(false);
   const hasJoinedRef = useRef(false);
 
+  // Sync gameId with store
+  useEffect(() => {
+    if (gameId) {
+      // We don't strictly need to set it here for Lobby as much as Game, 
+      // but it helps keep the store consistent.
+      useGameStore.getState().setGameId(gameId);
+    }
+  }, [gameId]);
+
+  // Auto-redirect if host leaves
+  useEffect(() => {
+    if (isLobbyLoading || !currentHostId || players.length === 0) return;
+
+    const hostIsPresent = players.some((p) => p.id === currentHostId);
+    if (!hostIsPresent) {
+      toast.info("L'hôte a quitté la partie.");
+      useGameStore.getState().reset();
+      router.push("/");
+    }
+  }, [players, currentHostId, isLobbyLoading, router]);
+
   // 1. Ensure profile exists (Auto-create if missing for seamless join)
   useEffect(() => {
     if (!isInitialized || !user || profile || isProfileLoading) return;

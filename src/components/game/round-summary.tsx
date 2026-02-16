@@ -104,14 +104,14 @@ export function RoundSummary({
   // Auto-advance timer logic
   useEffect(() => {
     // Only host handles the timer logic reset
-    if (!isHost || !round) return;
+    if (!isHost || !round || isGameOver) return;
 
     // Reset progress when round changes or mode changes
     setAutoAdvanceProgress(0);
     // Unpause when round changes to ensure flow
     setIsPaused(false);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [round?.id, isValidationMode, isHost]);
+  }, [round?.id, isValidationMode, isHost, isGameOver]);
 
   // Realtime Sync Logic
   useEffect(() => {
@@ -154,7 +154,7 @@ export function RoundSummary({
 
   useEffect(() => {
     // Only host handles the timer
-    if (!isHost || !round) return;
+    if (!isHost || !round || isGameOver) return;
 
     // Broadcast immediately when pause state changes
     broadcastSync(autoAdvanceProgress, isPaused);
@@ -210,6 +210,7 @@ export function RoundSummary({
     isPaused,
     isValidationMode,
     round,
+    isGameOver,
   ]);
 
   // Reset loading state when round status changes (e.g. switching from validation to summary)
@@ -540,7 +541,7 @@ export function RoundSummary({
       <div className="w-full flex flex-col gap-2">
         {isGameOver ? (
           <div className="flex gap-2 w-full">
-            {isHost ? (
+            {isHost && (
               <Button
                 onClick={onReplay}
                 disabled={isActionLoading}
@@ -548,11 +549,6 @@ export function RoundSummary({
               >
                 {isActionLoading ? "RELANCE..." : "REJOUER"}
               </Button>
-            ) : (
-              <div className="flex-1 flex items-center justify-center gap-2 font-display text-muted-foreground bg-muted/20 border-2 border-dashed border-muted p-2 rounded-none select-none h-12">
-                <span className="animate-pulse">⏳</span>
-                En attente...
-              </div>
             )}
             <Button
               onClick={onQuit}

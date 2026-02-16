@@ -61,6 +61,7 @@ interface GameState {
   removeRoundSubmission: (id: string) => void;
   setIsLoading: (isLoading: boolean) => void;
   submitWord: (word: string) => Promise<boolean>;
+  reset: () => void;
 }
 
 export const useGameStore = create<GameState>((set, get) => ({
@@ -71,6 +72,17 @@ export const useGameStore = create<GameState>((set, get) => ({
   currentRound: null,
   roundSubmissions: [],
   isLoading: true,
+
+  reset: () =>
+    set({
+      gameId: null,
+      hostId: null,
+      status: "LOBBY",
+      players: [],
+      currentRound: null,
+      roundSubmissions: [],
+      isLoading: true,
+    }),
 
   setGameId: (id) => set({ gameId: id }),
   setHostId: (id) => set({ hostId: id }),

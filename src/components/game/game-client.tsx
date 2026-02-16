@@ -1,6 +1,6 @@
 "use client";
 
-import { finishRound, resetGame } from "@/app/actions/game-actions";
+import { finishRound, leaveGame, resetGame } from "@/app/actions/game-actions";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { LoadingScreen } from "@/components/ui/loading-screen";
 import { ScrollArea } from "@/components/ui/scroll-area";
@@ -12,13 +12,13 @@ import { useGameStore } from "@/store/use-game-store";
 import { mapGamePlayerToDisplayPlayer } from "@/utils/player-mapper";
 import { useRouter } from "next/navigation";
 import { useEffect, useMemo, useState } from "react";
+import { toast } from "sonner";
 import { GameDebugControls } from "./game-debug-controls";
 import { GameInput } from "./game-input";
 import { GameTimer } from "./game-timer";
 import { GameTitle } from "./game-title";
 import { PlayerListDisplay } from "./player-list-display";
 import { RoundSummary } from "./round-summary";
-import { toast } from "sonner";
 
 interface GameClientProps {
   gameId: string;
@@ -47,7 +47,7 @@ function SectionLabel({
 
 export function GameClient({ gameId, currentUserId, code }: GameClientProps) {
   const router = useRouter();
-  useRealtimeGame(gameId);
+  const { refresh } = useRealtimeGame(gameId);
   const {
     players,
     currentRound,
@@ -56,15 +56,41 @@ export function GameClient({ gameId, currentUserId, code }: GameClientProps) {
     submitWord,
     roundSubmissions,
     status,
+    reset,
+    gameId: savedGameId,
+    setGameId,
   } = useGameStore();
 
   const isHost = hostId === currentUserId;
 
+  const [optimisticSubmitted, setOptimisticSubmitted] = useState(false);
+  const [isResetting, setIsResetting] = useState(false);
+  const [isQuitting, setIsQuitting] = useState(false);
+
+  // Sync gameId with store to ensure redirects work correctly
   useEffect(() => {
-    if (status === "LOBBY") {
+    if (gameId && gameId !== savedGameId && !isQuitting) {
+      setGameId(gameId);
+    }
+  }, [gameId, savedGameId, setGameId, isQuitting]);
+
+  useEffect(() => {
+    if (status === "LOBBY" && savedGameId && !isQuitting) {
       router.push(`/room/${code}`);
     }
-  }, [status, code, router]);
+  }, [status, code, router, savedGameId, isQuitting]);
+
+  // Auto-redirect if host leaves
+  useEffect(() => {
+    if (isLoading || isQuitting || !hostId || players.length === 0) return;
+
+    const hostIsPresent = players.some((p) => p.id === hostId);
+    if (!hostIsPresent) {
+      toast.info("L'hôte a quitté la partie.");
+      reset();
+      router.push("/");
+    }
+  }, [players, hostId, isLoading, isQuitting, reset, router]);
 
   // Auto-finish round if all players submitted
   useEffect(() => {
@@ -110,9 +136,6 @@ export function GameClient({ gameId, currentUserId, code }: GameClientProps) {
       });
   }, [players, hostId, roundSubmissions]);
 
-  const [optimisticSubmitted, setOptimisticSubmitted] = useState(false);
-  const [isResetting, setIsResetting] = useState(false);
-
   // Reset optimistic state when round changes
   useEffect(() => {
     setOptimisticSubmitted(false);
@@ -134,18 +157,44 @@ export function GameClient({ gameId, currentUserId, code }: GameClientProps) {
   };
 
   const handleReplay = async () => {
+    console.log(
+      "handleReplay called. isResetting:",
+      isResetting,
+      "gameId:",
+      gameId,
+    );
+    if (isResetting) return;
     setIsResetting(true);
+
+    // Reset local state immediately to show loading screen and avoid stale data
+    reset();
+    setGameId(gameId); // Restore gameId so that the redirect effect can work
+
     try {
+      console.log("Calling resetGame...");
       await resetGame(gameId);
-      // Status change to LOBBY will trigger navigation in GameClient
+      console.log("resetGame success. Calling refresh...");
+      // Force refresh to ensure status update is caught
+      await refresh();
+      console.log("refresh done. Status should be LOBBY.");
+      // Status change to LOBBY/PLAYING will be handled by realtime/refresh
     } catch (error) {
-      console.error(error);
+      console.error("Replay error:", error);
       toast.error("Erreur lors de la relance de la partie");
+    } finally {
+      console.log("handleReplay finally block. Setting isResetting to false.");
       setIsResetting(false);
     }
   };
 
-  const handleQuit = () => {
+  const handleQuit = async () => {
+    setIsQuitting(true);
+    try {
+      await leaveGame(gameId);
+    } catch (error) {
+      console.error("Error leaving game:", error);
+    }
+    reset();
     router.push("/");
   };
 

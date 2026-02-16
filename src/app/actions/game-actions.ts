@@ -9,6 +9,7 @@ import { submitWordSchema } from "@/lib/schemas/submission-schema";
 import { createClient } from "@/lib/supabase/server";
 import { Database, Json } from "@/types/database.types";
 import { RoundConstraints } from "@/types/game";
+import { createClient as createSupabaseClient } from "@supabase/supabase-js";
 import { customAlphabet } from "nanoid";
 import { redirect } from "next/navigation";
 import { z } from "zod";
@@ -167,7 +168,6 @@ export async function startGame(gameId: string) {
   }
 
   // 1. Start first round (Create round BEFORE updating status)
-  // RPC was removed, logic moved to TS as per memory/migration
   const { data: rounds } = await supabase
     .from("rounds")
     .select("round_number")
@@ -175,7 +175,10 @@ export async function startGame(gameId: string) {
     .order("round_number", { ascending: false })
     .limit(1);
 
+  console.log("Existing rounds for game", gameId, ":", rounds);
+
   const nextRoundNumber = (rounds?.[0]?.round_number || 0) + 1;
+  console.log("Next round number:", nextRoundNumber);
   const constraints = generateRoundConstraints(THEMES.map((t) => t.label));
   const endsAt = new Date(Date.now() + ROUND_DURATION_MS).toISOString();
 
@@ -247,6 +250,39 @@ export async function debugRegenerateRound(roundId: string) {
   if (error) throw error;
 }
 
+export async function leaveGame(gameId: string) {
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+
+  if (!user) {
+    console.error("Attempted to leave game without user session");
+    return;
+  }
+
+  console.log(`User ${user.id} leaving game ${gameId}`);
+
+  // Use Admin Client to ensure deletion works regardless of RLS or status
+  const adminClient = createSupabaseClient<Database>(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.SUPABASE_SERVICE_ROLE_KEY!,
+  );
+
+  const { error } = await adminClient
+    .from("game_players")
+    .delete()
+    .eq("game_id", gameId)
+    .eq("player_id", user.id);
+
+  if (error) {
+    console.error("Error leaving game:", error);
+    throw new Error("Erreur lors de la tentative de quitter la partie");
+  }
+
+  console.log(`User ${user.id} successfully removed from game ${gameId}`);
+}
+
 export async function resetGame(gameId: string) {
   const supabase = await createClient();
   const {
@@ -255,19 +291,36 @@ export async function resetGame(gameId: string) {
 
   if (!user) throw new Error("Unauthorized");
 
-  // Verify host
+  // Use Admin Client to bypass RLS and ensure complete cleanup
+  const adminClient = createSupabaseClient<Database>(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.SUPABASE_SERVICE_ROLE_KEY!,
+  );
+
+  // Verify game exists
   const { data: game } = await supabase
     .from("games")
     .select("host_id, code")
     .eq("id", gameId)
     .single();
 
-  if (!game || game.host_id !== user.id) {
-    throw new Error("Only host can reset game");
+  if (!game) {
+    throw new Error("Game not found");
   }
 
-  // Delete all rounds for this game (will cascade to submissions usually, or we assume so)
-  const { error: deleteError } = await supabase
+  // 1. Delete all submissions for this game directly (using game_id)
+  const { error: deleteSubmissionsError } = await adminClient
+    .from("submissions")
+    .delete()
+    .eq("game_id", gameId);
+
+  if (deleteSubmissionsError) {
+    console.error("Error deleting submissions:", deleteSubmissionsError);
+    throw new Error("Failed to reset game submissions");
+  }
+
+  // 2. Delete rounds
+  const { error: deleteError } = await adminClient
     .from("rounds")
     .delete()
     .eq("game_id", gameId);
@@ -277,16 +330,21 @@ export async function resetGame(gameId: string) {
     throw new Error("Failed to reset game rounds");
   }
 
-  // Reset player readiness
-  await supabase
+  // 3. Reset players status
+  const { error: playersError } = await adminClient
     .from("game_players")
     .update({ is_ready: false })
     .eq("game_id", gameId);
 
-  // Reset game status to LOBBY
-  const { error: updateError } = await supabase
+  if (playersError) {
+    console.error("Error resetting players:", playersError);
+    throw new Error("Failed to reset players");
+  }
+
+  // 4. Update game status
+  const { error: updateError } = await adminClient
     .from("games")
-    .update({ status: "LOBBY", started_at: null })
+    .update({ status: "LOBBY" })
     .eq("id", gameId);
 
   if (updateError) throw updateError;

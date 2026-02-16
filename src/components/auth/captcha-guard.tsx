@@ -1,7 +1,7 @@
 "use client";
 import { useAuth } from "@/components/providers/auth-provider";
 import { Turnstile, type TurnstileInstance } from "@marsidev/react-turnstile";
-import { useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 
 import { Card } from "@/components/ui/card";
 import { ErrorCard } from "@/components/ui/error-card";
@@ -13,6 +13,22 @@ export function CaptchaGuard({ children }: { children: React.ReactNode }) {
   const [captchaError, setCaptchaError] = useState(false);
   const turnstileRef = useRef<TurnstileInstance>(null);
 
+  // Si pas connecté, on affiche l'écran de garde avec Captcha
+  const isE2E = process.env.NEXT_PUBLIC_IS_E2E === "true";
+
+  // Auto-signin in E2E mode
+  useEffect(() => {
+    if (
+      process.env.NEXT_PUBLIC_IS_E2E === "true" &&
+      !user &&
+      !isLoading &&
+      !isVerifying
+    ) {
+      setIsVerifying(true);
+      signIn("e2e-bypass-token").catch(() => setIsVerifying(false));
+    }
+  }, [user, isLoading, isVerifying, signIn]);
+
   // Si on charge ou si l'utilisateur est connecté, on affiche le contenu normal
   if (isLoading) {
     return <LoadingScreen message="CHARGEMENT..." />;
@@ -22,7 +38,6 @@ export function CaptchaGuard({ children }: { children: React.ReactNode }) {
     return <>{children}</>;
   }
 
-  // Si pas connecté, on affiche l'écran de garde avec Captcha
   return (
     <div className="min-h-screen flex flex-col items-center justify-center bg-background p-4 gap-8">
       <div className="text-center space-y-4">
@@ -35,22 +50,32 @@ export function CaptchaGuard({ children }: { children: React.ReactNode }) {
       </div>
 
       <Card className="bg-black/50 border-primary backdrop-blur-sm p-8 gap-4 items-center">
-        <Turnstile
-          ref={turnstileRef}
-          siteKey={process.env.NEXT_PUBLIC_TURNSTILE_SITE_KEY || ""}
-          onSuccess={(token) => {
-            setCaptchaError(false);
-            // Auto-submit
-            setIsVerifying(true);
-            signIn(token).catch(() => setIsVerifying(false));
-          }}
-          onError={() => setCaptchaError(true)}
-          onExpire={() => setCaptchaError(true)}
-          options={{
-            theme: "dark",
-            size: "normal",
-          }}
-        />
+        {!isE2E && (
+          <Turnstile
+            ref={turnstileRef}
+            siteKey={process.env.NEXT_PUBLIC_TURNSTILE_SITE_KEY || ""}
+            onSuccess={(token) => {
+              setCaptchaError(false);
+              // Auto-submit
+              setIsVerifying(true);
+              signIn(token).catch(() => setIsVerifying(false));
+            }}
+            onError={() => setCaptchaError(true)}
+            onExpire={() => setCaptchaError(true)}
+            options={{
+              theme: "dark",
+              size: "normal",
+            }}
+          />
+        )}
+
+        {isE2E && (
+          <div className="text-yellow-400 font-mono text-center animate-pulse">
+            🔒 E2E MODE ACTIF
+            <br />
+            CAPTCHA DESACTIVÉ
+          </div>
+        )}
 
         {captchaError && (
           <div className="flex flex-col items-center gap-2">
@@ -108,7 +133,9 @@ export function CaptchaGuard({ children }: { children: React.ReactNode }) {
           className="fixed bottom-4 right-4 bg-red-500 text-white p-2 rounded text-xs opacity-50 hover:opacity-100 z-50"
           onClick={() => {
             console.log("🔒 E2E BUTTON CLICKED");
-            signIn("e2e-bypass-token").catch((e) => console.error("🔒 E2E BUTTON ERROR", e));
+            signIn("e2e-bypass-token").catch((e) =>
+              console.error("🔒 E2E BUTTON ERROR", e),
+            );
           }}
         >
           E2E BYPASS
