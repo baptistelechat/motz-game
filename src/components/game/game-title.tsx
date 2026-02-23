@@ -5,13 +5,15 @@ import { useGameStore } from "@/store/use-game-store";
 
 interface GameTitleProps extends React.HTMLAttributes<HTMLHeadingElement> {
   game?: boolean;
-  validation?:boolean
+  validation?:boolean;
+  gameOver?:boolean
 }
 
 export function GameTitle({
   className,
   game = false,
   validation = false,
+  gameOver = false,
   ...props
 }: GameTitleProps) {
 
@@ -29,7 +31,7 @@ export function GameTitle({
       )}
       {...props}
       >
-        {game ? `MANCHE ${currentRound?.round_number || 1}` : validation ? "VALIDATION" : "SALLE D'ATTENTE"}
+        {game ? `MANCHE ${currentRound?.round_number || 1}` : validation ? "VALIDATION" : gameOver ? "PARTIE TERMINEE": "SALLE D'ATTENTE"}
     </h1>
   );
 }

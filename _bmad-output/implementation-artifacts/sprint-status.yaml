@@ -63,16 +63,17 @@ development_status:
   epic-3-retrospective: done
 
   # Epic 4
-  epic-4: backlog
-  4-1-moteur-calcul-score-avance: backlog
-  4-2-tableau-scores-global-leaderboard: backlog
-  4-3-indicateur-qualite-reseau-ping: backlog
-  4-4-fin-partie-podium: backlog
-  epic-4-retrospective: optional
+  epic-4: done
+  4-1-moteur-calcul-score-avance: done
+  4-2-tableau-scores-global-leaderboard: done
+  4-3-indicateur-qualite-reseau-ping: done
+  4-4-fin-partie-podium: done
+  epic-4-retrospective: done
 
   # Epic 5
   epic-5: backlog
   5-1-filtre-profanite-safe-mode: backlog
   5-2-vote-exclusion-vote-kick-reputation: backlog
   5-3-signalement-mots-feedback-loop: backlog
+  5-4-tableau-bord-admin: backlog
   epic-5-retrospective: optional

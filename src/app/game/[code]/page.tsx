@@ -35,7 +35,7 @@ export default async function GamePage({ params }: GamePageProps) {
 
   return (
     <MainLayout className="h-dvh overflow-hidden flex flex-col">
-      <GameClient gameId={game.id} currentUserId={user.id} />
+      <GameClient gameId={game.id} currentUserId={user.id} code={code} />
     </MainLayout>
   );
 }

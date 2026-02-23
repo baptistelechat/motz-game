@@ -1,6 +1,6 @@
 "use server";
 
-import { ROUND_DURATION_MS } from "@/lib/game/constants";
+import { MAX_ROUNDS, ROUND_DURATION_MS } from "@/lib/game/constants";
 import { generateRoundConstraints } from "@/lib/game/constraint-generation";
 import { calculateWordScore } from "@/lib/game/scoring";
 import { THEMES } from "@/lib/game/themes";
@@ -9,6 +9,7 @@ import { submitWordSchema } from "@/lib/schemas/submission-schema";
 import { createClient } from "@/lib/supabase/server";
 import { Database, Json } from "@/types/database.types";
 import { RoundConstraints } from "@/types/game";
+import { createClient as createSupabaseClient } from "@supabase/supabase-js";
 import { customAlphabet } from "nanoid";
 import { redirect } from "next/navigation";
 import { z } from "zod";
@@ -84,10 +85,6 @@ export async function joinGame(code: string) {
     throw new Error("Partie introuvable.");
   }
 
-  if (game.status !== "LOBBY") {
-    throw new Error("La partie a déjà commencé ou est terminée.");
-  }
-
   // Check if already joined
   const { data: existing } = await supabase
     .from("game_players")
@@ -95,6 +92,10 @@ export async function joinGame(code: string) {
     .eq("game_id", game.id)
     .eq("player_id", user.id)
     .single();
+
+  if (!existing && game.status !== "LOBBY") {
+    throw new Error("La partie a déjà commencé ou est terminée.");
+  }
 
   if (!existing) {
     const { error: joinError } = await supabase.from("game_players").insert({
@@ -167,7 +168,6 @@ export async function startGame(gameId: string) {
   }
 
   // 1. Start first round (Create round BEFORE updating status)
-  // RPC was removed, logic moved to TS as per memory/migration
   const { data: rounds } = await supabase
     .from("rounds")
     .select("round_number")
@@ -175,7 +175,10 @@ export async function startGame(gameId: string) {
     .order("round_number", { ascending: false })
     .limit(1);
 
+  console.log("Existing rounds for game", gameId, ":", rounds);
+
   const nextRoundNumber = (rounds?.[0]?.round_number || 0) + 1;
+  console.log("Next round number:", nextRoundNumber);
   const constraints = generateRoundConstraints(THEMES.map((t) => t.label));
   const endsAt = new Date(Date.now() + ROUND_DURATION_MS).toISOString();
 
@@ -189,7 +192,9 @@ export async function startGame(gameId: string) {
 
   if (insertError) {
     console.error("Error creating round:", insertError);
-    throw new Error("Erreur lors du lancement de la manche.");
+    throw new Error(
+      `Erreur lors du lancement de la manche: ${insertError.message} (${insertError.code})`,
+    );
   }
 
   // 2. Update status
@@ -243,6 +248,106 @@ export async function debugRegenerateRound(roundId: string) {
     .eq("id", roundId);
 
   if (error) throw error;
+}
+
+export async function leaveGame(gameId: string) {
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+
+  if (!user) {
+    console.error("Attempted to leave game without user session");
+    return;
+  }
+
+  console.log(`User ${user.id} leaving game ${gameId}`);
+
+  // Use Admin Client to ensure deletion works regardless of RLS or status
+  const adminClient = createSupabaseClient<Database>(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.SUPABASE_SERVICE_ROLE_KEY!,
+  );
+
+  const { error } = await adminClient
+    .from("game_players")
+    .delete()
+    .eq("game_id", gameId)
+    .eq("player_id", user.id);
+
+  if (error) {
+    console.error("Error leaving game:", error);
+    throw new Error("Erreur lors de la tentative de quitter la partie");
+  }
+
+  console.log(`User ${user.id} successfully removed from game ${gameId}`);
+}
+
+export async function resetGame(gameId: string) {
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+
+  if (!user) throw new Error("Unauthorized");
+
+  // Use Admin Client to bypass RLS and ensure complete cleanup
+  const adminClient = createSupabaseClient<Database>(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.SUPABASE_SERVICE_ROLE_KEY!,
+  );
+
+  // Verify game exists
+  const { data: game } = await supabase
+    .from("games")
+    .select("host_id, code")
+    .eq("id", gameId)
+    .single();
+
+  if (!game) {
+    throw new Error("Game not found");
+  }
+
+  // 1. Delete all submissions for this game directly (using game_id)
+  const { error: deleteSubmissionsError } = await adminClient
+    .from("submissions")
+    .delete()
+    .eq("game_id", gameId);
+
+  if (deleteSubmissionsError) {
+    console.error("Error deleting submissions:", deleteSubmissionsError);
+    throw new Error("Failed to reset game submissions");
+  }
+
+  // 2. Delete rounds
+  const { error: deleteError } = await adminClient
+    .from("rounds")
+    .delete()
+    .eq("game_id", gameId);
+
+  if (deleteError) {
+    console.error("Error deleting rounds:", deleteError);
+    throw new Error("Failed to reset game rounds");
+  }
+
+  // 3. Reset players status
+  const { error: playersError } = await adminClient
+    .from("game_players")
+    .update({ is_ready: false })
+    .eq("game_id", gameId);
+
+  if (playersError) {
+    console.error("Error resetting players:", playersError);
+    throw new Error("Failed to reset players");
+  }
+
+  // 4. Update game status
+  const { error: updateError } = await adminClient
+    .from("games")
+    .update({ status: "LOBBY" })
+    .eq("id", gameId);
+
+  if (updateError) throw updateError;
 }
 
 export async function getServerTime() {
@@ -596,6 +701,17 @@ export async function startNextRound(currentRoundId: string) {
 
   // Generate new constraints
   const nextRoundNumber = round.round_number + 1;
+
+  if (nextRoundNumber > MAX_ROUNDS) {
+    const { error: updateGameError } = await supabase
+      .from("games")
+      .update({ status: "FINISHED" })
+      .eq("id", round.game_id);
+
+    if (updateGameError) throw updateGameError;
+    return;
+  }
+
   const constraints = generateRoundConstraints(THEMES.map((t) => t.label));
   const endsAt = new Date(Date.now() + ROUND_DURATION_MS).toISOString();
 

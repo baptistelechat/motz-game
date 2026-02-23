@@ -1,6 +1,7 @@
 "use client";
 
 import { ProfileBadge } from "@/components/profile/profile-badge";
+import { NetworkStatusBadge } from "@/components/layout/network-status-badge";
 import { cn } from "@/lib/utils";
 import { usePathname } from "next/navigation";
 import * as React from "react";
@@ -21,6 +22,7 @@ const MainLayout = React.forwardRef<HTMLElement, MainLayoutProps>(
         )}
         {...props}
       >
+        <NetworkStatusBadge className="absolute top-4 left-4 z-20" />
         {showProfileBadge && (
           <ProfileBadge className="absolute top-4 right-4 z-20" />
         )}

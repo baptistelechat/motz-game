@@ -1,6 +1,6 @@
 "use client";
 
-import { finishRound } from "@/app/actions/game-actions";
+import { finishRound, leaveGame, resetGame } from "@/app/actions/game-actions";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { LoadingScreen } from "@/components/ui/loading-screen";
 import { ScrollArea } from "@/components/ui/scroll-area";
@@ -10,7 +10,9 @@ import { calculatePlayerRankings } from "@/lib/game/ranking";
 import { cn } from "@/lib/utils";
 import { useGameStore } from "@/store/use-game-store";
 import { mapGamePlayerToDisplayPlayer } from "@/utils/player-mapper";
+import { useRouter } from "next/navigation";
 import { useEffect, useMemo, useState } from "react";
+import { toast } from "sonner";
 import { GameDebugControls } from "./game-debug-controls";
 import { GameInput } from "./game-input";
 import { GameTimer } from "./game-timer";
@@ -21,6 +23,7 @@ import { RoundSummary } from "./round-summary";
 interface GameClientProps {
   gameId: string;
   currentUserId: string;
+  code: string;
 }
 
 function SectionLabel({
@@ -42,8 +45,9 @@ function SectionLabel({
   );
 }
 
-export function GameClient({ gameId, currentUserId }: GameClientProps) {
-  useRealtimeGame(gameId);
+export function GameClient({ gameId, currentUserId, code }: GameClientProps) {
+  const router = useRouter();
+  const { refresh } = useRealtimeGame(gameId);
   const {
     players,
     currentRound,
@@ -51,9 +55,42 @@ export function GameClient({ gameId, currentUserId }: GameClientProps) {
     hostId,
     submitWord,
     roundSubmissions,
+    status,
+    reset,
+    gameId: savedGameId,
+    setGameId,
   } = useGameStore();
 
   const isHost = hostId === currentUserId;
+
+  const [optimisticSubmitted, setOptimisticSubmitted] = useState(false);
+  const [isResetting, setIsResetting] = useState(false);
+  const [isQuitting, setIsQuitting] = useState(false);
+
+  // Sync gameId with store to ensure redirects work correctly
+  useEffect(() => {
+    if (gameId && gameId !== savedGameId && !isQuitting) {
+      setGameId(gameId);
+    }
+  }, [gameId, savedGameId, setGameId, isQuitting]);
+
+  useEffect(() => {
+    if (status === "LOBBY" && savedGameId && !isQuitting) {
+      router.push(`/room/${code}`);
+    }
+  }, [status, code, router, savedGameId, isQuitting]);
+
+  // Auto-redirect if host leaves
+  useEffect(() => {
+    if (isLoading || isQuitting || !hostId || players.length === 0) return;
+
+    const hostIsPresent = players.some((p) => p.id === hostId);
+    if (!hostIsPresent) {
+      toast.info("L'hôte a quitté la partie.");
+      reset();
+      router.push("/");
+    }
+  }, [players, hostId, isLoading, isQuitting, reset, router]);
 
   // Auto-finish round if all players submitted
   useEffect(() => {
@@ -99,8 +136,6 @@ export function GameClient({ gameId, currentUserId }: GameClientProps) {
       });
   }, [players, hostId, roundSubmissions]);
 
-  const [optimisticSubmitted, setOptimisticSubmitted] = useState(false);
-
   // Reset optimistic state when round changes
   useEffect(() => {
     setOptimisticSubmitted(false);
@@ -121,11 +156,69 @@ export function GameClient({ gameId, currentUserId }: GameClientProps) {
     }
   };
 
+  const handleReplay = async () => {
+    console.log(
+      "handleReplay called. isResetting:",
+      isResetting,
+      "gameId:",
+      gameId,
+    );
+    if (isResetting) return;
+    setIsResetting(true);
+
+    // Reset local state immediately to show loading screen and avoid stale data
+    reset();
+    setGameId(gameId); // Restore gameId so that the redirect effect can work
+
+    try {
+      console.log("Calling resetGame...");
+      await resetGame(gameId);
+      console.log("resetGame success. Calling refresh...");
+      // Force refresh to ensure status update is caught
+      await refresh();
+      console.log("refresh done. Status should be LOBBY.");
+      // Status change to LOBBY/PLAYING will be handled by realtime/refresh
+    } catch (error) {
+      console.error("Replay error:", error);
+      toast.error("Erreur lors de la relance de la partie");
+    } finally {
+      console.log("handleReplay finally block. Setting isResetting to false.");
+      setIsResetting(false);
+    }
+  };
+
+  const handleQuit = async () => {
+    setIsQuitting(true);
+    try {
+      await leaveGame(gameId);
+    } catch (error) {
+      console.error("Error leaving game:", error);
+    }
+    reset();
+    router.push("/");
+  };
+
   const handleTimeUp = () => {
     if (isHost && currentRound && currentRound.status === "PLAYING") {
       finishRound(currentRound.id).catch(console.error);
     }
   };
+
+  if (status === "FINISHED") {
+    return (
+      <div className="flex flex-col items-center justify-start min-h-screen w-full pt-4 pb-4 px-4 gap-4">
+        <RoundSummary
+          players={players}
+          currentUserId={currentUserId}
+          hostId={hostId}
+          isGameOver={true}
+          onReplay={handleReplay}
+          onQuit={handleQuit}
+          isActionLoading={isResetting}
+        />
+      </div>
+    );
+  }
 
   if (isLoading) {
     return <LoadingScreen message="CHARGEMENT DE LA PARTIE..." />;

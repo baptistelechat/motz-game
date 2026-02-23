@@ -7,9 +7,9 @@ import {
 } from "@/app/actions/game-actions";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { PixelIcon } from "@/components/ui/pixel-icon";
 import { Progress } from "@/components/ui/progress";
 import { ScrollArea } from "@/components/ui/scroll-area";
+import { useLeaderboard } from "@/hooks/use-leaderboard";
 import { VALIDATION_DURATION_MS } from "@/lib/game/constants";
 import { calculatePlayerRankings } from "@/lib/game/ranking";
 import { createClient } from "@/lib/supabase/client";
@@ -22,40 +22,58 @@ import {
   useGameStore,
 } from "@/store/use-game-store";
 import { Flag, Pause, Play } from "@nsmr/pixelart-react";
+import { AnimatePresence, motion } from "framer-motion";
 import { useEffect, useMemo, useState } from "react";
 import { toast } from "sonner";
 import { AvatarDisplay } from "../profile/avatar-display";
 import { GameTitle } from "./game-title";
 
 interface RoundSummaryProps {
-  round: GameRound;
+  round?: GameRound;
   players: GamePlayer[];
-  submissions: RoundSubmission[];
+  submissions?: RoundSubmission[];
   currentUserId: string;
   hostId: string | null;
   isValidationMode?: boolean;
+  isLeaderboard?: boolean;
+  isGameOver?: boolean;
+  onReplay?: () => void;
+  onQuit?: () => void;
+  isActionLoading?: boolean;
 }
 
 export function RoundSummary({
   round,
   players,
-  submissions,
+  submissions = [],
   currentUserId,
   hostId,
   isValidationMode = false,
+  isLeaderboard = false,
+  isGameOver = false,
+  onReplay,
+  onQuit,
+  isActionLoading = false,
 }: RoundSummaryProps) {
   const {
     updateRoundSubmission,
+    gameId,
     // setCurrentRound, // Removed as we don't use it anymore for optimistic updates here
   } = useGameStore();
   const [supabase] = useState(() => createClient());
   const [isLoading, setIsLoading] = useState(false);
   const [autoAdvanceProgress, setAutoAdvanceProgress] = useState(0);
   const [isPaused, setIsPaused] = useState(false); // State to pause auto-advance
+  const [view, setView] = useState<"round" | "leaderboard">(
+    isLeaderboard || isGameOver ? "leaderboard" : "round",
+  );
+
+  const { leaderboard } = useLeaderboard(gameId!, round?.id);
+
   const isHost = currentUserId === hostId;
 
   const handleNextRound = async () => {
-    if (!isHost) return;
+    if (!isHost || !round) return;
     setIsLoading(true);
     try {
       await startNextRound(round.id);
@@ -67,7 +85,7 @@ export function RoundSummary({
   };
 
   const handleFinalizeValidation = async () => {
-    if (!isHost) return;
+    if (!isHost || !round) return;
     setIsLoading(true);
 
     // Removed optimistic update to prevent fetching stale submissions via useRealtimeGame effect
@@ -86,16 +104,18 @@ export function RoundSummary({
   // Auto-advance timer logic
   useEffect(() => {
     // Only host handles the timer logic reset
-    if (!isHost) return;
+    if (!isHost || !round || isGameOver) return;
 
     // Reset progress when round changes or mode changes
     setAutoAdvanceProgress(0);
     // Unpause when round changes to ensure flow
     setIsPaused(false);
-  }, [round.id, isValidationMode, isHost]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [round?.id, isValidationMode, isHost, isGameOver]);
 
   // Realtime Sync Logic
   useEffect(() => {
+    if (!round) return;
     const channel = supabase.channel(`round_sync:${round.id}`);
 
     if (!isHost) {
@@ -119,10 +139,12 @@ export function RoundSummary({
     return () => {
       supabase.removeChannel(channel);
     };
-  }, [round.id, isHost, supabase]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [round?.id, isHost, supabase]);
 
   // Broadcast function for Host
   const broadcastSync = async (progress: number, paused: boolean) => {
+    if (!round) return;
     await supabase.channel(`round_sync:${round.id}`).send({
       type: "broadcast",
       event: "sync_timer",
@@ -132,7 +154,7 @@ export function RoundSummary({
 
   useEffect(() => {
     // Only host handles the timer
-    if (!isHost) return;
+    if (!isHost || !round || isGameOver) return;
 
     // Broadcast immediately when pause state changes
     broadcastSync(autoAdvanceProgress, isPaused);
@@ -167,11 +189,11 @@ export function RoundSummary({
       clearInterval(interval);
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [isHost, isLoading, isPaused, round.id]); // Added round.id to deps to ensure fresh closure if needed, though isHost/paused are main triggers
+  }, [isHost, isLoading, isPaused, round?.id]); // Added round.id to deps to ensure fresh closure if needed, though isHost/paused are main triggers
 
   // Trigger action when progress reaches 100%
   useEffect(() => {
-    if (!isHost || isLoading || isPaused) return;
+    if (!isHost || isLoading || isPaused || !round) return;
 
     if (autoAdvanceProgress >= 100) {
       if (isValidationMode) {
@@ -181,16 +203,26 @@ export function RoundSummary({
       }
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [autoAdvanceProgress, isHost, isLoading, isPaused, isValidationMode]);
+  }, [
+    autoAdvanceProgress,
+    isHost,
+    isLoading,
+    isPaused,
+    isValidationMode,
+    round,
+    isGameOver,
+  ]);
 
   // Reset loading state when round status changes (e.g. switching from validation to summary)
   useEffect(() => {
     setIsLoading(false);
-  }, [round.status, isValidationMode]);
+  }, [round?.status, isValidationMode]);
 
   const results = useMemo(() => {
+    if (!round) return [];
     return calculatePlayerRankings(players, submissions, round.created_at);
-  }, [players, submissions, round.created_at]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [players, submissions, round?.created_at]);
 
   // Generate stable random avatars for validation mode to maintain anonymity
   const anonymousAvatars = useMemo(() => {
@@ -229,182 +261,304 @@ export function RoundSummary({
 
   return (
     <div className="flex flex-col items-center h-full w-full max-w-2xl mx-auto p-4 gap-6 animate-in fade-in duration-500">
-      <GameTitle game={!isValidationMode} validation={isValidationMode} />
+      <GameTitle
+        game={!isValidationMode && !isGameOver}
+        validation={isValidationMode}
+        gameOver={isGameOver}
+      />
       {isValidationMode && (
         <p className="text-muted-foreground font-display text-center text-xl">
           Signalez les mots qui ne respectent pas le thème !
         </p>
       )}
 
+      {/* Tabs */}
+      {!isValidationMode && !isGameOver && (
+        <div className="w-full grid grid-cols-2 border-4 border-black border-b-0 bg-muted -mb-6 shadow-hard">
+          <button
+            onClick={() => setView("round")}
+            className={cn(
+              "py-3 font-display text-lg transition-all relative",
+              view === "round"
+                ? "bg-background text-foreground"
+                : "bg-muted text-muted-foreground hover:bg-muted/80 hover:text-foreground",
+            )}
+          >
+            MANCHE
+          </button>
+          <button
+            onClick={() => setView("leaderboard")}
+            className={cn(
+              "py-3 font-display text-lg transition-all relative border-l-4 border-black",
+              view === "leaderboard"
+                ? "bg-background text-foreground"
+                : "bg-muted text-muted-foreground hover:bg-muted/80 hover:text-foreground",
+            )}
+          >
+            GLOBAL
+          </button>
+        </div>
+      )}
+
       {/* Results Table */}
-      <Card className="w-full flex-1 overflow-hidden flex flex-col border-4 border-black rounded-none shadow-hard">
-        <CardHeader className="pb-2 border-b-4 border-black">
-          <CardTitle className="font-display text-lg">
-            {isValidationMode ? "VOTEZ" : "CLASSEMENT"}
-          </CardTitle>
-        </CardHeader>
-        <CardContent className="p-0 flex-1 min-h-0 bg-background">
-          <ScrollArea className="h-full">
-            <div className="divide-y-4 divide-black">
-              {results.map((result, index) => {
-                const votes = result.submission?.votes || [];
-                const hasVoted = votes.includes(currentUserId);
-                const isMySubmission = result.player.id === currentUserId;
+      {view === "round" ? (
+        <Card
+          className={cn(
+            "w-full flex-1 overflow-hidden flex flex-col border-4 border-black rounded-none shadow-hard",
+            !isValidationMode && "border-t-0",
+          )}
+        >
+          <CardHeader className="pb-2 border-b-4 border-black">
+            <CardTitle className="font-display text-lg">
+              {isValidationMode ? "VOTEZ" : "CLASSEMENT MANCHE"}
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="p-0 flex-1 min-h-0 bg-background">
+            <ScrollArea className="h-full">
+              <div className="divide-y-4 divide-black">
+                <AnimatePresence mode="popLayout">
+                  {results.map((result, index) => {
+                    const votes = result.submission?.votes || [];
+                    const hasVoted = votes.includes(currentUserId);
+                    const isMySubmission = result.player.id === currentUserId;
 
-                // In validation mode, only show entries with actual submissions
-                if (isValidationMode && !result.submission) return null;
+                    // In validation mode, only show entries with actual submissions
+                    if (isValidationMode && !result.submission) return null;
 
-                return (
-                  <div
-                    key={result.player.id}
-                    className={cn(
-                      "grid items-center gap-3 p-4",
-                      index === results.length - 1 && "border-b-4 border-black",
-                      isValidationMode
-                        ? "grid-cols-[auto_minmax(0,1fr)_auto]"
-                        : "grid-cols-[3rem_auto_minmax(0,1fr)_auto]",
-                      result.player.id === currentUserId && "bg-theme/5",
-                      !isValidationMode &&
-                        !result.isValid &&
-                        "bg-destructive/5 opacity-75",
-                    )}
-                  >
-                    {/* Rank (Left side) - Only in Score Mode */}
-                    {!isValidationMode && (
-                      <div className="flex justify-center items-center">
-                        {result.isValid ? (
-                          <span
-                            className={cn(
-                              "font-display text-lg w-8 text-center",
-                              result.rank === 1 && "text-yellow-500",
-                              result.rank === 2 && "text-slate-400",
-                              result.rank === 3 && "text-amber-700",
-                              result.rank > 3 && "text-muted-foreground",
-                            )}
-                          >
-                            #{result.rank}
-                          </span>
-                        ) : result.word === "-" ? (
-                          <PixelIcon name="clock" className="size-8" />
-                        ) : (
-                          <PixelIcon name="alert-circle" className="size-8" />
-                        )}
-                      </div>
-                    )}
-
-                    {/* Avatar */}
-                    <div className="relative">
-                      {!isValidationMode ? (
-                        <AvatarDisplay
-                          player={result.player}
-                          isHost={result.player.id === hostId}
-                          // rank={result.rank}
-                          size="md"
-                          className="overflow-visible"
-                        />
-                      ) : (
-                        <AvatarDisplay
-                          player={{
-                            ...result.player,
-                            avatar_config: anonymousAvatars[result.player.id],
-                          }}
-                          // Masquer les status en mode anonyme
-                          isHost={false}
-                          rank={undefined}
-                          size="md"
-                          className="overflow-visible"
-                        />
-                      )}
-                    </div>
-
-                    {/* Info Joueur & Mot */}
-                    <div className="flex flex-col min-w-0 overflow-hidden">
-                      <div
+                    return (
+                      <motion.div
+                        layout
+                        initial={{ opacity: 0, y: 20 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        exit={{ opacity: 0, scale: 0.95 }}
+                        transition={{ duration: 0.3 }}
+                        key={result.player.id}
                         className={cn(
-                          "font-display truncate text-lg leading-tight w-full",
-                          result.player.id === currentUserId && "text-theme",
-                        )}
-                        title={
-                          !isValidationMode ? result.player.pseudo : undefined
-                        }
-                      >
-                        {!isValidationMode
-                          ? result.player.pseudo
-                          : `Joueur ${result.rank}`}
-                      </div>
-                      <p
-                        className={cn(
-                          "text-sm truncate w-full flex gap-1 text-muted-foreground",
+                          "grid items-center gap-3 p-4",
+                          index === results.length - 1 &&
+                            "border-b-4 border-black",
+                          "grid-cols-[auto_minmax(0,1fr)_auto]",
+                          result.player.id === currentUserId && "bg-theme/5",
                           !isValidationMode &&
                             !result.isValid &&
-                            "text-destructive line-through decoration-2",
-                          isValidationMode && "text-xl",
+                            "bg-destructive/5 opacity-75",
                         )}
                       >
-                        {result.word}
-                        {result.duration !== undefined && (
-                          <span>({result.duration.toFixed(3)}s)</span>
-                        )}
-                      </p>
-                    </div>
-
-                    {/* Action / Score */}
-                    <div className="text-right flex flex-col items-end shrink-0 gap-0.5">
-                      {isValidationMode ? (
-                        <>
-                          {!isMySubmission && result.submission && (
-                            <Button
-                              variant={hasVoted ? "destructive" : "outline"}
-                              size="sm"
-                              onClick={() =>
-                                result.submission &&
-                                handleVote(result.submission.id)
-                              }
-                              className="aspect-square h-12"
-                            >
-                              <Flag className="size-6" />
-                            </Button>
+                        {/* Avatar */}
+                        <div className="relative">
+                          {!isValidationMode ? (
+                            <AvatarDisplay
+                              player={result.player}
+                              isHost={result.player.id === hostId}
+                              rank={result.isValid ? result.rank : undefined}
+                              size="md"
+                              className="overflow-visible"
+                            />
+                          ) : (
+                            <AvatarDisplay
+                              player={{
+                                ...result.player,
+                                avatar_config:
+                                  anonymousAvatars[result.player.id],
+                              }}
+                              // Masquer les status en mode anonyme
+                              isHost={false}
+                              rank={undefined}
+                              size="md"
+                              className="overflow-visible"
+                            />
                           )}
-                        </>
-                      ) : (
-                        <>
-                          <span className="font-display text-lg whitespace-nowrap">
-                            +{result.score}
-                          </span>
-                          {result.isValid && result.submission && (
-                            <div className="flex flex-col items-end leading-none gap-0.5 text-sm">
-                              <span className="text-muted-foreground whitespace-nowrap">
-                                Mot +
-                                {result.score -
-                                  (result.submission.points_details
-                                    ?.speed_bonus || 0)}
-                              </span>
-                              {(result.submission.points_details?.speed_bonus ||
-                                0) > 0 && (
-                                <span className="text-primary whitespace-nowrap">
-                                  Vitesse +
-                                  {
-                                    result.submission.points_details
-                                      ?.speed_bonus
+                        </div>
+
+                        {/* Info Joueur & Mot */}
+                        <div className="flex flex-col min-w-0 overflow-hidden">
+                          <div
+                            className={cn(
+                              "font-display truncate text-lg leading-tight w-full",
+                              result.player.id === currentUserId &&
+                                "text-theme",
+                            )}
+                            title={
+                              !isValidationMode
+                                ? result.player.pseudo
+                                : undefined
+                            }
+                          >
+                            {!isValidationMode
+                              ? result.player.pseudo
+                              : `Joueur ${result.rank}`}
+                          </div>
+                          <p
+                            className={cn(
+                              "text-sm truncate w-full flex gap-1 text-muted-foreground",
+                              !isValidationMode &&
+                                !result.isValid &&
+                                "text-destructive line-through decoration-2",
+                              isValidationMode && "text-xl",
+                            )}
+                          >
+                            {result.word}
+                            {result.duration !== undefined && (
+                              <span>({result.duration.toFixed(3)}s)</span>
+                            )}
+                          </p>
+                        </div>
+
+                        {/* Action / Score */}
+                        <div className="text-right flex flex-col items-end shrink-0 gap-0.5">
+                          {isValidationMode ? (
+                            <>
+                              {!isMySubmission && result.submission && (
+                                <Button
+                                  variant={hasVoted ? "destructive" : "outline"}
+                                  size="sm"
+                                  onClick={() =>
+                                    result.submission &&
+                                    handleVote(result.submission.id)
                                   }
-                                </span>
+                                  className="aspect-square h-12"
+                                >
+                                  <Flag className="size-6" />
+                                </Button>
                               )}
-                            </div>
+                            </>
+                          ) : (
+                            <>
+                              <span className="font-display text-lg whitespace-nowrap">
+                                +{result.score}
+                              </span>
+                              {result.isValid && result.submission && (
+                                <div className="flex flex-col items-end leading-none gap-0.5 text-sm">
+                                  <span className="text-muted-foreground whitespace-nowrap">
+                                    Mot +
+                                    {result.score -
+                                      (result.submission.points_details
+                                        ?.speed_bonus || 0)}
+                                  </span>
+                                  {(result.submission.points_details
+                                    ?.speed_bonus || 0) > 0 && (
+                                    <span className="text-primary whitespace-nowrap">
+                                      Vitesse +
+                                      {
+                                        result.submission.points_details
+                                          ?.speed_bonus
+                                      }
+                                    </span>
+                                  )}
+                                </div>
+                              )}
+                            </>
                           )}
-                        </>
-                      )}
-                    </div>
-                  </div>
-                );
-              })}
-            </div>
-          </ScrollArea>
-        </CardContent>
-      </Card>
+                        </div>
+                      </motion.div>
+                    );
+                  })}
+                </AnimatePresence>
+              </div>
+            </ScrollArea>
+          </CardContent>
+        </Card>
+      ) : (
+        <Card
+          className={cn(
+            "w-full flex-1 overflow-hidden flex flex-col border-4 border-black rounded-none shadow-hard",
+            !isGameOver && "border-t-0",
+          )}
+        >
+          <CardHeader className="pb-2 border-b-4 border-black">
+            <CardTitle className="font-display text-lg flex items-center justify-between">
+              <span>CLASSEMENT GENERAL</span>
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="p-0 flex-1 min-h-0 bg-background">
+            <ScrollArea className="h-full">
+              <div className="divide-y-4 divide-black">
+                <AnimatePresence mode="popLayout">
+                  {leaderboard.map((entry, index) => {
+                    const player = players.find((p) => p.id === entry.playerId);
+                    if (!player) return null;
+                    const isMe = player.id === currentUserId;
 
-      {/* Host Controls */}
+                    return (
+                      <motion.div
+                        layout
+                        initial={{ opacity: 0, x: -20 }}
+                        animate={{ opacity: 1, x: 0 }}
+                        exit={{ opacity: 0, x: 20 }}
+                        transition={{ duration: 0.3, delay: index * 0.05 }}
+                        key={entry.playerId}
+                        className={cn(
+                          "grid items-center gap-3 p-4",
+                          index === leaderboard.length - 1 &&
+                            "border-b-4 border-black",
+                          "grid-cols-[auto_minmax(0,1fr)_auto]",
+                          isMe && "bg-theme/5",
+                        )}
+                      >
+                        {/* Avatar */}
+                        <div className="relative">
+                          <AvatarDisplay
+                            player={player}
+                            isHost={player.id === hostId}
+                            rank={entry.rank}
+                            size="md"
+                            className="overflow-visible"
+                          />
+                        </div>
+
+                        {/* Player Info */}
+                        <div className="flex flex-col min-w-0 overflow-hidden">
+                          <div
+                            className={cn(
+                              "font-display truncate text-lg leading-tight w-full",
+                              isMe && "text-theme",
+                            )}
+                          >
+                            {player.pseudo}
+                          </div>
+                          <div className="text-sm flex items-center gap-1 text-muted-foreground">
+                            {entry.lastRoundScore > 0
+                              ? entry.lastRoundScore + " pts"
+                              : "-"}
+                          </div>
+                        </div>
+
+                        {/* Total Score */}
+                        <span className="font-display text-lg whitespace-nowrap leading-none">
+                          {entry.totalScore}
+                        </span>
+                      </motion.div>
+                    );
+                  })}
+                </AnimatePresence>
+              </div>
+            </ScrollArea>
+          </CardContent>
+        </Card>
+      )}
+
+      {/* Footer Controls */}
       <div className="w-full flex flex-col gap-2">
-        {isHost ? (
+        {isGameOver ? (
+          <div className="flex gap-2 w-full">
+            {isHost && (
+              <Button
+                onClick={onReplay}
+                disabled={isActionLoading}
+                className="flex-1 h-12 text-xl font-display"
+              >
+                {isActionLoading ? "RELANCE..." : "REJOUER"}
+              </Button>
+            )}
+            <Button
+              onClick={onQuit}
+              variant="destructive"
+              className="flex-1 h-12 text-xl font-display"
+            >
+              QUITTER
+            </Button>
+          </div>
+        ) : isHost ? (
           <div className="flex gap-2">
             <Button
               onClick={
@@ -417,9 +571,14 @@ export function RoundSummary({
                 <>{isValidationMode ? "VALIDATION..." : "LANCEMENT..."}</>
               ) : (
                 <>
-                  {isValidationMode
-                    ? "TERMINER LA VALIDATION"
-                    : "MANCHE SUIVANTE"}
+                  {isValidationMode ? (
+                    "TERMINER LA VALIDATION"
+                  ) : (
+                    <>
+                      <span className="md:hidden">SUIVANT</span>
+                      <span className="hidden md:inline">MANCHE SUIVANTE</span>
+                    </>
+                  )}
                 </>
               )}
             </Button>
@@ -446,10 +605,12 @@ export function RoundSummary({
         )}
 
         {/* Timer Progress Bar */}
-        <Progress
-          value={autoAdvanceProgress}
-          className="h-2 w-full border-black border rounded-none"
-        />
+        {!isGameOver && (
+          <Progress
+            value={autoAdvanceProgress}
+            className="h-2 w-full border-black border rounded-none"
+          />
+        )}
       </div>
     </div>
   );
