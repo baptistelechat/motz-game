@@ -48,8 +48,8 @@ export function useGameStats(gameId: string) {
           return;
         }
 
-        let bestWord = null;
-        let longestWord = null;
+        let bestWord: GameStats["bestWord"] = null;
+        let longestWord: GameStats["longestWord"] = null;
         let totalScore = 0;
 
         submissions.forEach((sub) => {
