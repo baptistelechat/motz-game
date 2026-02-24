@@ -3,6 +3,7 @@ import { AvatarConfig } from "@/interface/AvatarConfig";
 import { cn } from "@/lib/utils";
 import { cva, type VariantProps } from "class-variance-authority";
 import Image from "next/image";
+import { PixelIcon } from "../ui/pixel-icon";
 
 const avatarDisplayVariants = cva(
   "flex items-center justify-center bg-black border-black transition-colors relative",
@@ -45,6 +46,7 @@ interface AvatarDisplayProps
   isHost?: boolean;
   isBot?: boolean;
   isReady?: boolean;
+  isReputable?: boolean;
   rank?: number;
 }
 
@@ -55,6 +57,7 @@ export function AvatarDisplay({
   isHost,
   isBot,
   isReady,
+  isReputable = true,
   rank,
   ...props
 }: AvatarDisplayProps) {
@@ -87,6 +90,17 @@ export function AvatarDisplay({
       {isReady && <PlayerStatusBadge role="READY" />}
       {isReady !== undefined && !isReady && (
         <PlayerStatusBadge role="WAITING" />
+      )}
+      {!isReputable && (
+        <div
+          className="absolute -top-3 -right-3 z-30"
+          title="Joueur signalé (plusieurs exclusions récentes)"
+        >
+          <PixelIcon
+            name="alert-triangle"
+            className="size-6 drop-shadow-[2px_2px_0_#000]"
+          />
+        </div>
       )}
       {rank !== undefined && rank > 0 && <PlayerStatusBadge rank={rank} />}
     </div>

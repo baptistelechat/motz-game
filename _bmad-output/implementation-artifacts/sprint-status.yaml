@@ -72,8 +72,8 @@ development_status:
 
   # Epic 5
   epic-5: in-progress
-  5-1-filtre-profanite-safe-mode: ready-for-dev
-  5-2-vote-exclusion-vote-kick-reputation: backlog
+  5-1-filtre-profanite-safe-mode: done
+  5-2-vote-exclusion-vote-kick-reputation: in-progress
   5-3-signalement-mots-feedback-loop: backlog
   5-4-tableau-bord-admin: backlog
   epic-5-retrospective: optional

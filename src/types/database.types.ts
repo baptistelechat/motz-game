@@ -80,6 +80,146 @@ export type Database = {
         };
         Relationships: [];
       };
+      kick_sessions: {
+        Row: {
+          created_at: string;
+          expires_at: string;
+          game_id: string;
+          id: string;
+          initiator_id: string;
+          status: string;
+          target_id: string;
+        };
+        Insert: {
+          created_at?: string;
+          expires_at?: string;
+          game_id: string;
+          id?: string;
+          initiator_id: string;
+          status?: string;
+          target_id: string;
+        };
+        Update: {
+          created_at?: string;
+          expires_at?: string;
+          game_id?: string;
+          id?: string;
+          initiator_id?: string;
+          status?: string;
+          target_id?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "kick_sessions_game_id_fkey";
+            columns: ["game_id"];
+            isOneToOne: false;
+            referencedRelation: "games";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "kick_sessions_initiator_id_fkey";
+            columns: ["initiator_id"];
+            isOneToOne: false;
+            referencedRelation: "players";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "kick_sessions_target_id_fkey";
+            columns: ["target_id"];
+            isOneToOne: false;
+            referencedRelation: "players";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
+      kick_votes: {
+        Row: {
+          created_at: string;
+          id: string;
+          session_id: string;
+          vote: boolean;
+          voter_id: string;
+        };
+        Insert: {
+          created_at?: string;
+          id?: string;
+          session_id: string;
+          vote: boolean;
+          voter_id: string;
+        };
+        Update: {
+          created_at?: string;
+          id?: string;
+          session_id?: string;
+          vote?: boolean;
+          voter_id?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "kick_votes_session_id_fkey";
+            columns: ["session_id"];
+            isOneToOne: false;
+            referencedRelation: "kick_sessions";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "kick_votes_voter_id_fkey";
+            columns: ["voter_id"];
+            isOneToOne: false;
+            referencedRelation: "players";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
+      player_reports: {
+        Row: {
+          created_at: string;
+          game_id: string;
+          id: string;
+          reason: Database["public"]["Enums"]["report_reason"];
+          reported_id: string;
+          reporter_id: string;
+        };
+        Insert: {
+          created_at?: string;
+          game_id: string;
+          id?: string;
+          reason: Database["public"]["Enums"]["report_reason"];
+          reported_id: string;
+          reporter_id: string;
+        };
+        Update: {
+          created_at?: string;
+          game_id?: string;
+          id?: string;
+          reason?: Database["public"]["Enums"]["report_reason"];
+          reported_id?: string;
+          reporter_id?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "player_reports_game_id_fkey";
+            columns: ["game_id"];
+            isOneToOne: false;
+            referencedRelation: "games";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "player_reports_reported_id_fkey";
+            columns: ["reported_id"];
+            isOneToOne: false;
+            referencedRelation: "players";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "player_reports_reporter_id_fkey";
+            columns: ["reporter_id"];
+            isOneToOne: false;
+            referencedRelation: "players";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
       players: {
         Row: {
           avatar_config: Json;
@@ -263,6 +403,7 @@ export type Database = {
     Enums: {
       game_status: "LOBBY" | "PLAYING" | "FINISHED";
       round_status: "PLAYING" | "COMPLETED" | "VALIDATING";
+      report_reason: "toxic" | "cheat" | "afk";
     };
     CompositeTypes: {
       [_ in never]: never;

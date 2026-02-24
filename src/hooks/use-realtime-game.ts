@@ -235,7 +235,10 @@ export function useRealtimeGame(gameId: string) {
           table: "game_players",
           filter: `game_id=eq.${gameId}`,
         },
-        () => {
+        (payload) => {
+          // If the current user was deleted from game_players, trigger refresh
+          // The refresh/fetchPlayers logic might not be enough if we want to redirect
+          // But GameClient monitors players list?
           fetchPlayers();
         },
       )

@@ -13,15 +13,101 @@ import { createClient as createSupabaseClient } from "@supabase/supabase-js";
 import filter from "leo-profanity";
 import { customAlphabet } from "nanoid";
 import { redirect } from "next/navigation";
+import { z } from "zod";
 
 // Initialize profanity filter
 filter.loadDictionary("fr");
-import { z } from "zod";
 
 const generateGameCode = customAlphabet(
   "0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ",
   6,
 );
+
+interface ReputationStatus {
+  allowed: boolean;
+  remainingMinutes?: number;
+}
+
+async function checkPlayerReputation(
+  userId: string,
+): Promise<ReputationStatus> {
+  const adminClient = createSupabaseClient<Database>(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.SUPABASE_SERVICE_ROLE_KEY!,
+  );
+
+  const sevenDaysAgo = new Date();
+  sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
+
+  const { count } = await adminClient
+    .from("kick_sessions")
+    .select("*", { count: "exact", head: true })
+    .eq("target_id", userId)
+    .eq("status", "completed")
+    .gte("created_at", sevenDaysAgo.toISOString());
+
+  // Increase ban threshold to > 5 kicks (was 3)
+  if (count && count > 5) {
+    // Check time of last kick
+    const { data: lastKick } = await adminClient
+      .from("kick_sessions")
+      .select("created_at")
+      .eq("target_id", userId)
+      .eq("status", "completed")
+      .order("created_at", { ascending: false })
+      .limit(1)
+      .single();
+
+    if (lastKick) {
+      const lastKickTime = new Date(lastKick.created_at);
+      const now = new Date();
+      const diffMinutes =
+        (now.getTime() - lastKickTime.getTime()) / (1000 * 60);
+
+      // Keep 30 minutes cooldown
+      if (diffMinutes < 30) {
+        return {
+          allowed: false,
+          remainingMinutes: Math.ceil(30 - diffMinutes),
+        };
+      }
+      // If cooldown passed, allow access but do NOT reset history
+    }
+  }
+
+  return { allowed: true };
+}
+
+export async function getPlayersReputation(playerIds: string[]) {
+  const adminClient = createSupabaseClient<Database>(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.SUPABASE_SERVICE_ROLE_KEY!,
+  );
+
+  const sevenDaysAgo = new Date();
+  sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
+
+  const reputations: Record<string, "normal" | "warning"> = {};
+
+  const { data: kicks } = await adminClient
+    .from("kick_sessions")
+    .select("target_id")
+    .in("target_id", playerIds)
+    .eq("status", "completed")
+    .gte("created_at", sevenDaysAgo.toISOString());
+
+  const counts: Record<string, number> = {};
+  kicks?.forEach((k) => {
+    counts[k.target_id] = (counts[k.target_id] || 0) + 1;
+  });
+
+  playerIds.forEach((id) => {
+    // Lower warning threshold to > 2 (was 3) so warnings appear before ban
+    reputations[id] = (counts[id] || 0) > 2 ? "warning" : "normal";
+  });
+
+  return reputations;
+}
 
 export async function createGame() {
   const supabase = await createClient();
@@ -32,6 +118,14 @@ export async function createGame() {
   } = await supabase.auth.getUser();
   if (authError || !user) {
     throw new Error("Vous devez être connecté pour créer une partie.");
+  }
+
+  // Check reputation
+  const reputation = await checkPlayerReputation(user.id);
+  if (!reputation.allowed) {
+    throw new Error(
+      `Vous êtes temporairement suspendu. Réessayez dans ${reputation.remainingMinutes} minute(s).`,
+    );
   }
 
   const code = generateGameCode();
@@ -78,6 +172,14 @@ export async function joinGame(code: string) {
     throw new Error("Vous devez être connecté pour rejoindre une partie.");
   }
 
+  // Check reputation
+  const reputation = await checkPlayerReputation(user.id);
+  if (!reputation.allowed) {
+    throw new Error(
+      `Vous êtes temporairement suspendu. Réessayez dans ${reputation.remainingMinutes} minute(s).`,
+    );
+  }
+
   // Find game
   const { data: game, error: gameError } = await supabase
     .from("games")
@@ -87,6 +189,25 @@ export async function joinGame(code: string) {
 
   if (gameError || !game) {
     throw new Error("Partie introuvable.");
+  }
+
+  // Check if kicked from this game
+  const adminClient = createSupabaseClient<Database>(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.SUPABASE_SERVICE_ROLE_KEY!,
+  );
+
+  const { data: kickRecord } = await adminClient
+    .from("kick_sessions")
+    .select("id")
+    .eq("game_id", game.id)
+    .eq("target_id", user.id)
+    .eq("status", "completed")
+    .limit(1)
+    .maybeSingle();
+
+  if (kickRecord) {
+    throw new Error("Vous avez été exclu de cette partie.");
   }
 
   // Check if already joined
@@ -738,4 +859,212 @@ export async function startNextRound(currentRoundId: string) {
   });
 
   if (error) throw error;
+}
+
+// --- Vote Kick System ---
+
+export async function initiateVoteKick(gameId: string, targetId: string) {
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+
+  if (!user) throw new Error("Vous devez être connecté.");
+
+  // 1. Check if vote already active
+  const { data: existingSession } = await supabase
+    .from("kick_sessions")
+    .select("id")
+    .eq("game_id", gameId)
+    .eq("target_id", targetId)
+    .eq("status", "active")
+    .single();
+
+  if (existingSession) {
+    throw new Error("Un vote est déjà en cours contre ce joueur.");
+  }
+
+  // 2. Create kick session
+  // Expires in 2 minutes
+  const expiresAt = new Date(Date.now() + 2 * 60 * 1000).toISOString();
+
+  const { data: session, error } = await supabase
+    .from("kick_sessions")
+    .insert({
+      game_id: gameId,
+      target_id: targetId,
+      initiator_id: user.id,
+      status: "active",
+      expires_at: expiresAt,
+    })
+    .select()
+    .single();
+
+  if (error) {
+    console.error("Error initiating vote kick:", error);
+    throw new Error("Impossible de lancer le vote.");
+  }
+
+  // 3. Auto-cast YES vote for initiator
+  await castVote(session.id, true);
+
+  return session;
+}
+
+export async function castVote(sessionId: string, vote: boolean) {
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+
+  if (!user) throw new Error("Vous devez être connecté.");
+
+  // 1. Validate session
+  const { data: session } = await supabase
+    .from("kick_sessions")
+    .select("*, games!inner(id)")
+    .eq("id", sessionId)
+    .single();
+
+  if (!session) throw new Error("Session de vote introuvable.");
+
+  if (session.status !== "active") {
+    throw new Error("Ce vote est terminé.");
+  }
+
+  if (new Date(session.expires_at) < new Date()) {
+    // Expire it lazily using adminClient to bypass RLS
+    const adminClient = createSupabaseClient<Database>(
+      process.env.NEXT_PUBLIC_SUPABASE_URL!,
+      process.env.SUPABASE_SERVICE_ROLE_KEY!,
+    );
+
+    await adminClient
+      .from("kick_sessions")
+      .update({ status: "expired" })
+      .eq("id", sessionId);
+    throw new Error("Ce vote a expiré.");
+  }
+
+  // 1.5 Check if voter is target
+  if (user.id === session.target_id) {
+    throw new Error("La cible ne peut pas voter.");
+  }
+
+  // 2. Record vote
+  const { error: voteError } = await supabase.from("kick_votes").upsert({
+    session_id: sessionId,
+    voter_id: user.id,
+    vote: vote,
+  });
+
+  if (voteError) {
+    console.error("Error casting vote:", voteError);
+    throw new Error("Erreur lors du vote.");
+  }
+
+  // 3. Check for majority
+  // Count YES votes
+  const { count: yesVotes } = await supabase
+    .from("kick_votes")
+    .select("*", { count: "exact", head: true })
+    .eq("session_id", sessionId)
+    .eq("vote", true);
+
+  // Count TOTAL votes
+  const { count: totalVotes } = await supabase
+    .from("kick_votes")
+    .select("*", { count: "exact", head: true })
+    .eq("session_id", sessionId);
+
+  // Count Total Players in Game
+  const { count: totalPlayers } = await supabase
+    .from("game_players")
+    .select("*", { count: "exact", head: true })
+    .eq("game_id", session.game_id);
+
+  if (yesVotes !== null && totalPlayers !== null && totalVotes !== null) {
+    // Majority > 50%
+    const majority = Math.floor(totalPlayers / 2) + 1;
+
+    if (yesVotes >= majority) {
+      await executeKick(session.game_id, session.target_id, session.id);
+    } else {
+      // Check if all eligible voters have voted (everyone except target)
+      // If target CANNOT vote, eligible = totalPlayers - 1.
+      // If target CAN vote, eligible = totalPlayers.
+      // Based on UI, target is excluded.
+      const eligibleVoters = totalPlayers - 1;
+
+      if (totalVotes >= eligibleVoters) {
+        // Vote failed - Close session
+        const adminClient = createSupabaseClient<Database>(
+          process.env.NEXT_PUBLIC_SUPABASE_URL!,
+          process.env.SUPABASE_SERVICE_ROLE_KEY!,
+        );
+
+        await adminClient
+          .from("kick_sessions")
+          .update({ status: "rejected" })
+          .eq("id", sessionId);
+      }
+    }
+  }
+}
+
+async function executeKick(
+  gameId: string,
+  targetId: string,
+  sessionId: string,
+) {
+  const supabase = await createClient();
+  const adminClient = createSupabaseClient<Database>(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.SUPABASE_SERVICE_ROLE_KEY!,
+  );
+
+  // 1. Create Report (System report or attributed to initiator?)
+  // Let's attribute to initiator for now, or system.
+  // We need initiator_id from session.
+  const { data: session } = await supabase
+    .from("kick_sessions")
+    .select("initiator_id")
+    .eq("id", sessionId)
+    .single();
+
+  if (session) {
+    await adminClient.from("player_reports").insert({
+      game_id: gameId,
+      reported_id: targetId,
+      reporter_id: session.initiator_id,
+      reason: "toxic", // Default reason for vote kick
+    });
+  }
+
+  // 2. Close session FIRST to avoid race conditions or reopening
+  await adminClient
+    .from("kick_sessions")
+    .update({ status: "completed" })
+    .eq("id", sessionId);
+
+  // 3. Remove player from game
+  await adminClient
+    .from("game_players")
+    .delete()
+    .eq("game_id", gameId)
+    .eq("player_id", targetId);
+
+  // 4. Check if game empty or only 1 player left?
+  // If < 2 players, maybe end game?
+  const { count: remaining } = await adminClient
+    .from("game_players")
+    .select("*", { count: "exact", head: true })
+    .eq("game_id", gameId);
+
+  if (remaining !== null && remaining < 2) {
+    await adminClient
+      .from("games")
+      .update({ status: "FINISHED" })
+      .eq("id", gameId);
+  }
 }

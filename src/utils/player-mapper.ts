@@ -4,6 +4,7 @@ import { GamePlayer } from "@/store/use-game-store";
 export function mapGamePlayerToDisplayPlayer(
   player: GamePlayer,
   hostId: string | null | undefined,
+  reputation?: Record<string, boolean>
 ): DisplayPlayer {
   return {
     id: player.id,
@@ -12,5 +13,6 @@ export function mapGamePlayerToDisplayPlayer(
     isReady: player.is_ready,
     isHost: hostId === player.id,
     isBot: player.pseudo.startsWith("Bot-"),
+    isReputable: reputation ? reputation[player.id] : undefined,
   };
 }

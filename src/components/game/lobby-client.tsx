@@ -1,14 +1,16 @@
 "use client";
 
-import { joinGame } from "@/app/actions/game-actions";
+import { getPlayersReputation, joinGame } from "@/app/actions/game-actions";
 import { LobbyControls } from "@/components/game/lobby-controls";
 import { LobbyInfo } from "@/components/game/lobby-info";
 import { LobbyPlayerList } from "@/components/game/lobby-player-list";
+import { VoteKickManager } from "@/components/game/vote-kick-manager";
 import { useAuth } from "@/components/providers/auth-provider";
 import { Button } from "@/components/ui/button";
 import { usePlayerNotifications } from "@/hooks/use-player-notifications";
 import { usePlayerProfile } from "@/hooks/use-player-profile";
 import { useRealtimeGame } from "@/hooks/use-realtime-game";
+import { useVoteKick } from "@/hooks/use-vote-kick";
 import { generateRandomPlayer } from "@/lib/utils/generate-player";
 import { useGameStore } from "@/store/use-game-store";
 import { Loader } from "@nsmr/pixelart-react";
@@ -48,6 +50,8 @@ export function LobbyClient({
     status: gameStatus,
     isLoading: isLobbyLoading,
     hostId: storeHostId,
+    reputation,
+    setReputation,
   } = useGameStore();
 
   // Enable toast notifications
@@ -55,6 +59,30 @@ export function LobbyClient({
 
   // Use store hostId if available (updated via realtime), fallback to initial
   const currentHostId = storeHostId || initialHostId;
+
+  const { activeSession, votes, hasVoted, initiateVote, castVote, isKicked } = useVoteKick(
+    gameId,
+    user?.id || "",
+  );
+
+  useEffect(() => {
+    if (isKicked) {
+      useGameStore.getState().reset();
+      router.replace("/");
+    }
+  }, [isKicked, router]);
+
+  useEffect(() => {
+    if (players.length > 0) {
+      getPlayersReputation(players.map((p) => p.id)).then((reps) => {
+        const boolReps: Record<string, boolean> = {};
+        Object.entries(reps).forEach(([id, status]) => {
+          boolReps[id] = status === "normal";
+        });
+        setReputation(boolReps);
+      });
+    }
+  }, [players, setReputation]);
 
   const [isJoining, setIsJoining] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -103,7 +131,7 @@ export function LobbyClient({
   useEffect(() => {
     // Wait for profile to be ready and user to be authenticated
     if (!user || !profile) return;
-    if (hasJoinedRef.current || isJoining) return;
+    if (hasJoinedRef.current || isJoining || error) return; // Stop if already joined, joining, or encountered error
 
     const isInLobby = players.some((p) => p.id === user.id);
     if (isInLobby) {
@@ -138,7 +166,7 @@ export function LobbyClient({
       }
     };
     join();
-  }, [user, profile, code, players, isJoining, refresh]);
+  }, [user, profile, code, players, isJoining, refresh, error]);
 
   // 3. Navigation when game starts
   useEffect(() => {
@@ -149,9 +177,10 @@ export function LobbyClient({
 
   const isInLobby = players.some((p) => p.id === user?.id);
   const showLoader =
-    isJoining ||
-    (isLobbyLoading && players.length === 0) ||
-    (!isInLobby && !error);
+    !isKicked &&
+    (isJoining ||
+      (isLobbyLoading && players.length === 0) ||
+      (!isInLobby && !error));
 
   // 4. Timeout handler for connection issues
   useEffect(() => {
@@ -231,6 +260,15 @@ export function LobbyClient({
         )}
       </div>
 
+      <VoteKickManager
+        activeSession={activeSession}
+        votes={votes}
+        hasVoted={hasVoted}
+        castVote={castVote}
+        currentUserId={user?.id || ""}
+        players={players}
+      />
+
       <div
         className={`w-full min-h-0 overflow-hidden flex flex-col justify-center transition-all ${
           isHost ? "flex-1 md:max-h-[50vh]" : "flex-1 md:flex-none"
@@ -240,6 +278,8 @@ export function LobbyClient({
           players={players}
           hostId={currentHostId}
           className={isHost ? "md:max-h-full" : "md:max-h-[50vh]"}
+          reputation={reputation}
+          onKick={initiateVote}
         />
       </div>
 

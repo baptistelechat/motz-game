@@ -1,8 +1,15 @@
 "use client";
 
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 import { AvatarConfig } from "@/interface/AvatarConfig";
 import { cn } from "@/lib/utils";
 import { AnimatePresence, motion } from "framer-motion";
+import { UserX } from "lucide-react";
 import { AvatarDisplay } from "../profile/avatar-display";
 
 export interface DisplayPlayer {
@@ -14,6 +21,7 @@ export interface DisplayPlayer {
   isBot?: boolean;
   score?: number;
   rank?: number;
+  isReputable?: boolean;
 }
 
 interface PlayerListDisplayProps {
@@ -22,6 +30,7 @@ interface PlayerListDisplayProps {
   className?: string;
   emptyMessage?: string;
   hideReadyStatus?: boolean;
+  onKick?: (playerId: string) => void;
 }
 
 export function PlayerListDisplay({
@@ -30,6 +39,7 @@ export function PlayerListDisplay({
   className,
   emptyMessage = "En attente de joueurs...",
   hideReadyStatus = false,
+  onKick,
 }: PlayerListDisplayProps) {
   return (
     <div
@@ -54,14 +64,32 @@ export function PlayerListDisplay({
             className="flex flex-col items-center gap-2 group w-full md:w-40"
           >
             <div className="relative">
-              <AvatarDisplay
-                player={p}
-                size="md"
-                isReady={hideReadyStatus ? undefined : p.isReady}
-                isHost={p.isHost}
-                isBot={p.isBot}
-                rank={p.rank}
-              />
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <div className="relative cursor-pointer hover:scale-105 transition-transform">
+                    <AvatarDisplay
+                      player={p}
+                      size="md"
+                      isReady={hideReadyStatus ? undefined : p.isReady}
+                      isHost={p.isHost}
+                      isBot={p.isBot}
+                      rank={p.rank}
+                      isReputable={p.isReputable}
+                    />
+                  </div>
+                </DropdownMenuTrigger>
+                {onKick && p.id !== currentUserId && !p.isBot && (
+                  <DropdownMenuContent>
+                    <DropdownMenuItem
+                      className="text-red-500 focus:text-red-500 cursor-pointer text-lg"
+                      onClick={() => onKick(p.id)}
+                    >
+                      <UserX className="w-4 h-4 mr-1 text-red-500" />
+                      Voter pour exclure
+                    </DropdownMenuItem>
+                  </DropdownMenuContent>
+                )}
+              </DropdownMenu>
             </div>
 
             <div className="flex flex-col items-center w-full">

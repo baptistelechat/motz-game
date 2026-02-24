@@ -7,6 +7,12 @@ import {
 } from "@/app/actions/game-actions";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 import { Progress } from "@/components/ui/progress";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { useLeaderboard } from "@/hooks/use-leaderboard";
@@ -23,6 +29,7 @@ import {
 } from "@/store/use-game-store";
 import { Flag, Pause, Play } from "@nsmr/pixelart-react";
 import { AnimatePresence, motion } from "framer-motion";
+import { UserX } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
 import { toast } from "sonner";
 import { AvatarDisplay } from "../profile/avatar-display";
@@ -40,6 +47,8 @@ interface RoundSummaryProps {
   onReplay?: () => void;
   onQuit?: () => void;
   isActionLoading?: boolean;
+  reputation?: Record<string, boolean>;
+  onKick?: (playerId: string) => void;
 }
 
 export function RoundSummary({
@@ -54,6 +63,8 @@ export function RoundSummary({
   onReplay,
   onQuit,
   isActionLoading = false,
+  reputation = {},
+  onKick,
 }: RoundSummaryProps) {
   const {
     updateRoundSubmission,
@@ -346,28 +357,51 @@ export function RoundSummary({
                       >
                         {/* Avatar */}
                         <div className="relative">
-                          {!isValidationMode ? (
-                            <AvatarDisplay
-                              player={result.player}
-                              isHost={result.player.id === hostId}
-                              rank={result.isValid ? result.rank : undefined}
-                              size="md"
-                              className="overflow-visible"
-                            />
-                          ) : (
-                            <AvatarDisplay
-                              player={{
-                                ...result.player,
-                                avatar_config:
-                                  anonymousAvatars[result.player.id],
-                              }}
-                              // Masquer les status en mode anonyme
-                              isHost={false}
-                              rank={undefined}
-                              size="md"
-                              className="overflow-visible"
-                            />
-                          )}
+                          <DropdownMenu>
+                            <DropdownMenuTrigger asChild>
+                              <div className="relative cursor-pointer hover:scale-105 transition-transform">
+                                {!isValidationMode ? (
+                                  <AvatarDisplay
+                                    player={result.player}
+                                    isHost={result.player.id === hostId}
+                                    rank={
+                                      result.isValid ? result.rank : undefined
+                                    }
+                                    isReputable={reputation[result.player.id]}
+                                    size="md"
+                                    className="overflow-visible"
+                                  />
+                                ) : (
+                                  <AvatarDisplay
+                                    player={{
+                                      ...result.player,
+                                      avatar_config:
+                                        anonymousAvatars[result.player.id],
+                                    }}
+                                    // Masquer les status en mode anonyme
+                                    isHost={false}
+                                    rank={undefined}
+                                    isReputable={true}
+                                    size="md"
+                                    className="overflow-visible"
+                                  />
+                                )}
+                              </div>
+                            </DropdownMenuTrigger>
+                            {!isValidationMode &&
+                              onKick &&
+                              result.player.id !== currentUserId && (
+                                <DropdownMenuContent>
+                                  <DropdownMenuItem
+                                    className="text-red-500 focus:text-red-500 cursor-pointer text-lg"
+                                    onClick={() => onKick(result.player.id)}
+                                  >
+                                    <UserX className="w-4 h-4 mr-2 text-red-500" />
+                                    Voter pour exclure
+                                  </DropdownMenuItem>
+                                </DropdownMenuContent>
+                              )}
+                          </DropdownMenu>
                         </div>
 
                         {/* Info Joueur & Mot */}
@@ -497,13 +531,31 @@ export function RoundSummary({
                       >
                         {/* Avatar */}
                         <div className="relative">
-                          <AvatarDisplay
-                            player={player}
-                            isHost={player.id === hostId}
-                            rank={entry.rank}
-                            size="md"
-                            className="overflow-visible"
-                          />
+                          <DropdownMenu>
+                            <DropdownMenuTrigger asChild>
+                              <div className="relative cursor-pointer hover:scale-105 transition-transform">
+                                <AvatarDisplay
+                                  player={player}
+                                  isHost={player.id === hostId}
+                                  rank={entry.rank}
+                                  isReputable={reputation[player.id]}
+                                  size="md"
+                                  className="overflow-visible"
+                                />
+                              </div>
+                            </DropdownMenuTrigger>
+                            {onKick && !isMe && (
+                              <DropdownMenuContent>
+                                <DropdownMenuItem
+                                  className="text-red-500 focus:text-red-500 cursor-pointer text-lg"
+                                  onClick={() => onKick(player.id)}
+                                >
+                                  <UserX className="w-4 h-4 mr-2 text-red-500" />
+                                  Voter pour exclure
+                                </DropdownMenuItem>
+                              </DropdownMenuContent>
+                            )}
+                          </DropdownMenu>
                         </div>
 
                         {/* Player Info */}

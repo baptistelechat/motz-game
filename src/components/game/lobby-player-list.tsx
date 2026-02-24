@@ -11,18 +11,22 @@ interface LobbyPlayerListProps {
   players: GamePlayer[];
   hostId?: string | null;
   className?: string;
+  reputation?: Record<string, boolean>;
+  onKick?: (playerId: string) => void;
 }
 
 export function LobbyPlayerList({
   players,
   hostId,
   className,
+  reputation,
+  onKick,
 }: LobbyPlayerListProps) {
   const { user } = useAuth();
   const currentUserId = user?.id;
 
   const displayPlayers = players.map((p) =>
-    mapGamePlayerToDisplayPlayer(p, hostId),
+    mapGamePlayerToDisplayPlayer(p, hostId, reputation),
   );
 
   return (
@@ -32,6 +36,7 @@ export function LobbyPlayerList({
       <PlayerListDisplay
         players={displayPlayers}
         currentUserId={currentUserId}
+        onKick={onKick}
       />
     </ScrollArea>
   );

@@ -14,6 +14,7 @@ export interface GamePlayer {
   avatar_config: AvatarConfig;
   is_ready: boolean;
   joined_at: string;
+  isReputable?: boolean;
 }
 
 export interface GameRound {
@@ -44,6 +45,7 @@ interface GameState {
   hostId: string | null;
   status: GameStatus;
   players: GamePlayer[];
+  reputation: Record<string, boolean>;
   currentRound: GameRound | null;
   roundSubmissions: RoundSubmission[];
   isLoading: boolean;
@@ -52,6 +54,7 @@ interface GameState {
   setHostId: (id: string | null) => void;
   setStatus: (status: GameStatus) => void;
   setPlayers: (players: GamePlayer[]) => void;
+  setReputation: (reputation: Record<string, boolean>) => void;
   setCurrentRound: (round: GameRound | null) => void;
   setRoundSubmissions: (submissions: RoundSubmission[]) => void;
   addRoundSubmission: (submission: RoundSubmission) => void;
@@ -69,6 +72,7 @@ export const useGameStore = create<GameState>((set, get) => ({
   hostId: null,
   status: "LOBBY",
   players: [],
+  reputation: {},
   currentRound: null,
   roundSubmissions: [],
   isLoading: true,
@@ -79,6 +83,7 @@ export const useGameStore = create<GameState>((set, get) => ({
       hostId: null,
       status: "LOBBY",
       players: [],
+      reputation: {},
       currentRound: null,
       roundSubmissions: [],
       isLoading: true,
@@ -88,6 +93,7 @@ export const useGameStore = create<GameState>((set, get) => ({
   setHostId: (id) => set({ hostId: id }),
   setStatus: (status) => set({ status }),
   setPlayers: (players) => set({ players }),
+  setReputation: (reputation) => set({ reputation }),
   setCurrentRound: (round) => set({ currentRound: round }),
   setRoundSubmissions: (submissions) => set({ roundSubmissions: submissions }),
   addRoundSubmission: (submission) =>

@@ -1,10 +1,16 @@
 "use client";
 
-import { finishRound, leaveGame, resetGame } from "@/app/actions/game-actions";
+import {
+  finishRound,
+  getPlayersReputation,
+  leaveGame,
+  resetGame,
+} from "@/app/actions/game-actions";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { LoadingScreen } from "@/components/ui/loading-screen";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { useRealtimeGame } from "@/hooks/use-realtime-game";
+import { useVoteKick } from "@/hooks/use-vote-kick";
 import { getConstraintLabel } from "@/lib/game/formatting";
 import { calculatePlayerRankings } from "@/lib/game/ranking";
 import { cn } from "@/lib/utils";
@@ -19,6 +25,7 @@ import { GameTimer } from "./game-timer";
 import { GameTitle } from "./game-title";
 import { PlayerListDisplay } from "./player-list-display";
 import { RoundSummary } from "./round-summary";
+import { VoteKickManager } from "./vote-kick-manager";
 
 interface GameClientProps {
   gameId: string;
@@ -59,6 +66,8 @@ export function GameClient({ gameId, currentUserId, code }: GameClientProps) {
     reset,
     gameId: savedGameId,
     setGameId,
+    reputation,
+    setReputation,
   } = useGameStore();
 
   const isHost = hostId === currentUserId;
@@ -66,6 +75,30 @@ export function GameClient({ gameId, currentUserId, code }: GameClientProps) {
   const [optimisticSubmitted, setOptimisticSubmitted] = useState(false);
   const [isResetting, setIsResetting] = useState(false);
   const [isQuitting, setIsQuitting] = useState(false);
+
+  // --- Vote Kick Integration ---
+  const { activeSession, votes, hasVoted, initiateVote, castVote, isKicked } =
+    useVoteKick(gameId, currentUserId);
+
+  useEffect(() => {
+    if (isKicked) {
+      setIsQuitting(true);
+      reset();
+      router.replace("/");
+    }
+  }, [isKicked, reset, router]);
+
+  useEffect(() => {
+    if (players.length > 0) {
+      getPlayersReputation(players.map((p) => p.id)).then((reps) => {
+        const boolReps: Record<string, boolean> = {};
+        Object.entries(reps).forEach(([id, status]) => {
+          boolReps[id] = status === "normal";
+        });
+        setReputation(boolReps);
+      });
+    }
+  }, [players, setReputation]);
 
   // Sync gameId with store to ensure redirects work correctly
   useEffect(() => {
@@ -80,17 +113,35 @@ export function GameClient({ gameId, currentUserId, code }: GameClientProps) {
     }
   }, [status, code, router, savedGameId, isQuitting]);
 
-  // Auto-redirect if host leaves
+  // Auto-redirect if host leaves or user is kicked
   useEffect(() => {
-    if (isLoading || isQuitting || !hostId || players.length === 0) return;
+    if (isLoading || isQuitting || !hostId) return;
 
-    const hostIsPresent = players.some((p) => p.id === hostId);
-    if (!hostIsPresent) {
-      toast.info("L'hôte a quitté la partie.");
-      reset();
-      router.push("/");
+    // Check if host left
+    if (players.length > 0) {
+      const hostIsPresent = players.some((p) => p.id === hostId);
+      if (!hostIsPresent) {
+        toast.info("L'hôte a quitté la partie.");
+        reset();
+        router.push("/");
+        return;
+      }
     }
-  }, [players, hostId, isLoading, isQuitting, reset, router]);
+
+    // Check if current user is kicked
+    // We remove the check for players.length > 0 because if the user is kicked,
+    // they might lose access to read the players list due to RLS, resulting in an empty list.
+    // If the list is empty but we are not loading, it means we are disconnected/kicked.
+    if (!isLoading) {
+      const isCurrentUserPresent = players.some((p) => p.id === currentUserId);
+      if (!isCurrentUserPresent) {
+        setIsQuitting(true); // Prevent further updates
+        toast.error("Vous avez été exclu de la partie.");
+        reset();
+        router.replace("/"); // Use replace to prevent back navigation
+      }
+    }
+  }, [players, hostId, isLoading, isQuitting, reset, router, currentUserId]);
 
   // Auto-finish round if all players submitted
   useEffect(() => {
@@ -127,14 +178,18 @@ export function GameClient({ gameId, currentUserId, code }: GameClientProps) {
     return rankedPlayers
       .filter((rp) => rp.submission)
       .map((rp) => {
-        const display = mapGamePlayerToDisplayPlayer(rp.player, hostId);
+        const display = mapGamePlayerToDisplayPlayer(
+          rp.player,
+          hostId,
+          reputation,
+        );
         return {
           ...display,
           score: rp.score,
           rank: rp.rank,
         };
       });
-  }, [players, hostId, roundSubmissions]);
+  }, [players, hostId, roundSubmissions, reputation]);
 
   // Reset optimistic state when round changes
   useEffect(() => {
@@ -210,6 +265,14 @@ export function GameClient({ gameId, currentUserId, code }: GameClientProps) {
   if (status === "FINISHED") {
     return (
       <div className="flex flex-col items-center justify-start min-h-screen w-full pt-4 pb-4 px-4 gap-4">
+        <VoteKickManager
+          activeSession={activeSession}
+          votes={votes}
+          hasVoted={hasVoted}
+          castVote={castVote}
+          currentUserId={currentUserId}
+          players={players}
+        />
         <RoundSummary
           players={players}
           currentUserId={currentUserId}
@@ -218,6 +281,8 @@ export function GameClient({ gameId, currentUserId, code }: GameClientProps) {
           onReplay={handleReplay}
           onQuit={handleQuit}
           isActionLoading={isResetting}
+          reputation={reputation}
+          onKick={initiateVote}
         />
       </div>
     );
@@ -232,19 +297,39 @@ export function GameClient({ gameId, currentUserId, code }: GameClientProps) {
     currentRound?.status === "VALIDATING"
   ) {
     return (
-      <RoundSummary
-        round={currentRound}
-        players={players}
-        submissions={roundSubmissions}
-        currentUserId={currentUserId}
-        hostId={hostId}
-        isValidationMode={currentRound?.status === "VALIDATING"}
-      />
+      <>
+        <VoteKickManager
+          activeSession={activeSession}
+          votes={votes}
+          hasVoted={hasVoted}
+          castVote={castVote}
+          currentUserId={currentUserId}
+          players={players}
+        />
+        <RoundSummary
+          round={currentRound}
+          players={players}
+          submissions={roundSubmissions}
+          currentUserId={currentUserId}
+          hostId={hostId}
+          isValidationMode={currentRound?.status === "VALIDATING"}
+          reputation={reputation}
+          onKick={initiateVote}
+        />
+      </>
     );
   }
 
   return (
     <div className="flex flex-col items-center h-full w-full gap-4 overflow-hidden p-2 md:p-4 relative">
+      <VoteKickManager
+        activeSession={activeSession}
+        votes={votes}
+        hasVoted={hasVoted}
+        castVote={castVote}
+        currentUserId={currentUserId}
+        players={players}
+      />
       {currentRound && (
         <GameDebugControls
           currentRound={currentRound}
@@ -309,6 +394,7 @@ export function GameClient({ gameId, currentUserId, code }: GameClientProps) {
           className="w-full"
           hideReadyStatus
           emptyMessage="En attente de réponses..."
+          onKick={initiateVote}
         />
       </ScrollArea>
 
