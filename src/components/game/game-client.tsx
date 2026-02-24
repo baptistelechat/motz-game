@@ -150,10 +150,13 @@ export function GameClient({ gameId, currentUserId, code }: GameClientProps) {
 
   const handleValidate = async (word: string) => {
     setOptimisticSubmitted(true);
-    const success = await submitWord(word);
-    if (!success) {
+    const result = await submitWord(word);
+    if (!result.success) {
       setOptimisticSubmitted(false);
+      // Let GameInput handle the error display (toast position etc)
+      return result;
     }
+    return result;
   };
 
   const handleReplay = async () => {

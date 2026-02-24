@@ -10,8 +10,12 @@ import { createClient } from "@/lib/supabase/server";
 import { Database, Json } from "@/types/database.types";
 import { RoundConstraints } from "@/types/game";
 import { createClient as createSupabaseClient } from "@supabase/supabase-js";
+import filter from "leo-profanity";
 import { customAlphabet } from "nanoid";
 import { redirect } from "next/navigation";
+
+// Initialize profanity filter
+filter.loadDictionary("fr");
 import { z } from "zod";
 
 const generateGameCode = customAlphabet(
@@ -460,6 +464,16 @@ export async function submitWord(
 
   // 3. Validate Word
   const constraints = round.constraints as unknown as RoundConstraints;
+
+  // 3.1 Check for profanity
+  if (filter.check(word)) {
+    return {
+      success: false,
+      message: "Mot inapproprié",
+      validationError: "PROFANITY_DETECTED",
+    };
+  }
+
   let validation;
 
   try {

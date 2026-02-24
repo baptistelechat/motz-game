@@ -60,7 +60,7 @@ interface GameState {
   ) => void;
   removeRoundSubmission: (id: string) => void;
   setIsLoading: (isLoading: boolean) => void;
-  submitWord: (word: string) => Promise<boolean>;
+  submitWord: (word: string) => Promise<{ success: boolean; message?: string }>;
   reset: () => void;
 }
 
@@ -117,8 +117,7 @@ export const useGameStore = create<GameState>((set, get) => ({
       console.error(
         `Cannot submit word: Game (${gameId}) or Round (${currentRound?.id}) not active`,
       );
-      toast.error("Erreur: Partie non active");
-      return false;
+      return { success: false, message: "Erreur: Partie non active" };
     }
 
     try {
@@ -129,8 +128,8 @@ export const useGameStore = create<GameState>((set, get) => ({
       });
 
       if (!result.success) {
-        toast.error(result.message || "Mot refusé par le serveur");
-        return false;
+        // Error handling is now delegated to the caller (GameClient) for custom UI
+        return { success: false, message: result.message || "Mot refusé par le serveur" };
       } else {
         // Success
         const { score, rank, speed_bonus, word_score } =
@@ -144,12 +143,11 @@ export const useGameStore = create<GameState>((set, get) => ({
         } else {
           toast.success("Mot validé !");
         }
-        return true;
+        return { success: true };
       }
     } catch (err) {
       console.error("Failed to submit word:", err);
-      toast.error("Erreur de communication avec le serveur");
-      return false;
+      return { success: false, message: "Erreur de communication avec le serveur" };
     }
   },
 }));

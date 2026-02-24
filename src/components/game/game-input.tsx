@@ -1,6 +1,8 @@
 "use client";
 
+import { Progress } from "@/components/ui/progress";
 import { useDictionary } from "@/hooks/use-dictionary";
+import { ROUND_DURATION_SECONDS } from "@/lib/game/constants";
 import { getConstraintLabel } from "@/lib/game/formatting";
 import { validateWord } from "@/lib/game/validation";
 import { cn } from "@/lib/utils";
@@ -11,12 +13,11 @@ import { useEffect, useRef, useState } from "react";
 import { toast } from "sonner";
 import { Button } from "../ui/button";
 import { Input } from "../ui/input";
-import { ROUND_DURATION_SECONDS } from "@/lib/game/constants";
-import { Progress } from "@/components/ui/progress";
 
 interface GameInputProps {
   constraints: RoundConstraints;
-  onValidate: (word: string) => void;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  onValidate: (word: string) => Promise<any>;
   disabled?: boolean;
   endsAt?: string;
 }
@@ -77,7 +78,7 @@ export function GameInput({
     setValue(newValue);
   };
 
-  const handleSubmit = (e?: React.FormEvent) => {
+  const handleSubmit = async (e?: React.FormEvent) => {
     e?.preventDefault();
     if (disabled || !value) return;
 
@@ -89,15 +90,29 @@ export function GameInput({
     const result = validateWord(value, constraints, dictionary.has);
 
     if (result.isValid) {
-      // Success
-      // Play sound "Success" (placeholder)
-      console.log("Audio: Success");
-      onValidate(value);
-      setValue("");
-      // Keep focus
-      inputRef.current?.focus();
+      // Client-side valid, now try server-side
+      const serverResult = await onValidate(value);
+
+      if (serverResult?.success === false) {
+        // Server rejected (e.g. profanity)
+        console.log("Audio: Bloop");
+        toast.error(serverResult.message || "Erreur serveur", {
+          className:
+            "!fixed !bottom-28 !left-0 !right-0 !mx-auto !w-fit !top-auto",
+        });
+        setIsShaking(true);
+        setTimeout(() => setIsShaking(false), 400); // Reset shake
+        inputRef.current?.focus();
+        // Do NOT clear value so user can see what was rejected
+      } else {
+        // Success
+        console.log("Audio: Success");
+        setValue("");
+        // Keep focus
+        inputRef.current?.focus();
+      }
     } else {
-      // Error
+      // Error (Client-side)
       // Play sound "Bloop" (placeholder)
       console.log("Audio: Bloop");
       toast.error(result.error || "Mot invalide", {
