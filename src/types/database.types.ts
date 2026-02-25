@@ -370,6 +370,58 @@ export type Database = {
           },
         ];
       };
+      word_reports: {
+        Row: {
+          created_at: string;
+          game_id: string;
+          id: string;
+          reason: string;
+          reported_word: string;
+          reporter_id: string;
+          round_id: string;
+        };
+        Insert: {
+          created_at?: string;
+          game_id: string;
+          id?: string;
+          reason?: string;
+          reported_word: string;
+          reporter_id: string;
+          round_id: string;
+        };
+        Update: {
+          created_at?: string;
+          game_id?: string;
+          id?: string;
+          reason?: string;
+          reported_word?: string;
+          reporter_id?: string;
+          round_id?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "word_reports_game_id_fkey";
+            columns: ["game_id"];
+            isOneToOne: false;
+            referencedRelation: "games";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "word_reports_reporter_id_fkey";
+            columns: ["reporter_id"];
+            isOneToOne: false;
+            referencedRelation: "players";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "word_reports_round_id_fkey";
+            columns: ["round_id"];
+            isOneToOne: false;
+            referencedRelation: "rounds";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
     };
     Views: {
       [_ in never]: never;

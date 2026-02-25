@@ -2,6 +2,7 @@
 
 import {
   finalizeValidation,
+  reportWord,
   startNextRound,
   toggleVote,
 } from "@/app/actions/game-actions";
@@ -29,7 +30,7 @@ import {
 } from "@/store/use-game-store";
 import { Flag, Pause, Play } from "@nsmr/pixelart-react";
 import { AnimatePresence, motion } from "framer-motion";
-import { UserX } from "lucide-react";
+import { AlertTriangle, UserX } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
 import { toast } from "sonner";
 import { AvatarDisplay } from "../profile/avatar-display";
@@ -270,6 +271,27 @@ export function RoundSummary({
     }
   };
 
+  const [reportedWords, setReportedWords] = useState<string[]>([]);
+
+  const handleReport = async (word: string) => {
+    if (!gameId || !round) return;
+
+    // Optimistic update
+    setReportedWords((prev) => [...prev, word]);
+    toast.success("Signalement envoyé", {
+      description: `Le mot "${word}" a été signalé.`,
+    });
+
+    try {
+      await reportWord(gameId, round.id, word);
+    } catch (error) {
+      console.error("Error reporting:", error);
+      toast.error("Erreur lors du signalement");
+      // Revert optimistic update
+      setReportedWords((prev) => prev.filter((w) => w !== word));
+    }
+  };
+
   return (
     <div className="flex flex-col items-center h-full w-full max-w-2xl mx-auto p-4 gap-6 animate-in fade-in duration-500">
       <GameTitle
@@ -345,7 +367,7 @@ export function RoundSummary({
                         transition={{ duration: 0.3 }}
                         key={result.player.id}
                         className={cn(
-                          "grid items-center gap-3 p-4",
+                          "grid items-center gap-3 p-4 group",
                           index === results.length - 1 &&
                             "border-b-4 border-black",
                           "grid-cols-[auto_minmax(0,1fr)_auto]",
@@ -422,20 +444,39 @@ export function RoundSummary({
                               ? result.player.pseudo
                               : `Joueur ${result.rank}`}
                           </div>
-                          <p
-                            className={cn(
-                              "text-sm truncate w-full flex gap-1 text-muted-foreground",
-                              !isValidationMode &&
-                                !result.isValid &&
-                                "text-destructive line-through decoration-2",
-                              isValidationMode && "text-xl",
-                            )}
-                          >
-                            {result.word}
-                            {result.duration !== undefined && (
-                              <span>({result.duration.toFixed(3)}s)</span>
-                            )}
-                          </p>
+                          <div className="flex items-center gap-2 w-full min-w-0">
+                            <p
+                              className={cn(
+                                "text-sm truncate flex-1 flex gap-1 text-muted-foreground",
+                                !isValidationMode &&
+                                  !result.isValid &&
+                                  "text-destructive line-through decoration-2",
+                                isValidationMode && "text-xl",
+                              )}
+                            >
+                              {result.word}
+                              {result.duration !== undefined && (
+                                <span>({result.duration.toFixed(3)}s)</span>
+                              )}
+                            </p>
+                            {!isValidationMode &&
+                              !isGameOver &&
+                              result.word &&
+                              !reportedWords.includes(result.word) && (
+                                <Button
+                                  variant="ghost"
+                                  size="icon"
+                                  className="h-6 w-6 shrink-0 text-muted-foreground/50 hover:text-destructive"
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    handleReport(result.word!);
+                                  }}
+                                  title="Signaler ce mot"
+                                >
+                                  <AlertTriangle className="h-3 w-3" />
+                                </Button>
+                              )}
+                          </div>
                         </div>
 
                         {/* Action / Score */}

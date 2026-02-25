@@ -1068,3 +1068,53 @@ async function executeKick(
       .eq("id", gameId);
   }
 }
+
+const reportWordSchema = z.object({
+  gameId: z.string().uuid(),
+  roundId: z.string().uuid(),
+  word: z.string().min(1),
+  reason: z.string().optional().default("offensive"),
+});
+
+export async function reportWord(
+  gameId: string,
+  roundId: string,
+  word: string,
+  reason: string = "offensive",
+) {
+  const supabase = await createClient();
+
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+
+  if (!user) {
+    throw new Error("Unauthorized");
+  }
+
+  const result = reportWordSchema.safeParse({
+    gameId,
+    roundId,
+    word,
+    reason,
+  });
+
+  if (!result.success) {
+    throw new Error("Invalid input");
+  }
+
+  const { error } = await supabase.from("word_reports").insert({
+    game_id: gameId,
+    round_id: roundId,
+    reporter_id: user.id,
+    reported_word: word,
+    reason: reason,
+  });
+
+  if (error) {
+    console.error("Error reporting word:", error);
+    throw new Error("Failed to report word");
+  }
+
+  return { success: true };
+}
