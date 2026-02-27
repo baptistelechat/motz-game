@@ -31,6 +31,17 @@ Jeu de mots multijoueur temps réel avec design Pixel-Pop.
    pnpm dev
    ```
 
+## 👑 Configuration Admin
+
+Pour accéder au tableau de bord administrateur (`/admin`), vous devez attribuer le rôle `admin` à votre utilisateur.
+Exécutez cette requête SQL dans l'éditeur Supabase :
+
+```sql
+UPDATE public.players
+SET role = 'admin'
+WHERE id = 'VOTRE_UUID_UTILISATEUR'; -- Trouvez votre ID dans la table auth.users ou public.players
+```
+
 ## 🧪 Tests
 
 Le projet suit une stratégie de test rigoureuse définie par le Master Test Architect.
